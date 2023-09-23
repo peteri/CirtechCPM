@@ -3,6 +3,10 @@ Analysis of the Cirtech Apple //e CP/M plus code, basically the repo where I add
 various disk images and disassemblies while I work on the code. Currently the disk images do NOT boot
 in eiher mame or AppleWin this is the first thing to fix.
 
+The Cirtech card looks like this installed in a Apple //e:
+
+![Cirtech card](images/CirtechCard.jpg)
+
 ## Why?
 Well I'd like to port CP/M plus to the RC2014 system. With most of the source code being available 
 via [The Unoffical CP/M Web site](http://www.cpm.z80.de/) along with various bits of build process
