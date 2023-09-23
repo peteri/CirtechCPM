@@ -1,0 +1,565 @@
+﻿### 6502bench SourceGen dis65 v1.0 ###
+{
+"_ContentVersion":5,
+"FileDataLength":512,
+"FileDataCrc32":-37069546,
+"ProjectProps":{
+"CpuName":"65C02",
+"IncludeUndocumentedInstr":false,
+"TwoByteBrk":false,
+"EntryFlags":32702671,
+"AutoLabelStyle":"Simple",
+"AnalysisParams":{
+"AnalyzeUncategorizedData":true,
+"DefaultTextScanMode":"LowHighAscii",
+"MinCharsForString":4,
+"SeekNearbyTargets":true,
+"UseRelocData":false,
+"SmartPlpHandling":false,
+"SmartPlbHandling":true},
+
+"PlatformSymbolFileIdentifiers":["RT:Apple/F8-ROM.sym65",
+"RT:Apple/Cxxx-IO.sym65",
+"RT:Apple/C08x-DiskII.sym65",
+"RT:Apple/ProDOS8.sym65"],
+"ExtensionScriptFileIdentifiers":["RT:Apple/ProDOS8.cs",
+"RT:Apple/VisHiRes.cs"],
+"ProjectSyms":{
+"DISKREADSECT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"ROM Disk read sector routine",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DISKREADSECT",
+"Value":49244,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"SLOTX":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"SLOTX",
+"HasWidth":true,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SLOTX",
+"Value":4,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"SLOTX16":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Boot slot times sixteen",
+"HasWidth":true,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SLOTX16",
+"Value":1,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"}}},
+
+"AddressMap":[{
+"Offset":0,
+"Addr":2048,
+"Length":512,
+"PreLabel":"",
+"IsRelative":false}],
+"TypeHints":[{
+"Low":0,
+"High":0,
+"Hint":"InlineData"},
+
+{
+"Low":1,
+"High":1,
+"Hint":"Code"},
+
+{
+"Low":269,
+"High":269,
+"Hint":"Code"}],
+"StatusFlagOverrides":{
+},
+
+"Comments":{
+"1":"Slot ($60 for disk ii in slot 6)",
+"4":"Divide by 16",
+"8":"Now we have slot number",
+"15":"Check for Disk II 16 sector?",
+"20":"Found Intelligent Disk Controller",
+"36":"Get back CX slot",
+"39":"Update rom address we want to call",
+"42":"Alter jump to skip next time we run",
+"50":"We\u0027ve read sector 0",
+"54":"Add one to our sect to read",
+"58":"Still on track 0?",
+"60":"Nope see if we\u0027ve read the whole track",
+"62":"Track 0 still, have read sector 1 yet?",
+"66":"So now we\u0027ve read in sectors 0 and 1 ",
+"67":"We can start reading into the language card",
+"72":"Done the whole track yet?",
+"78":"Start loading in CPM stuff at $1100 (6520) 0100H Z80",
+"84":"Track one read in?",
+"86":"Done track two, fire up Z80",
+"88":"Time to read track 2",
+"95":"Get sector zero",
+"99":"Add one to the track",
+"104":"Move the head half track",
+"107":"Sleep for a bit",
+"120":"Turn off the stepper motor",
+"123":"Are we on track 1.5?",
+"128":"Time to go to track 2",
+"131":"Another half track",
+"134":"Get the prodos(?) style sector",
+"136":"Convert it for the ROM",
+"141":"Setup X register for ROM",
+"143":"Read in the sector via ROM, reneter back at $801",
+"162":"Clear 40 column etc",
+"165":"Copy 80 column pascal init offset",
+"168":"Self modify so we can init the 80 column card",
+"174":"Allow writes to language card",
+"230":"Z80 card swap from Z80 side",
+"232":"Z80 card swap from 6502 side",
+"234":"Patch back from Z80",
+"237":"Patch go to Z80",
+"240":"Patch this test",
+"253":"Out of card slots?",
+"269":"$3C0",
+"272":"$3C3",
+"275":"$3C6 (Patched when Z80 card found)",
+"278":"$3C9 Turn on ROM",
+"281":"$3cc No idea?",
+"284":"$3CF 6502 routine?",
+"287":"$3D2 STA so we don\u0027t overwrite it",
+"290":"$3D5",
+"291":"$3D6 Save away the registers",
+"294":"$3D9 Back to z80 land",
+"297":"xor a",
+"298":"xor ($0000),a",
+"301":"ld hl,($F3DE) Card return address to 6502",
+"304":"ld (hl),a",
+"305":"jp $1100"},
+
+"LongComments":{
+"-2147483647":{
+"Text":"6502bench SourceGen v1.8.5",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"23":{
+"Text":"This code runs on the first boot sector, we read in the second sector to $900\r\nPresumably to mimic a Intelligent Disk Controller aka Smart Drive, which has \r\na sector size of 512 bytes. We skip this code on future reads.\r\n",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"54":{
+"Text":"Future reads skip the code above and jump to here.",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"42":{
+"Text":"This constant is SKIP_DISKII_INIT - (DISKII_TEST+2)",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"269":{
+"Text":"Jump code to and from the Z80\r\nCopy this into $3C0 - $3DB",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"76":{
+"Text":"Assuming Disk II in slot 6\r\nFirst time X=$60\r\nWrite to $C0E0 (C080,X) IWM_PH0_OFF ; left on by C600 ROM\r\nWrite to $C0E3 (C083,X) IWM_PH1_ON  \r\nDelay\r\nWrite to $C0E2 (C082,X) IWM_PH1_OFF\r\nWrite to $C0E5 (C085,X) IWM_PH2_ON\r\nRead a whole track",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"88":{
+"Text":"Second time X=$64\r\nWrite to $C0E4 (C080,X) IWM_PH2_OFF ; left on by C600 ROM\r\nWrite to $C0E7 (C083,X) IWM_PH3_ON  \r\nDelay\r\nWrite to $C0E6 (C082,X) IWM_PH3_OFF",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"128":{
+"Text":"Third time X=$5C\r\nWrite to $C0E1 (C085,X) IWM_PH0_ON\r\nRead a whole track\r\n",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0}},
+
+"Notes":{
+},
+
+"UserLabels":{
+"15":{
+"Label":"READCXFF",
+"Value":2063,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"171":{
+"Label":"JSR80COLINIT",
+"Value":2219,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"162":{
+"Label":"CLRSCR_ENABLELANGCARD",
+"Value":2210,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"308":{
+"Label":"IDCFOUND",
+"Value":2356,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"23":{
+"Label":"DISKII_FOUND_INIT",
+"Value":2071,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"143":{
+"Label":"JSRDISKIIREAD",
+"Value":2191,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"146":{
+"Label":"SECTORMAP",
+"Value":2194,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"18":{
+"Label":"DISKII_TEST",
+"Value":2066,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"110":{
+"Label":"DELAY1",
+"Value":2158,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"111":{
+"Label":"DELAY2",
+"Value":2159,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"54":{
+"Label":"SKIP_DISKII_INIT",
+"Value":2102,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"181":{
+"Label":"SLOTXPLUS4",
+"Value":2229,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"182":{
+"Label":"SLOTXMINUS4",
+"Value":2230,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"183":{
+"Label":"COPYRIGHT",
+"Value":2231,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"72":{
+"Label":"TRACK_READ_YET",
+"Value":2120,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"134":{
+"Label":"MAP_SECTOR_AND_READ",
+"Value":2182,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"269":{
+"Label":"VECTOR6502",
+"Value":2317,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"297":{
+"Label":"VECTORZ80",
+"Value":2345,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"221":{
+"Label":"COPY_Z80_LOOP",
+"Value":2269,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"210":{
+"Label":"COPY_6502_LOOP",
+"Value":2258,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"266":{
+"Label":"START_Z80",
+"Value":2314,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"234":{
+"Label":"PATCH_VECT_LOOP",
+"Value":2282,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"243":{
+"Label":"TEST_Z80_CARD",
+"Value":2291,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"208":{
+"Label":"COPY_VECTORS_FIND_Z80",
+"Value":2256,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"93":{
+"Label":"READ_NEXT_TRK",
+"Value":2141,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"131":{
+"Label":"READTRK1",
+"Value":2179,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"}},
+
+"OperandFormats":{
+"1":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SLOTX16",
+"Part":"Low"}},
+
+"8":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SLOTX",
+"Part":"Low"}},
+
+"39":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"JSRDISKIIREAD",
+"Part":"Low"}},
+
+"174":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LCBANK1",
+"Part":"Low"}},
+
+"177":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LCBANK1",
+"Part":"Low"}},
+
+"210":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"VECTOR6502",
+"Part":"Low"}},
+
+"257":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"ROMIN",
+"Part":"Low"}},
+
+"269":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LCBANK2",
+"Part":"Low"}},
+
+"272":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LCBANK2",
+"Part":"Low"}},
+
+"278":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"ROMIN",
+"Part":"Low"}},
+
+"287":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"ROMIN",
+"Part":"Low"}}},
+
+"LvTables":{
+"1":{
+"Variables":[{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"sector we\u0027re going to read",
+"HasWidth":true,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"sect_to_read",
+"Value":0,
+"Source":"Variable",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+{
+"DataDescriptor":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Pointer to BOOT1 databuffer",
+"HasWidth":true,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"data_ptr",
+"Value":38,
+"Source":"Variable",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Disk II sector to read",
+"HasWidth":true,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"rom_sect_to_read",
+"Value":61,
+"Source":"Variable",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"track to read",
+"HasWidth":true,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"track",
+"Value":65,
+"Source":"Variable",
+"Type":"ExternalAddr",
+"LabelAnno":"None"}],
+"ClearPrevious":false}},
+
+"Visualizations":[],
+"VisualizationAnimations":[],
+"VisualizationSets":{
+},
+
+"RelocList":{
+},
+
+"DbrValues":{
+}}
