@@ -1,0 +1,7 @@
+*.dsk binary
+*.po binary
+*.jpg binary
+*.nib binary
+*.bin binary
+
+
