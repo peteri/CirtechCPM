@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.editorAssociations": {
+			"*.bin": "hexEditor.hexedit",
+			"*.po": "hexEditor.hexedit",
+			"*.DSK": "hexEditor.hexedit",
+			"*.nib": "hexEditor.hexedit"
+		}
+	}
+
+}
