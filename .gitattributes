@@ -3,5 +3,4 @@
 *.jpg binary
 *.nib binary
 *.bin binary
-
-
+*.DSK binary
