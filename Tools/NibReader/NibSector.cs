@@ -2,16 +2,16 @@ namespace NibReader;
 
 public class NibSector
 {
-    Memory<byte> _header;
-    Memory<byte> _data;
+    public SectorHeader Header {get;private set;}
+    public SectorData Data{get;private set;}
     public NibSector(Memory<byte> header, Memory<byte> data)
     {
-        _header = header;
-        _data = data;
+        Header = new SectorHeader(header);
+        Data = new SectorData(data);
     }
 
     public override string ToString()
     {
-        return "NibSector";
+        return $"NibSector Header={Header} Data={Data}";
     }
 }

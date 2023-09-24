@@ -1,7 +1,7 @@
 namespace NibReader;
 public class NibReader
 {
-    private const int NumberOfTracks = 35;
+    public const int NumberOfTracks = 35;
     private const int HeaderLength = 8;
     private const int DataLength = 342;
 
@@ -40,7 +40,7 @@ public class NibReader
                         (trackData.Span[dataIndex + HeaderLength + 1] == 0xDE) &&
                         (trackData.Span[dataIndex + HeaderLength + 2] == 0xAA))
                     {
-                        header = trackData.Slice(1, HeaderLength);
+                        header = trackData.Slice(dataIndex + 1, HeaderLength);
                         readerState = ReaderState.FindSectorData;
                         dataIndex += HeaderLength + 6;
                     };
@@ -52,7 +52,8 @@ public class NibReader
                         (trackData.Span[dataIndex + DataLength + 2] == 0xDE) &&
                         (trackData.Span[dataIndex + DataLength + 3] == 0xAA))
                     {
-                        var data = trackData.Slice(1, DataLength);
+                        // Grab the data including checksum
+                        var data = trackData.Slice(dataIndex + 1, DataLength+1);
                         if (!header.IsEmpty)
                             sectors.Add(new NibSector(header, data));
                         header = Memory<byte>.Empty;
