@@ -42,6 +42,40 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"PD_BLOCK_NUM":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Prodos block number",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"PD_BLOCK_NUM",
+"Value":70,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"PD_DATA_BUFH":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Prodos Data buffer high byte",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"PD_DATA_BUFH",
+"Value":69,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "SLOTX":{
 "DataDescriptor":{
 "Length":1,
@@ -74,6 +108,23 @@
 "Value":1,
 "Source":"Project",
 "Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"ZP_PRODOS_CMD":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"ProDOS command in zeropage",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"ZP_PRODOS_CMD",
+"Value":66,
+"Source":"Project",
+"Type":"ExternalAddr",
 "LabelAnno":"None"}}},
 
 "AddressMap":[{
@@ -95,11 +146,17 @@
 {
 "Low":269,
 "High":269,
-"Hint":"Code"}],
+"Hint":"Code"},
+
+{
+"Low":380,
+"High":382,
+"Hint":"InlineData"}],
 "StatusFlagOverrides":{
 },
 
 "Comments":{
+"0":"Disk II boot sector count to read",
 "1":"Slot ($60 for disk ii in slot 6)",
 "4":"Divide by 16",
 "8":"Now we have slot number",
@@ -141,12 +198,14 @@
 "234":"Patch back from Z80",
 "237":"Patch go to Z80",
 "240":"Patch this test",
+"248":"Found the card?",
 "253":"Out of card slots?",
+"257":"Show an error message",
 "269":"$3C0",
 "272":"$3C3",
 "275":"$3C6 (Patched when Z80 card found)",
 "278":"$3C9 Turn on ROM",
-"281":"$3cc No idea?",
+"281":"$3cc restore 6502 regs (unclear how that gets in place)",
 "284":"$3CF 6502 routine?",
 "287":"$3D2 STA so we don\u0027t overwrite it",
 "290":"$3D5",
@@ -156,12 +215,37 @@
 "298":"xor ($0000),a",
 "301":"ld hl,($F3DE) Card return address to 6502",
 "304":"ld (hl),a",
-"305":"jp $1100"},
+"305":"jp $1100",
+"311":"Get back Cx00 slot",
+"314":"Patch up various things",
+"317":"Get the prodos driver entry point",
+"326":"Get Prodos entry point",
+"329":"Check for smartdrv?",
+"333":"Call via the ProDOS driver",
+"341":"Read in rest of track zero to $D000",
+"350":"Read in Tracks one and two to $1100",
+"359":"Possibly used by BIOS code later on?",
+"361":"Some sort of flag?",
+"380":"Read command",
+"384":"Number of parameters",
+"385":"Unit number 1",
+"390":"Three bytes for the address",
+"401":"Possibly used by BIOS code later on?",
+"403":"Some sort of flags?",
+"407":"Copy prodos command to zero page",
+"415":"Read in 7 ProDOS blocks",
+"430":"Read in tracks one and two",
+"441":"Call the prodos driver",
+"446":"Increment the store address by 512",
+"450":"Add one to the block number",
+"455":"Repeat until done",
+"468":"Prodos command copied $42",
+"469":"Prodos unit number copied $43"},
 
 "LongComments":{
 "-2147483647":{
-"Text":"6502bench SourceGen v1.8.5",
-"BoxMode":false,
+"Text":"Cirtech Apple //e CP/M Plus boot sector disassembly\r\n\r\nDisassembled by Peter Ibbotson.\r\n\r\nBoots from Disk ][, ProDOS driver and a Smart Port\r\n\r\nGenerated using 6502bench SourceGen v1.8.5",
+"BoxMode":true,
 "MaxWidth":80,
 "BackgroundColor":0},
 
@@ -203,6 +287,24 @@
 
 "128":{
 "Text":"Third time X=$5C\r\nWrite to $C0E1 (C085,X) IWM_PH0_ON\r\nRead a whole track\r\n",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"335":{
+"Text":"Okay we\u0027ve decided to use a smart port",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"393":{
+"Text":"Read via ProDOS device driver",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"329":{
+"Text":"Can\u0027t quite figure this out Apple //c tech ref second edition\r\nsays this is for a ram card. ProDOS tech ref doesn\u0027t help either.",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0}},
@@ -391,6 +493,139 @@
 "Value":2179,
 "Source":"User",
 "Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"468":{
+"Label":"PRODOS_CMD",
+"Value":2516,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"407":{
+"Label":"PD_ZP_COPY",
+"Value":2455,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"469":{
+"Label":"PRODOS_UNITNUM",
+"Value":2517,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"470":{
+"Label":"PRODOS_BUFPTR",
+"Value":2518,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"472":{
+"Label":"PRODOS_BLKNUM",
+"Value":2520,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"377":{
+"Label":"SMARTDRV_CALL",
+"Value":2425,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"326":{
+"Label":"PD_ENTRY_PTR",
+"Value":2374,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"384":{
+"Label":"SMARTDRV_PARAM",
+"Value":2432,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"368":{
+"Label":"SMARTDRV_READ",
+"Value":2416,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"386":{
+"Label":"SMART_BUF_PTR",
+"Value":2434,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"388":{
+"Label":"SMART_NUM_BYTES",
+"Value":2436,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"390":{
+"Label":"SMART_BLOCK_NUM",
+"Value":2438,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"329":{
+"Label":"SMART_DRV_CHK",
+"Value":2377,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"441":{
+"Label":"PD_CALL_DRIVER",
+"Value":2489,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"257":{
+"Label":"SHOW_ERROR",
+"Value":2305,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"393":{
+"Label":"PRODOS_READ",
+"Value":2441,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"459":{
+"Label":"PD_ERR_COUNT",
+"Value":2507,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"458":{
+"Label":"PD_BLOCK_COUNT",
+"Value":2506,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"460":{
+"Label":"PD_ERROR_HANDLER",
+"Value":2508,
+"Source":"User",
+"Type":"GlobalAddr",
 "LabelAnno":"None"}},
 
 "OperandFormats":{
@@ -417,6 +652,54 @@
 "SymbolRef":{
 "Label":"JSRDISKIIREAD",
 "Part":"Low"}},
+
+"146":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"147":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"148":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"149":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"150":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"151":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"152":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"153":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
 
 "174":{
 "Length":3,
@@ -480,7 +763,71 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"ROMIN",
-"Part":"Low"}}},
+"Part":"Low"}},
+
+"314":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SMARTDRV_CALL",
+"Part":"Low"}},
+
+"338":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SMARTDRV_CALL",
+"Part":"Low"}},
+
+"381":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SMARTDRV_PARAM",
+"Part":"Low"}},
+
+"386":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"388":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"428":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PD_DATA_BUFH",
+"Part":"Low"}},
+
+"450":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PD_BLOCK_NUM",
+"Part":"Low"}},
+
+"470":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"472":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null}},
 
 "LvTables":{
 "1":{
