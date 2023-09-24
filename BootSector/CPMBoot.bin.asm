@@ -221,6 +221,8 @@
 0946: ac ff c0     PD_ENTRY_PTR    ldy     $c0ff             ;Get Prodos entry point
                    ; Can't quite figure this out Apple //c tech ref second edition
                    ; says this is for a ram card. ProDOS tech ref doesn't help either.
+                   ; Possible large ram cards don't have ProDOS drivers so use a Smart
+                   ; Drive interface instead?
 0949: ad fb c0     SMART_DRV_CHK   lda     $c0fb             ;Check for smartdrv?
 094c: 4a                           lsr     A
 094d: 90 3a                        bcc     PRODOS_READ       ;Call via the ProDOS driver

@@ -304,7 +304,7 @@
 "BackgroundColor":0},
 
 "329":{
-"Text":"Can\u0027t quite figure this out Apple //c tech ref second edition\r\nsays this is for a ram card. ProDOS tech ref doesn\u0027t help either.",
+"Text":"Can\u0027t quite figure this out Apple //c tech ref second edition\r\nsays this is for a ram card. ProDOS tech ref doesn\u0027t help either.\r\nPossible large ram cards don\u0027t have ProDOS drivers so use a Smart\r\nDrive interface instead?",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0}},
