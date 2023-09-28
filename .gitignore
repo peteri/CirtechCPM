@@ -292,3 +292,6 @@ ClassicBasic_coverage.xml
 /ClassicBasic/ClassicBasic.xml
 /ClassicBasic.Interpreter/ClassicBasic.Interpreter.xml
 /ClassicBasic.Test/ClassicBasic.Test.xml
+Tools/NibReader/D000.bin
+Tools/NibReader/CPMBoot.bin
+Tools/NibReader/CPMLDR.bin
