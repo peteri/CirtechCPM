@@ -89,6 +89,7 @@ to help make things a bit clearer. (Note these have reversed out from the disass
 | $0380 | 0F380H | DISK_TRKL | Disk track low |
 | $0381 | 0F381H | DISK_SECT | Disk sector |
 | $0384 | 0F384H | DISK_DRV  | Disk drive slot ($60) |
+| $0385 | 0F385H | DISK_ACTD | Disk active drive |
 | $0386 | 0F386H | DISK_TRKH | Disk track high |
 | $0388 | 0F388H | DISK_OP   | Disk operation (set 1 by read) |
 | $0389 | 0F389H | DISK_ERR  | Disk Result (0=OK) |
