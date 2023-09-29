@@ -53,7 +53,7 @@ class Program
                 {
                     var mappedSector = sectorMap[ts.sector];
                     Console.Write("(T:{0:X2} S:{1:X} M:{2:X}) ", ts.track, ts.sector, mappedSector);
-                    var sector = nibTracks[ts.track].Where(s => s.Header.Sector == ts.sector).First();
+                    var sector = nibTracks[ts.track].Where(s => s.Header.Sector == mappedSector).First();
                     writer.Write(sector.Data.Bytes);
                 }
             }
