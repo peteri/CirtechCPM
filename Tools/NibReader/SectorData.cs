@@ -5,7 +5,7 @@ namespace NibReader;
 public class SectorData
 {
     public Memory<byte> RawData { get; private set; }
-    private byte[]? _data;
+    private byte[]? _bytes;
     private static Lazy<byte[]> _conversionTable = new Lazy<byte[]>(InitConversion);
     private bool _error;
 
@@ -47,13 +47,13 @@ public class SectorData
         RawData = header;
     }
 
-    public byte[] Data
+    public byte[] Bytes
     {
         get
         {
-            if (_data == null)
-                _data = DecodeData();
-            return _data;
+            if (_bytes == null)
+                _bytes = DecodeData();
+            return _bytes;
         }
     }
 
@@ -61,8 +61,8 @@ public class SectorData
     {
         get
         {
-            if (_data == null)
-                _data = DecodeData();
+            if (_bytes == null)
+                _bytes = DecodeData();
             return _error;
         }
     }
@@ -70,7 +70,7 @@ public class SectorData
     // Code based on the boot rom
     private byte[] DecodeData()
     {
-        var data = new byte[256];
+        var bytes = new byte[256];
         var twos = new byte[86];
         int bits = 86;
         int dataIndex = 0;
@@ -89,7 +89,7 @@ public class SectorData
         {
             rawData = RawData.Span[dataIndex++];
             acc ^= _conversionTable.Value[rawData - 128];
-            data[bits] = acc;
+            bytes[bits] = acc;
             bits = bits + 1;
         }
         // Check the checksum
@@ -106,18 +106,18 @@ public class SectorData
         {
             twosIndex--;
             if (twosIndex < 0) twosIndex = 85;
-            data[i] = (byte)(data[i] << 1 | twos[twosIndex] & 0x01);
+            bytes[i] = (byte)(bytes[i] << 1 | twos[twosIndex] & 0x01);
             twos[twosIndex] = (byte)(twos[twosIndex] >> 1);
-            data[i] = (byte)(data[i] << 1 | twos[twosIndex] & 0x01);
+            bytes[i] = (byte)(bytes[i] << 1 | twos[twosIndex] & 0x01);
             twos[twosIndex] = (byte)(twos[twosIndex] >> 1);
         }
-        return data;
+        return bytes;
     }
 
     public override string ToString()
     {
         if (Error)
             return "Error";
-        return String.Join(" ", Data.Take(16).Select(b => b.ToString("X2")));
+        return String.Join(" ", Bytes.Take(16).Select(b => b.ToString("X2")));
     }
 }

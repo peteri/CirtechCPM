@@ -1,4 +1,5 @@
 namespace NibReader;
+
 public class NibReader
 {
     public const int NumberOfTracks = 35;

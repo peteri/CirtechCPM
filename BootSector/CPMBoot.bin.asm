@@ -128,22 +128,8 @@
 088d: a6 01                        ldx     SLOTX16           ;Setup X register for ROM
 088f: 4c 5c c0     JSRDISKIIREAD   jmp     DISKREADSECT      ;Read in the sector via ROM, reneter back at $801
 
-0892: 00           SECTORMAP       .dd1    $00
-0893: 02                           .dd1    $02
-0894: 04                           .dd1    $04
-0895: 06                           .dd1    $06
-0896: 08                           .dd1    $08
-0897: 0a                           .dd1    $0a
-0898: 0c                           .dd1    $0c
-0899: 0e                           .dd1    $0e
-089a: 01                           .dd1    $01
-089b: 03                           .dd1    $03
-089c: 05                           .dd1    $05
-089d: 07                           .dd1    $07
-089e: 09                           .dd1    $09
-089f: 0b                           .dd1    $0b
-08a0: 0d                           .dd1    $0d
-08a1: 0f                           .dd1    $0f
+0892: 00 02 04 06+ SECTORMAP       .bulk   $00,$02,$04,$06,$08,$0a,$0c,$0e
+089a: 01 03 05 07+                 .bulk   $01,$03,$05,$07,$09,$0b,$0d,$0f
 
                    CLRSCR_ENABLELANGCARD
 08a2: 20 2f fb                     jsr     MON_INIT          ;Clear 40 column etc
