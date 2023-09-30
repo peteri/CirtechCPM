@@ -25,6 +25,23 @@
 "ExtensionScriptFileIdentifiers":["RT:Apple/ProDOS8.cs",
 "RT:Apple/VisHiRes.cs"],
 "ProjectSyms":{
+"CURSOR_STATE":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Bit 7 high if cursor on screen",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"CURSOR_STATE",
+"Value":35,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "CURSORX":{
 "DataDescriptor":{
 "Length":1,
@@ -49,7 +66,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Cursor Y (80 col)",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -195,7 +212,24 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
-"PRDOOS_BUFPTR":{
+"ESCAPE_STATE":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"State for ESCAPE leadin",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"ESCAPE_STATE",
+"Value":34,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"PRDOOS_BUFPTRL":{
 "DataDescriptor":{
 "Length":1,
 "Format":"NumericLE",
@@ -206,7 +240,7 @@
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
-"Label":"PRDOOS_BUFPTR",
+"Label":"PRDOOS_BUFPTRL",
 "Value":68,
 "Source":"Project",
 "Type":"ExternalAddr",
@@ -225,6 +259,23 @@
 "MultiMask":null,
 "Label":"PRODOS_BLKNUM",
 "Value":70,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"PRODOS_BUFPTRH":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Prodos buffer pointer high",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"PRODOS_BUFPTRH",
+"Value":69,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -293,6 +344,40 @@
 "MultiMask":null,
 "Label":"SCRLINEL",
 "Value":32,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"SLOT_INFO":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SLOT_INFO",
+"Value":952,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"ZP_TEMP1":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Zero page temporary",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"ZP_TEMP1",
+"Value":38,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"}}},
@@ -391,6 +476,46 @@
 "Hint":"Code"},
 
 {
+"Low":1349,
+"High":1352,
+"Hint":"InlineData"},
+
+{
+"Low":1369,
+"High":1424,
+"Hint":"InlineData"},
+
+{
+"Low":1440,
+"High":1445,
+"Hint":"InlineData"},
+
+{
+"Low":1472,
+"High":1482,
+"Hint":"InlineData"},
+
+{
+"Low":1497,
+"High":1508,
+"Hint":"InlineData"},
+
+{
+"Low":1513,
+"High":1519,
+"Hint":"InlineData"},
+
+{
+"Low":1522,
+"High":1527,
+"Hint":"InlineData"},
+
+{
+"Low":1529,
+"High":1535,
+"Hint":"InlineData"},
+
+{
 "Low":2796,
 "High":2796,
 "Hint":"InlineData"},
@@ -403,10 +528,95 @@
 },
 
 "Comments":{
+"3":"Get our character off the stack",
+"4":"Set the high bit",
+"8":"Bit 7 clear check for escape",
+"10":"Goto YX, Y Character set yet?",
+"13":"Must be the X postion now we can move the  cursor",
+"15":"Setting the Y character",
+"23":"Subtract space",
+"25":"Okay are we on screen?",
+"27":"Bigger than screen",
+"29":"Zero cursor",
+"31":"Save away X position",
+"33":"Get the Y Coord",
+"72":"Go off and deal with a control character",
+"74":"Save A for later",
+"75":"Get the current cursor",
+"77":"Divide by two",
+"78":"Was it odd",
+"80":"If so write to the odd columns",
+"83":"Save CursorX/2 -\u003e Y",
+"84":"Get back our character",
+"85":"Are we in inverse mode?",
+"89":"Inverse lowercase?",
+"91":"No change needed",
+"93":"Inverse Numbers or punctuation?",
+"95":"No Change needed",
+"97":"Convert uppercase out of mouse text",
+"99":"Write character to screen",
+"101":"Back to main text page",
+"104":"Move cursor to right",
+"108":"Cursor still on screen?",
+"110":"Go show it.",
+"112":"Set us to back to column zero",
+"116":"Move down a line",
+"120":"Still on screen?",
+"122":"Yep don\u0027t scroll",
+"124":"Correct us",
+"126":"Scroll the screen up",
+"131":"Set up the current screen line pointer",
+"143":"Set the cursor to on",
+"145":"Get cursor position",
+"148":"Which page?",
+"153":"Cursor divided by two to Y",
+"154":"Get the current character on screen",
+"156":"Is it an inverse Uppercase",
+"158":"If not just go and do invert",
+"160":"Put back bit 6 so it\u0027s a proper Uppercase",
+"162":"Invert the character",
+"164":"Store if it\u0027s normal",
+"166":"Lower case inverted",
+"168":"Store it",
+"170":"Inverse Numbers or punctuation?",
+"172":"We\u0027re good store it",
+"174":"Upper case letters, kill bit 6",
+"176":"Store on screen",
+"178":"Back to text page 1",
 "181":"Also used in jump table",
+"182":"Off the end of the table",
+"184":"Ignore it",
+"186":"Off the front of the table",
+"188":"Ignore it",
+"194":"Subtract Bell character",
+"196":"Mult by 2 for table index",
+"198":"Lookup the entry and modify jump",
+"211":"Jump to control handler",
+"217":"First character in escape sequence",
+"221":"Goto YX command?",
+"223":"Yes it is",
+"227":"Is it in the table?",
+"230":"Yes it is do something",
+"238":"Set the high bit so say we\u0027re waiting for Y",
+"242":"Clear bit 7 (Seen Y coord)",
+"246":"Get the regular Ctrl code",
+"260":"Last line?",
+"262":"Nope just set the line pointer",
+"264":"Backup the cursor",
+"266":"Scroll up",
+"269":"Lookup new line pointer",
+"274":"And save it away",
+"282":"Pop unwanted parameter",
+"283":"Flip the cursor state",
+"289":"Flip the character on screen inverse state",
 "292":"Decrement the cursor position",
 "294":"Off left hand of screen?",
 "296":"Go Home still on screen",
+"297":"Right hand edge of screen",
+"301":"Back up a line",
+"303":"Still on screen set pointer",
+"307":"Top line of screen",
+"309":"Scroll depending on state of carry flage",
 "315":"Add one to cursor position",
 "319":"Off right hand edge",
 "323":"Nope go home",
@@ -414,10 +624,32 @@
 "327":"and down a line",
 "330":"Set us to be at the beginning of the line",
 "334":"Now clear to EOL",
+"337":"Set Cursor X,Y to 0,0",
+"343":"Set the current line pointer",
+"349":"Save away current screen position",
+"355":"Get line number",
+"360":"Go and clear this line",
+"384":"Zero flag always set back into loop",
 "386":"Setup the //e hardware",
 "398":"Set X,Y to zero",
 "404":"Set the screen ptr up",
 "412":"Clear to EOL",
+"417":"Divide cursor by two",
+"419":"Save cursor/2 for Page 1 clear",
+"421":"Sort out if blank is inverse or not",
+"425":"Save our blank character",
+"427":"Do we need skip the first one?",
+"429":"Clear the character",
+"431":"Next one",
+"432":"All Done?",
+"434":"Nah loop",
+"436":"Restore cursor/2 for page 1 clear",
+"438":"Get the character to clear with",
+"440":"Setup for main text page",
+"443":"Clear the character",
+"445":"Next one",
+"446":"All done?",
+"448":"Nope do the next one",
 "479":"Save counter",
 "480":"Decrement our counter",
 "482":"Inner loop",
@@ -434,6 +666,11 @@
 "531":"Copy line by line",
 "669":"Blank character in Y",
 "674":"copy lines up",
+"817":"Get the current cursor state",
+"819":"Is it off",
+"821":"Nope save the accumulator",
+"822":"Toggle the cursor",
+"825":"Restore acc",
 "827":"Ctrl-G",
 "829":"Ctrl-H",
 "831":"Ctrl-I",
@@ -459,6 +696,19 @@
 "871":"Ctrl-]",
 "873":"Start of video line high",
 "897":"Start of video line low",
+"921":"\u003cESC\u003e\u003cFF\u003e - Form feed",
+"922":"\u003cESC\u003e ) - Start half intensity",
+"923":"\u003cESC\u003e ( - End half intesity",
+"924":"\u003cESC\u003e * - Clear all to null",
+"925":"\u003cESC\u003e Y - Page erase to space",
+"926":"\u003cESC\u003e T - Line erase to space",
+"927":"Ctrl-L - Form feed",
+"928":"Ctrl-N - set normal",
+"929":"Ctrl-O - Set Inverse",
+"930":"Ctrl-L - Form feed",
+"931":"Ctrl-K - Clear to end of screen",
+"932":"Ctrl-] - Clear to end of line",
+"933":"Goto YX cursor Y",
 "1024":"Get the drive ($60 for S6,D1)",
 "1027":"Mask off drive (ProDOS style)",
 "1037":"Get Disk type? Might be card in slot",
@@ -484,7 +734,11 @@
 "2804":"Write protected error?",
 "2806":"Lets say it\u0027s generic error",
 "2808":"Write protect error",
-"2834":"Status commmand? Return eror"},
+"2834":"Status commmand? Return eror",
+"3113":"Possibly serial card",
+"3117":"High speed serial",
+"3121":"Parallel printer",
+"3125":"Dunno Softcard manual is silent"},
 
 "LongComments":{
 "-2147483647":{
@@ -501,7 +755,7 @@
 
 "2730":{
 "Text":"SmartDrive code\r\n",
-"BoxMode":false,
+"BoxMode":true,
 "MaxWidth":80,
 "BackgroundColor":0},
 
@@ -537,6 +791,96 @@
 
 "386":{
 "Text":"Clear the screen and initialise the \r\nvideo system",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"412":{
+"Text":"Clear to end of line",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"346":{
+"Text":"Clear to end of screen",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"315":{
+"Text":"Cursor Right",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"330":{
+"Text":"Clear line",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"337":{
+"Text":"Home",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"251":{
+"Text":"Carriage return",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"0":{
+"Text":"\r\nRoutines to handle the 80 Column card\r\n\r\n",
+"BoxMode":true,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"182":{
+"Text":"Handle a possible control character",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1024":{
+"Text":"\r\nRoutines to handle Disk drives\r\n\r\n",
+"BoxMode":true,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2814":{
+"Text":"Prodos driver code",
+"BoxMode":true,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"3072":{
+"Text":"Various routines\r\nThese get copied out of $DC00 into $0A00\r\nThey also get copied into the other bank of memory\r\nSo probably have some banking code in there.\r\n",
+"BoxMode":true,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"70":{
+"Text":"Come here to write a character to screen\r\nand handle control characters",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"921":{
+"Text":"Used to convert some televideo 920 escape codes to Ctrl codes",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"225":{
+"Text":"Convert any of the single character escape codes",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"19":{
+"Text":"There is a fairly complicated state machine here\r\nESCAPE_STATE \r\n  Bit 7 0=no escape seen\r\n  Bit 6 0=Possible normal character\r\n  Bit 6 1=Escape seen\r\n  Bit 7 1=Waiting for Y position\r\nGOTOY\r\n  Bit 7 0=Not yet seen Y\r\n  Bit 7 1=Seen Y coord, other bits are Y character.\r\n\r\nSo for a \u003cESC\u003e C where C is a single character escape state goes through\r\n|Escape state| GOTOY     | \r\n|------------|-----------|\r\n| 00zz zzzz  | 0yyy yyyy | Waiting for escape\r\n| 01zz zzzz  | 0yyy yyyy | Escape seen waiting next char\r\n| 00zz zzzz  | 0yyy yyyy | \u003cEsc\u003e C seen C converted to regular ctrl character\r\n\r\nHowever for \u003cESC\u003e = Y X (goto Y X) the states are as follows\r\n|Escape state| GOTOY     | \r\n|------------|-----------|\r\n| 00zz zzzz  | 0yyy yyyy | Waiting for escape\r\n| 01zz zzzz  | 0yyy yyyy | Escape seen waiting next char\r\n| 11zz zzzz  | 0yyy yyyy | \u003cEsc\u003e = seen waiting Y coord\r\n| 11zz zzzz  | 1yyy yyyy | \u003cEsc\u003e = Y seen waiting X Coord\r\n| 00zz zzzz  | 0yyy yyyy | \u003cEsc\u003e = Y X seen cursor moved to correct pos\r\n\r\n",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0}},
@@ -784,11 +1128,11 @@
 "LabelAnno":"None"},
 
 "346":{
-"Label":"TD15A",
+"Label":"CLR_TO_ENDSCR",
 "Value":53594,
 "Source":"User",
 "Type":"GlobalAddr",
-"LabelAnno":"Generated"},
+"LabelAnno":"None"},
 
 "386":{
 "Label":"CLEAR_SCREEN",
@@ -847,7 +1191,7 @@
 "LabelAnno":"None"},
 
 "269":{
-"Label":"NO_SCROLL_NEEDED",
+"Label":"SET_LINE_PTR",
 "Value":53517,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -914,9 +1258,306 @@
 "Value":53728,
 "Source":"User",
 "Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"357":{
+"Label":"CLR_NEXT_LINE",
+"Value":53605,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"369":{
+"Label":"CLR_LINE_X",
+"Value":53617,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"414":{
+"Label":"CLR_FROM_YREG",
+"Value":53662,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"429":{
+"Label":"CLR_PAGE2_LINE",
+"Value":53677,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"443":{
+"Label":"CLR_PAGE1_LINE",
+"Value":53691,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"431":{
+"Label":"SKIP_ODD_CLR",
+"Value":53679,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"182":{
+"Label":"TEST_CONTROL_CHAR",
+"Value":53430,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"141":{
+"Label":"SHOW_CURSOR",
+"Value":53389,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"31":{
+"Label":"CURSORX_OK",
+"Value":53279,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"45":{
+"Label":"CURSORY_OK",
+"Value":53293,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"933":{
+"Label":"GOTO_Y",
+"Value":54181,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"70":{
+"Label":"CTRL_WRITE_SCR",
+"Value":53318,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"83":{
+"Label":"WRITE_ODD",
+"Value":53331,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"99":{
+"Label":"STORE_TO_SCREEN",
+"Value":53347,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"129":{
+"Label":"NO_SCROLL",
+"Value":53377,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"162":{
+"Label":"INVERT_CHAR",
+"Value":53410,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"176":{
+"Label":"STORE_CURSOR",
+"Value":53424,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3132":{
+"Label":"CARD6",
+"Value":2620,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3179":{
+"Label":"CARD5",
+"Value":2667,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"56":{
+"Label":"CHECK_ESC_CHAR1",
+"Value":53304,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"61":{
+"Label":"CHECK_FOR_ESC",
+"Value":53309,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"19":{
+"Label":"GOTO_YX",
+"Value":53267,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"817":{
+"Label":"HIDE_CURSOR",
+"Value":54065,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"826":{
+"Label":"CURSOR_IS_OFF",
+"Value":54074,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"145":{
+"Label":"FLIP_INVERTED",
+"Value":53393,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"153":{
+"Label":"CURSOR_PAGE1",
+"Value":53401,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"283":{
+"Label":"TOGGLE_CURSOR",
+"Value":53531,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"217":{
+"Label":"ESCAPE_CHAR1",
+"Value":53465,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"238":{
+"Label":"GOTO_YX_CMD",
+"Value":53486,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"921":{
+"Label":"ESC_CTRL_CODES",
+"Value":54169,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"927":{
+"Label":"ESC_CHAR_TRANS",
+"Value":54175,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"227":{
+"Label":"FIND_ESC_CHAR_LOOP",
+"Value":53475,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"246":{
+"Label":"FOUND_ESC_CHAR",
+"Value":53494,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3":{
+"Label":"PRINT_STACK_CHAR",
+"Value":53251,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"4":{
+"Label":"PRINT_CHAR",
+"Value":53252,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"190":{
+"Label":"HANDLE_CONTROL_CHAR",
+"Value":53438,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"282":{
+"Label":"POP_TOGGLE_CURSOR",
+"Value":53530,
+"Source":"User",
+"Type":"GlobalAddr",
 "LabelAnno":"None"}},
 
 "OperandFormats":{
+"6":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"ESCAPE_STATE",
+"Part":"Low"}},
+
+"25":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"39":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"108":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"120":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"221":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"HighAscii",
+"SymbolRef":null},
+
 "256":{
 "Length":2,
 "Format":"NumericLE",
@@ -979,6 +1620,12 @@
 "SubFormat":"Decimal",
 "SymbolRef":null},
 
+"446":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
 "508":{
 "Length":2,
 "Format":"NumericLE",
@@ -1022,7 +1669,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"TD15A",
+"Label":"CLR_TO_ENDSCR",
 "Part":"Low"}},
 
 "837":{
@@ -1206,14 +1853,74 @@
 "SymbolRef":null},
 
 "921":{
-"Length":6,
-"Format":"Dense",
+"Length":1,
+"Format":"NumericLE",
 "SubFormat":"None",
 "SymbolRef":null},
 
+"922":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"HighAscii",
+"SymbolRef":null},
+
+"923":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"HighAscii",
+"SymbolRef":null},
+
+"924":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"HighAscii",
+"SymbolRef":null},
+
+"925":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"HighAscii",
+"SymbolRef":null},
+
+"926":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"HighAscii",
+"SymbolRef":null},
+
 "927":{
-"Length":6,
-"Format":"Dense",
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"928":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"929":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"930":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"931":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"932":{
+"Length":1,
+"Format":"NumericLE",
 "SubFormat":"None",
 "SymbolRef":null},
 
@@ -1225,12 +1932,36 @@
 "Label":"DISK_DRV",
 "Part":"Low"}},
 
+"1037":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SLOT_INFO",
+"Part":"Low"}},
+
 "1108":{
 "Length":3,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"DISK_ACTD",
+"Part":"Low"}},
+
+"1837":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"ZP_TEMP1",
+"Part":"Low"}},
+
+"2467":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRDOOS_BUFPTRL",
 "Part":"Low"}},
 
 "2733":{
@@ -1278,7 +2009,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"PRDOOS_BUFPTR",
+"Label":"PRDOOS_BUFPTRL",
 "Part":"Low"}},
 
 "2856":{
@@ -1286,7 +2017,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"PRDOOS_BUFPTR",
+"Label":"PRDOOS_BUFPTRL",
 "Part":"Low"}},
 
 "2880":{
@@ -1837,7 +2568,39 @@
 "Length":1,
 "Format":"NumericLE",
 "SubFormat":"None",
-"SymbolRef":null}},
+"SymbolRef":null},
+
+"3077":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LCBANK1",
+"Part":"Low"}},
+
+"3080":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LCBANK1",
+"Part":"Low"}},
+
+"3088":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LCBANK1",
+"Part":"Low"}},
+
+"3091":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LCBANK1",
+"Part":"Low"}}},
 
 "LvTables":{
 },

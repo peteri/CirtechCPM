@@ -105,7 +105,7 @@
 1C46: AF          xor  a
 1C47: 32 27 F0    ld   ($F027),a ;Store a zero in 6502?
 1C4A: 11 00 F3    ld   de,$F300  ;Copy $300 to aux memory
-1C4D: 62          ld   h,d
+1C4D: 62          ld   h,d       ;Upto $BFF
 1C4E: 6B          ld   l,e
 1C4F: 01 FF 08    ld   bc,$08FF
 1C52: ED B0       ldir

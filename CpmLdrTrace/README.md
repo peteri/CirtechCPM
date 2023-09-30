@@ -182,5 +182,24 @@ Next stop is disassembling the 6502 code
 
 ## Disassembling the 6502 code
 
-Again we're going to use [6502bench SourceGen](https://6502bench.com/) to disassemble the code. Highlights of the code will be put here afterwards.
+Again we're going to use [6502bench SourceGen](https://6502bench.com/) to disassemble the code. 
 
+Highlights of the code will be put here afterwards.
+
+### Terminal emulator
+
+The code from $D000-$D3FF handles writing to the screen and emulates a Televideo 920 (I think) Weirdly it seems to be missing the Cursor Up sequence which should either be Ctrl-K (Currently clear to end of screen) or Ctrl-_ I'm not entirely sure why this is missing, there is more than enough space. There is also no code to deal with the Tab character which leaves me wondering if this is dealt with in some Z80 code?
+
+The only really tricky piece of code is the bit that deals with Escape followed by either a single character code OR an `=` which is then followed by a Y and X character to form a GOTOYX sequence for the cursor. This has some comments around address $D013 to explain what's happening.
+
+### Disk driver code
+
+Disk driver is from $D400 - $DBFF
+Buffer is $800-$9FF (512 bytes)
+
+Currently the Smart Drive code is disassembled, ProDOS and regular RWTS code still has more work to do.
+
+### Slot / Card driver
+Code is copied in $A00-$BFF by the boot routine from $DC00
+
+Looks like this deals with talking to the other cards (serial ports / printers etc)
