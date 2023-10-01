@@ -727,6 +727,9 @@
 "1105":"Get selected drive",
 "1108":"Same as active drive",
 "1113":"Update the drive",
+"1117":"Clear zero flag",
+"1171":"Read?",
+"1178":"Read multiple sectors",
 "1555":"Write sync bytes",
 "1576":"Write data header bytes",
 "1648":"Write checksum",
@@ -737,6 +740,10 @@
 "1719":"5 cycles - Write load",
 "1722":"5 cycles - write byte",
 "1725":"6 cycles - return to caller ",
+"1995":"MOVE_TO_TRACK",
+"2714":"Get slot number *16",
+"2717":"Divide by 16",
+"2721":"Put Acc into Y",
 "2723":"What sort of drive?",
 "2730":"Convert to CX",
 "2733":"Save slot rom into call high",
@@ -1606,6 +1613,34 @@
 "1719":{
 "Label":"WRITE",
 "Value":54967,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1078":{
+"Label":"CHECK_FOR_DATA",
+"Value":54326,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1093":{
+"Label":"DATA_INCOMING",
+"Value":54341,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1995":{
+"Label":"MOVE_TO_TRACK",
+"Value":55243,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2714":{
+"Label":"SLOT_TO_Y",
+"Value":55962,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"}},
