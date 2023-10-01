@@ -516,6 +516,11 @@
 "Hint":"InlineData"},
 
 {
+"Low":2305,
+"High":2309,
+"Hint":"InlineData"},
+
+{
 "Low":2796,
 "High":2796,
 "Hint":"InlineData"},
@@ -713,6 +718,25 @@
 "1027":"Mask off drive (ProDOS style)",
 "1037":"Get Disk type? Might be card in slot",
 "1040":"DISK ][ ?",
+"1070":"Into read mode",
+"1078":"Read some data",
+"1081":"Waste 3+4 cycles",
+"1083":"Waste 3+4 cycles",
+"1085":"Read some data",
+"1093":"Zero flag set means data incoming",
+"1105":"Get selected drive",
+"1108":"Same as active drive",
+"1113":"Update the drive",
+"1555":"Write sync bytes",
+"1576":"Write data header bytes",
+"1648":"Write checksum",
+"1651":"Write trailer bytes",
+"1716":"2 Cycles - Provide different delays",
+"1717":"3 cycles - delays to produce",
+"1718":"4 cycles correct timeing",
+"1719":"5 cycles - Write load",
+"1722":"5 cycles - write byte",
+"1725":"6 cycles - return to caller ",
 "2723":"What sort of drive?",
 "2730":"Convert to CX",
 "2733":"Save slot rom into call high",
@@ -868,7 +892,7 @@
 "BackgroundColor":0},
 
 "921":{
-"Text":"Used to convert some televideo 920 escape codes to Ctrl codes",
+"Text":"Used to convert some televideo 920(maybe?) escape codes to Ctrl codes",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0},
@@ -881,6 +905,24 @@
 
 "19":{
 "Text":"There is a fairly complicated state machine here\r\nESCAPE_STATE \r\n  Bit 7 0=no escape seen\r\n  Bit 6 0=Possible normal character\r\n  Bit 6 1=Escape seen\r\n  Bit 7 1=Waiting for Y position\r\nGOTOY\r\n  Bit 7 0=Not yet seen Y\r\n  Bit 7 1=Seen Y coord, other bits are Y character.\r\n\r\nSo for a \u003cESC\u003e C where C is a single character escape state goes through\r\n|Escape state| GOTOY     | \r\n|------------|-----------|\r\n| 00zz zzzz  | 0yyy yyyy | Waiting for escape\r\n| 01zz zzzz  | 0yyy yyyy | Escape seen waiting next char\r\n| 00zz zzzz  | 0yyy yyyy | \u003cEsc\u003e C seen C converted to regular ctrl character\r\n\r\nHowever for \u003cESC\u003e = Y X (goto Y X) the states are as follows\r\n|Escape state| GOTOY     | \r\n|------------|-----------|\r\n| 00zz zzzz  | 0yyy yyyy | Waiting for escape\r\n| 01zz zzzz  | 0yyy yyyy | Escape seen waiting next char\r\n| 11zz zzzz  | 0yyy yyyy | \u003cEsc\u003e = seen waiting Y coord\r\n| 11zz zzzz  | 1yyy yyyy | \u003cEsc\u003e = Y seen waiting X Coord\r\n| 00zz zzzz  | 0yyy yyyy | \u003cEsc\u003e = Y X seen cursor moved to correct pos\r\n\r\n",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1576":{
+"Text":"data header",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1057":{
+"Text":"\r\nDisk II driver code\r\n\r\n",
+"BoxMode":true,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1716":{
+"Text":"Write data every 32 cycles\r\n\r\nTypical call sequence\r\n  2 2 cycles - LDA #D5\r\n  8 6 cycles - JSR WRITE9\r\n 10 2 cycles - CLC\r\n 13 3 cycles - PHA\r\n 17 4 cycles - PLA\r\n 22 5 cycles - STA $C08B,x\r\n 26 4 cycles - ORA $C08C,X\r\n 32 6 cycles - RTS",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0}},
@@ -1517,6 +1559,55 @@
 "Value":53530,
 "Source":"User",
 "Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1362":{
+"Label":"TRANS62",
+"Value":54610,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1333":{
+"Label":"CPM_TRAN_SECT",
+"Value":54581,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1128":{
+"Label":"SELECT_DRIVE2",
+"Value":54376,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1120":{
+"Label":"SELECT_DRIVE",
+"Value":54368,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1716":{
+"Label":"WRITE9",
+"Value":54964,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1717":{
+"Label":"WRITE7",
+"Value":54965,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1719":{
+"Label":"WRITE",
+"Value":54967,
+"Source":"User",
+"Type":"GlobalAddr",
 "LabelAnno":"None"}},
 
 "OperandFormats":{
@@ -1947,6 +2038,66 @@
 "SymbolRef":{
 "Label":"DISK_ACTD",
 "Part":"Low"}},
+
+"1333":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1341":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1362":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1370":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1378":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1386":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1394":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1402":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1410":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1418":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
 
 "1837":{
 "Length":2,
