@@ -161,6 +161,23 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"DISK_TRK_ADDR":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"While track read/write page",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DISK_TRK_ADDR",
+"Value":898,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "DISK_TRKH":{
 "DataDescriptor":{
 "Length":1,
@@ -734,7 +751,40 @@
 "2804":"Write protected error?",
 "2806":"Lets say it\u0027s generic error",
 "2808":"Write protect error",
+"2817":"Patch up the driver call",
+"2820":"Patch the call to find the driver entry",
+"2823":"Get the entry point",
+"2826":"Patch the call",
 "2834":"Status commmand? Return eror",
+"2839":"Greater than 3 not simple.",
+"2844":"Convert track / sector to ProDosBloc",
+"2848":"Copy the command over",
+"2852":"Buffer is at $800",
+"2864":"Did we have an error?",
+"2868":"Was it initialise?",
+"2870":"Do the rest of the track",
+"2873":"Looks like this skips the first three tracks",
+"2878":"Zero the high block",
+"2882":"Which block to write",
+"2887":"Setup for a write",
+"2889":"Write out sector",
+"2892":"Error go home",
+"2894":"Next sector",
+"2897":"Until the counter =0",
+"2903":"Do the conversion",
+"2908":"Set the command",
+"2910":"Whole track?",
+"2915":"Get disk data pointer",
+"2922":"We\u0027re doing the whole track",
+"2927":"Convert to PD block",
+"2933":"Flag we had an error",
+"2935":"Add 512 bytes to destination / source",
+"2941":"Bounce the block number along",
+"2947":"Do the ProDOS address",
+"2951":"Do the loop",
+"2957":"Prodos block is TRACK*8 + SECT",
+"2967":"Multiply by two",
+"2973":"Add sector",
 "3113":"Possibly serial card",
 "3117":"High speed serial",
 "3121":"Parallel printer",
@@ -883,6 +933,18 @@
 "Text":"There is a fairly complicated state machine here\r\nESCAPE_STATE \r\n  Bit 7 0=no escape seen\r\n  Bit 6 0=Possible normal character\r\n  Bit 6 1=Escape seen\r\n  Bit 7 1=Waiting for Y position\r\nGOTOY\r\n  Bit 7 0=Not yet seen Y\r\n  Bit 7 1=Seen Y coord, other bits are Y character.\r\n\r\nSo for a \u003cESC\u003e C where C is a single character escape state goes through\r\n|Escape state| GOTOY     | \r\n|------------|-----------|\r\n| 00zz zzzz  | 0yyy yyyy | Waiting for escape\r\n| 01zz zzzz  | 0yyy yyyy | Escape seen waiting next char\r\n| 00zz zzzz  | 0yyy yyyy | \u003cEsc\u003e C seen C converted to regular ctrl character\r\n\r\nHowever for \u003cESC\u003e = Y X (goto Y X) the states are as follows\r\n|Escape state| GOTOY     | \r\n|------------|-----------|\r\n| 00zz zzzz  | 0yyy yyyy | Waiting for escape\r\n| 01zz zzzz  | 0yyy yyyy | Escape seen waiting next char\r\n| 11zz zzzz  | 0yyy yyyy | \u003cEsc\u003e = seen waiting Y coord\r\n| 11zz zzzz  | 1yyy yyyy | \u003cEsc\u003e = Y seen waiting X Coord\r\n| 00zz zzzz  | 0yyy yyyy | \u003cEsc\u003e = Y X seen cursor moved to correct pos\r\n\r\n",
 "BoxMode":false,
 "MaxWidth":80,
+"BackgroundColor":0},
+
+"2873":{
+"Text":"After initialisng the disk\r\nthis routine writes out DISK_TRACKL sectors of\r\ndata from $800 (probably E5 to fill in directory\r\nstructure) skipping the first $18 blocks (our boot\r\nsectors and tracks)",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2903":{
+"Text":"We get here if the command is greater than or equal to four.\r\nNormal ProDOS commands are \r\n0 - Status\r\n1 - Read\r\n2 - Write\r\n3 - Init\r\nExtended commands (read / write a whole track?)\r\n4 - gets translated as (4-3)^3 so to a 2 - Write\r\n5 - gets translated as (5-3)^3 so to a 1 - Read\r\n6 - gets translated as (6-3)^3 so to a 0 - status\r\n",
+"BoxMode":false,
+"MaxWidth":80,
 "BackgroundColor":0}},
 
 "Notes":{
@@ -1002,7 +1064,7 @@
 "LabelAnno":"None"},
 
 "2988":{
-"Label":"PRODOS_XXX",
+"Label":"PD_TRACK_OP_CNT",
 "Value":56236,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -1517,6 +1579,76 @@
 "Value":53530,
 "Source":"User",
 "Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2957":{
+"Label":"TRKSEC2PD_BLK",
+"Value":56205,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2967":{
+"Label":"BLK_MULT_2",
+"Value":56215,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2799":{
+"Label":"PD_CHECK_ERR",
+"Value":56047,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2872":{
+"Label":"PD_EXIT",
+"Value":56120,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2873":{
+"Label":"PD_INIT_DATA",
+"Value":56121,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2878":{
+"Label":"PD_INIT_WR",
+"Value":56126,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2848":{
+"Label":"PD_ALT_CALL",
+"Value":56096,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2903":{
+"Label":"PD_MULT_SECT_OP",
+"Value":56151,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2947":{
+"Label":"PD_BLK_NO_WRAP",
+"Value":56195,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2930":{
+"Label":"PD_TRACK_OP_LOOP",
+"Value":56178,
+"Source":"User",
+"Type":"GlobalAddr",
 "LabelAnno":"None"}},
 
 "OperandFormats":{
@@ -2029,6 +2161,30 @@
 "Part":"Low"}},
 
 "2885":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRODOS_BLKNUM",
+"Part":"Low"}},
+
+"2915":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DISK_TRK_ADDR",
+"Part":"Low"}},
+
+"2945":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRODOS_BLKNUM",
+"Part":"Low"}},
+
+"2960":{
 "Length":2,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
