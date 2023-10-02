@@ -534,7 +534,7 @@ d379: 04 04 05 05+                 .bulk   $04,$04,$05,$05,$06,$06,$07,$07
 d381: 00 80 00 80+ LINE_STARTL     .bulk   $00,$80,$00,$80,$00,$80,$00,$80 ;Start of video line low
 d389: 28 a8 28 a8+                 .bulk   $28,$a8,$28,$a8,$28,$a8,$28,$a8
 d391: 50 d0 50 d0+                 .bulk   $50,$d0,$50,$d0,$50,$d0,$50,$d0
-                   ; Used to convert some televideo 920 escape codes to Ctrl codes
+                   ; Used to convert some televideo 920(maybe?) escape codes to Ctrl codes
 d399: 8c           ESC_CTRL_CODES  .dd1    $8c               ;<ESC><FF> - Form feed
 d39a: a9                           .dd1    ‘)’ | $80         ;<ESC> ) - Start half intensity
 d39b: a8                           .dd1    ‘(’ | $80         ;<ESC> ( - End half intesity
@@ -574,42 +574,47 @@ d41b: a9 01        BAD_SLOT_ERR    lda     #$01
 d41d: 8d 89 03                     sta     DISK_ERR
 d420: 60                           rts
 
+                   ********************************************************************************
+                   *                                                                              *
+                   * Disk II driver code                                                          *
+                   *                                                                              *
+                   ********************************************************************************
 d421: a0 02        DISKII          ldy     #$02
 d423: 8c f8 06                     sty     SCRNHOLE5
 d426: a0 04                        ldy     #$04
 d428: 8c f8 04                     sty     SCRNHOLE1
 d42b: ae f8 05                     ldx     DISKSLOTCX
-d42e: bd 8e c0                     lda     IWM_Q7_OFF,x
+d42e: bd 8e c0                     lda     IWM_Q7_OFF,x      ;Into read mode
 d431: bd 8c c0                     lda     IWM_Q6_OFF,x
 d434: a0 08                        ldy     #$08
-d436: bd 8c c0     LD436           lda     IWM_Q6_OFF,x
-d439: 48                           pha
+d436: bd 8c c0     CHECK_FOR_DATA  lda     IWM_Q6_OFF,x      ;Read some data
+d439: 48                           pha                       ;Waste 3+4 cycles
 d43a: 68                           pla
-d43b: 48                           pha
+d43b: 48                           pha                       ;Waste 3+4 cycles
 d43c: 68                           pla
-d43d: dd 8c c0                     cmp     IWM_Q6_OFF,x
-d440: d0 03                        bne     LD445
+d43d: dd 8c c0                     cmp     IWM_Q6_OFF,x      ;Read some data
+d440: d0 03                        bne     DATA_INCOMING
 d442: 88                           dey
-d443: d0 f1                        bne     LD436
-d445: 08           LD445           php
+d443: d0 f1                        bne     CHECK_FOR_DATA
+d445: 08           DATA_INCOMING   php                       ;Zero flag set means data incoming
 d446: bd 89 c0                     lda     IWM_MOTOR_ON,x
 d449: a9 ef                        lda     #$ef
 d44b: 85 46                        sta     PRODOS_BLKNUM
 d44d: a9 d8                        lda     #$d8
 d44f: 85 47                        sta     $47
-d451: ad 84 03                     lda     DISK_DRV
-d454: cd 85 03                     cmp     DISK_ACTD
-d457: f0 07                        beq     LD460
-d459: 8d 85 03                     sta     DISK_ACTD
+d451: ad 84 03                     lda     DISK_DRV          ;Get selected drive
+d454: cd 85 03                     cmp     DISK_ACTD         ;Same as active drive
+d457: f0 07                        beq     SELECT_DRIVE
+d459: 8d 85 03                     sta     DISK_ACTD         ;Update the drive
 d45c: 28                           plp
-d45d: a0 00                        ldy     #$00
+d45d: a0 00                        ldy     #$00              ;Clear zero flag
 d45f: 08                           php
-d460: 2a           LD460           rol     A
-d461: b0 05                        bcs     LD468
+d460: 2a           SELECT_DRIVE    rol     A
+d461: b0 05                        bcs     SELECT_DRIVE2
 d463: bd 8a c0                     lda     IWM_DRIVE_1,x
 d466: 90 03                        bcc     LD46B
 
-d468: bd 8b c0     LD468           lda     IWM_DRIVE_2,x
+d468: bd 8b c0     SELECT_DRIVE2   lda     IWM_DRIVE_2,x
 d46b: 66 35        LD46B           ror     $35
 d46d: 28                           plp
 d46e: 08                           php
@@ -626,7 +631,7 @@ d483: 28                           plp
 d484: 4c b3 d9                     jmp     LD9B3
 
 d487: ad 80 03     LD487           lda     DISK_TRKL
-d48a: 20 cb d7                     jsr     LD7CB
+d48a: 20 cb d7                     jsr     MOVE_TO_TRACK
 d48d: ad 88 03                     lda     DISK_OP
 d490: 28                           plp
 d491: d0 07                        bne     LD49A
@@ -659,9 +664,9 @@ d4c9: f0 31                        beq     LD4FC
 d4cb: a9 04                        lda     #$04
 d4cd: 8d f8 04                     sta     SCRNHOLE1
 d4d0: a9 00                        lda     #$00
-d4d2: 20 cb d7                     jsr     LD7CB
+d4d2: 20 cb d7                     jsr     MOVE_TO_TRACK
 d4d5: ad 80 03                     lda     DISK_TRKL
-d4d8: 20 cb d7     LD4D8           jsr     LD7CB
+d4d8: 20 cb d7     LD4D8           jsr     MOVE_TO_TRACK
 d4db: 4c af d4                     jmp     LD4AF
 
 d4de: a5 2f        LD4DE           lda     $2f
@@ -687,7 +692,7 @@ d500: b0 22        LD500           bcs     LD524
 
 d502: ad 81 03     LD502           lda     DISK_SECT
 d505: a8                           tay
-d506: b9 35 d5     LD506           lda     LD535,y
+d506: b9 35 d5     LD506           lda     CPM_TRAN_SECT,y
 d509: c5 2d                        cmp     MON_V2
 d50b: d0 af                        bne     LD4BC
 d50d: 28                           plp
@@ -712,22 +717,8 @@ d530: a9 10                        lda     #$10
 d532: 38                           sec
 d533: b0 ef                        bcs     LD524
 
-d535: 00           LD535           .dd1    $00
-d536: 03                           .dd1    $03
-d537: 06                           .dd1    $06
-d538: 09                           .dd1    $09
-d539: 0c                           .dd1    $0c
-d53a: 0f                           .dd1    $0f
-d53b: 02                           .dd1    $02
-d53c: 05                           .dd1    $05
-d53d: 08                           .dd1    $08
-d53e: 0b                           .dd1    $0b
-d53f: 0e                           .dd1    $0e
-d540: 01                           .dd1    $01
-d541: 04                           .dd1    $04
-d542: 07                           .dd1    $07
-d543: 0a                           .dd1    $0a
-d544: 0d                           .dd1    $0d
+d535: 00 03 06 09+ CPM_TRAN_SECT   .bulk   $00,$03,$06,$09,$0c,$0f,$02,$05
+d53d: 08 0b 0e 01+                 .bulk   $08,$0b,$0e,$01,$04,$07,$0a,$0d
 d545: 70           LD545           .dd1    $70
 d546: 2c                           .dd1    $2c
 d547: 26                           .dd1    $26
@@ -736,70 +727,14 @@ d549: 1f                           .dd1    $1f
 d54a: 1e                           .dd1    $1e
 d54b: 1d                           .dd1    $1d
 d54c: 1c 1c 1c 1c+                 .fill   6,$1c
-d552: 96           LD552           .dd1    $96
-d553: 97                           .dd1    $97
-d554: 9a                           .dd1    $9a
-d555: 9b                           .dd1    $9b
-d556: 9d                           .dd1    $9d
-d557: 9e                           .dd1    $9e
-d558: 9f                           .dd1    $9f
-d559: a6                           .dd1    $a6
-d55a: a7                           .dd1    $a7
-d55b: ab                           .dd1    $ab
-d55c: ac                           .dd1    $ac
-d55d: ad                           .dd1    $ad
-d55e: ae                           .dd1    $ae
-d55f: af                           .dd1    $af
-d560: b2                           .dd1    $b2
-d561: b3                           .dd1    $b3
-d562: b4                           .dd1    $b4
-d563: b5                           .dd1    $b5
-d564: b6                           .dd1    $b6
-d565: b7                           .dd1    $b7
-d566: b9                           .dd1    $b9
-d567: ba                           .dd1    $ba
-d568: bb                           .dd1    $bb
-d569: bc                           .dd1    $bc
-d56a: bd                           .dd1    $bd
-d56b: be                           .dd1    $be
-d56c: bf                           .dd1    $bf
-d56d: cb                           .dd1    $cb
-d56e: cd                           .dd1    $cd
-d56f: ce                           .dd1    $ce
-d570: cf                           .dd1    $cf
-d571: d3                           .dd1    $d3
-d572: d6                           .dd1    $d6
-d573: d7                           .dd1    $d7
-d574: d9                           .dd1    $d9
-d575: da                           .dd1    $da
-d576: db                           .dd1    $db
-d577: dc                           .dd1    $dc
-d578: dd                           .dd1    $dd
-d579: de                           .dd1    $de
-d57a: df                           .dd1    $df
-d57b: e5                           .dd1    $e5
-d57c: e6                           .dd1    $e6
-d57d: e7                           .dd1    $e7
-d57e: e9                           .dd1    $e9
-d57f: ea                           .dd1    $ea
-d580: eb                           .dd1    $eb
-d581: ec                           .dd1    $ec
-d582: ed                           .dd1    $ed
-d583: ee                           .dd1    $ee
-d584: ef                           .dd1    $ef
-d585: f2                           .dd1    $f2
-d586: f3                           .dd1    $f3
-d587: f4                           .dd1    $f4
-d588: f5                           .dd1    $f5
-d589: f6                           .dd1    $f6
-d58a: f7                           .dd1    $f7
-d58b: f9                           .dd1    $f9
-d58c: fa                           .dd1    $fa
-d58d: fb                           .dd1    $fb
-d58e: fc                           .dd1    $fc
-d58f: fd                           .dd1    $fd
-d590: fe                           .dd1    $fe
-d591: ff                           .dd1    $ff
+d552: 96 97 9a 9b+ TRANS62         .bulk   $96,$97,$9a,$9b,$9d,$9e,$9f,$a6
+d55a: a7 ab ac ad+                 .bulk   $a7,$ab,$ac,$ad,$ae,$af,$b2,$b3
+d562: b4 b5 b6 b7+                 .bulk   $b4,$b5,$b6,$b7,$b9,$ba,$bb,$bc
+d56a: bd be bf cb+                 .bulk   $bd,$be,$bf,$cb,$cd,$ce,$cf,$d3
+d572: d6 d7 d9 da+                 .bulk   $d6,$d7,$d9,$da,$db,$dc,$dd,$de
+d57a: df e5 e6 e7+                 .bulk   $df,$e5,$e6,$e7,$e9,$ea,$eb,$ec
+d582: ed ee ef f2+                 .bulk   $ed,$ee,$ef,$f2,$f3,$f4,$f5,$f6
+d58a: f7 f9 fa fb+                 .bulk   $f7,$f9,$fa,$fb,$fc,$fd,$fe,$ff
 d592: 00 00 00 00+                 .fill   5,$00
 d597: 01                           .dd1    $01
 d598: 98                           .dd1    $98
@@ -914,7 +849,7 @@ d609: bd 8e c0                     lda     IWM_Q7_OFF,x
 d60c: 30 7c                        bmi     LD68A
 d60e: ad 00 df                     lda     $df00
 d611: 85 26                        sta     ZP_TEMP1
-d613: a9 ff                        lda     #$ff
+d613: a9 ff                        lda     #$ff              ;Write sync bytes
 d615: 9d 8f c0                     sta     IWM_Q7_ON,x
 d618: 1d 8c c0                     ora     IWM_Q6_OFF,x
 d61b: 48                           pha
@@ -923,15 +858,16 @@ d61d: ea                           nop
 d61e: a0 04                        ldy     #$04
 d620: 48           LD620           pha
 d621: 68                           pla
-d622: 20 b5 d6                     jsr     LD6B5
+d622: 20 b5 d6                     jsr     WRITE7
 d625: 88                           dey
 d626: d0 f8                        bne     LD620
-d628: a9 d5                        lda     #$d5
-d62a: 20 b4 d6                     jsr     LD6B4
+                   ; data header
+d628: a9 d5                        lda     #$d5              ;Write data header bytes
+d62a: 20 b4 d6                     jsr     WRITE9
 d62d: a9 aa                        lda     #$aa
-d62f: 20 b4 d6                     jsr     LD6B4
+d62f: 20 b4 d6                     jsr     WRITE9
 d632: a9 ad                        lda     #$ad
-d634: 20 b4 d6                     jsr     LD6B4
+d634: 20 b4 d6                     jsr     WRITE9
 d637: 98                           tya
 d638: a0 56                        ldy     #$56
 d63a: d0 03                        bne     LD63F
@@ -939,7 +875,7 @@ d63a: d0 03                        bne     LD63F
 d63c: b9 00 df     LD63C           lda     $df00,y
 d63f: 59 ff de     LD63F           eor     $deff,y
 d642: aa                           tax
-d643: bd 52 d5                     lda     LD552,x
+d643: bd 52 d5                     lda     TRANS62,x
 d646: a6 27                        ldx     MON_GBASH
 d648: 9d 8d c0                     sta     IWM_Q6_ON,x
 d64b: bd 8c c0                     lda     IWM_Q6_OFF,x
@@ -949,7 +885,7 @@ d651: a5 26                        lda     ZP_TEMP1
 d653: ea                           nop
 d654: 59 00 de     LD654           eor     $de00,y
 d657: aa                           tax
-d658: bd 52 d5                     lda     LD552,x
+d658: bd 52 d5                     lda     TRANS62,x
 d65b: ae 78 06                     ldx     SCRNHOLE4
 d65e: 9d 8d c0                     sta     IWM_Q6_ON,x
 d661: bd 8c c0                     lda     IWM_Q6_OFF,x
@@ -957,17 +893,17 @@ d664: b9 00 de                     lda     $de00,y
 d667: c8                           iny
 d668: d0 ea                        bne     LD654
 d66a: aa                           tax
-d66b: bd 52 d5                     lda     LD552,x
+d66b: bd 52 d5                     lda     TRANS62,x
 d66e: a6 27                        ldx     MON_GBASH
-d670: 20 b7 d6                     jsr     LD6B7
-d673: a9 de                        lda     #$de
-d675: 20 b4 d6                     jsr     LD6B4
+d670: 20 b7 d6                     jsr     WRITE             ;Write checksum
+d673: a9 de                        lda     #$de              ;Write trailer bytes
+d675: 20 b4 d6                     jsr     WRITE9
 d678: a9 aa                        lda     #$aa
-d67a: 20 b4 d6                     jsr     LD6B4
+d67a: 20 b4 d6                     jsr     WRITE9
 d67d: a9 eb                        lda     #$eb
-d67f: 20 b4 d6                     jsr     LD6B4
+d67f: 20 b4 d6                     jsr     WRITE9
 d682: a9 ff                        lda     #$ff
-d684: 20 b4 d6                     jsr     LD6B4
+d684: 20 b4 d6                     jsr     WRITE9
 d687: bd 8e c0                     lda     IWM_Q7_OFF,x
 d68a: bd 8c c0     LD68A           lda     IWM_Q6_OFF,x
 d68d: 60                           rts
@@ -994,12 +930,23 @@ d6b0: 98                           tya
 d6b1: d0 e9                        bne     LD69C
 d6b3: 60                           rts
 
-d6b4: 18           LD6B4           clc
-d6b5: 48           LD6B5           pha
-d6b6: 68                           pla
-d6b7: 9d 8d c0     LD6B7           sta     IWM_Q6_ON,x
-d6ba: 1d 8c c0                     ora     IWM_Q6_OFF,x
-d6bd: 60                           rts
+                   ; Write data every 32 cycles
+                   ; 
+                   ; Typical call sequence
+                   ;   2 2 cycles - LDA #D5
+                   ;   8 6 cycles - JSR WRITE9
+                   ;  10 2 cycles - CLC
+                   ;  13 3 cycles - PHA
+                   ;  17 4 cycles - PLA
+                   ;  22 5 cycles - STA $C08B,x
+                   ;  26 4 cycles - ORA $C08C,X
+                   ;  32 6 cycles - RTS
+d6b4: 18           WRITE9          clc                       ;2 Cycles - Provide different delays
+d6b5: 48           WRITE7          pha                       ;3 cycles - delays to produce
+d6b6: 68                           pla                       ;4 cycles correct timeing
+d6b7: 9d 8d c0     WRITE           sta     IWM_Q6_ON,x       ;5 cycles - Write load
+d6ba: 1d 8c c0                     ora     IWM_Q6_OFF,x      ;5 cycles - write byte
+d6bd: 60                           rts                       ;6 cycles - return to caller 
 
 d6be: a0 00        LD6BE           ldy     #$00
 d6c0: a2 56        LD6C0           ldx     #$56
@@ -1141,7 +1088,7 @@ d7c7: d0 a4                        bne     LD76D
 d7c9: 18           LD7C9           clc
 d7ca: 60                           rts
 
-d7cb: 0a           LD7CB           asl     A
+d7cb: 0a           MOVE_TO_TRACK   asl     A                 ;MOVE_TO_TRACK
 d7cc: 20 d3 d7                     jsr     LD7D3
 d7cf: 4e 78 04                     lsr     SCRNHOLE0
 d7d2: 60                           rts
@@ -1307,7 +1254,11 @@ d8fd: 4c                           .dd1    $4c
 d8fe: c5                           .dd1    $c5
 d8ff: da                           .dd1    $da
 d900: 8a                           .dd1    $8a
-d901: 0a 0a 0a 0a+                 .str    $0a,$0a,$0a,$0a,“`”
+d901: 0a                           .dd1    $0a
+d902: 0a                           .dd1    $0a
+d903: 0a                           .dd1    $0a
+d904: 0a                           .dd1    $0a
+d905: 60                           .dd1    $60
 d906: 00                           .dd1    $00
 d907: 02                           .dd1    $02
 d908: 04                           .dd1    $04
@@ -1428,7 +1379,7 @@ d9db: 20 ee d6                     jsr     LD6EE
 d9de: a9 28                        lda     #$28
 d9e0: 85 45                        sta     PRODOS_BUFPTRH
 d9e2: a5 44        LD9E2           lda     PRDOOS_BUFPTRL
-d9e4: 20 cb d7                     jsr     LD7CB
+d9e4: 20 cb d7                     jsr     MOVE_TO_TRACK
 d9e7: 20 16 d9                     jsr     LD916
 d9ea: b0 27                        bcs     LDA13
 d9ec: a9 30                        lda     #$30
