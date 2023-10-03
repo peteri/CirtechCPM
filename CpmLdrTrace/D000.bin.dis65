@@ -679,9 +679,14 @@
 "Hint":"Code"},
 
 {
+"Low":2285,
+"High":2285,
+"Hint":"Code"},
+
+{
 "Low":2305,
 "High":2309,
-"Hint":"InlineData"},
+"Hint":"Code"},
 
 {
 "Low":2703,
@@ -2137,6 +2142,13 @@
 "Value":54926,
 "Source":"User",
 "Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1536":{
+"Label":"D2_WRITE_SECTOR_DATA",
+"Value":54784,
+"Source":"User",
+"Type":"GlobalAddr",
 "LabelAnno":"None"}},
 
 "OperandFormats":{
@@ -2775,6 +2787,18 @@
 "SymbolRef":{
 "Label":"HEADER_CHECKSUM",
 "Part":"Low"}},
+
+"2310":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"2318":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
 
 "2391":{
 "Length":2,
