@@ -4,3 +4,5 @@
 *.nib binary
 *.bin binary
 *.DSK binary
+*.COM binary
+*.REL binary
