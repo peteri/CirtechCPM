@@ -1,8 +1,204 @@
-;============================================
+           title 'LDRBIOS for CP/M 3 CPMLDR'
 ;
 ; Loader BIOS for Cirtech CPM system.
 ;
 ; Created via decompiling by Peter Ibbotson Oct 2023
 ; (C) Copyright Cirtech 1985
 ;
-;============================================
+           .z80
+           cseg
+           org 0
+           JP boot       ; initial entry point on coldstart
+           JP boot       ; warm start
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           JP conout     ; send console output charcater
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           JP home       ; set disks to logical home
+           JP seldsk     ; select disk drive, return disk parameter info
+           JP settrk     ; set disk track
+           JP setsec     ; set disk sector
+           JP setdma     ; set disk I/O memory address
+           JP read       ; read phisical block(s)
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           JP sectrn     ; translate logical to physical sector
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           JP move       ; block move memory to memory
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+           ld a,00H
+           ret
+;==================================================================
+; BIOS Func 0 - BOOT
+; Perform cold boot stuff.
+; Entry
+; Exit
+;==================================================================
+boot       ret
+           DS 441H,0           ;Pad out so other routines are right start point
+;==================================================================
+; Call 6502 helper routine
+; Entry
+; HL=address to call
+; Exit
+;==================================================================
+call6502   ld   a,04H          ;Set 6502 flags
+           ld   (FLAG_6502),a  ;Just Interrupts disabled
+           ld   (ROUT_6502),hl ;Set our destination
+           ld   hl,(CARD_Z80)  ;Bounce off to
+           ld   (hl),a         ;6502 land
+           ret
+;==================================================================
+; BIOS Func 5 - CONOUT
+; Write character in to screen.
+; Entry
+; C = Character to write
+;==================================================================
+conout     ld   a,c            ;character to output
+           ld   (ACC_6502),a
+           ld   a,(0E30FH)     ;80 column card out
+           ld   hl,0C330H      ;Set X=$30
+           ld   (0F046H),hl    ;Set Y=$C3
+           ld   l,a            ;HL=$C3XX
+           jr   call6502
+;==================================================================
+; BIOS Func 16 - SECTRAN
+; Translate sector
+; Entry
+; BC = Logical sector number
+; DE = Address of translation table
+; Exit
+; HL = Physical sector number
+;==================================================================
+sectran    ld   h,b            ;Copy BC to HL as we don't translate
+           ld   l,c
+           ret
+;==================================================================
+; BIOS Func 9 - SELDSK
+; Select the disc drive in register C
+; Entry
+; C = Drive 0=A, 1=B....
+; E = 0 or FFFFH, if Bit 0 is 1 disc has been logged before
+;                 if Bit 0 is 0 disc is logged as if new
+;                 can cause a disc read to figure out DPH from
+;                 boot sector.
+; Exit
+; HL = Disk parameter Header
+;==================================================================
+seldsk     ld   a,(5E20H)      ;presumably boot drive
+           ld   (DISK_DRV),a   ;save it for our caller
+           ld   hl,6EA8H       ;return back boot DPH
+           ret
+;==================================================================
+; BIOS Func 8 - HOME
+; Move the current to track 0
+; Entry
+; Exit
+;==================================================================
+home       ld   bc,$0000       ;Set track to zero fall thru
+;==================================================================
+; BIOS Func 10 - SETTRK
+; Set the track
+; Entry
+; BC = Track to set
+; Exit
+;==================================================================
+settrk     ld   a,c
+           ld   (DISK_TRKL),a
+           ld   a,b
+           ld   (DISK_TRKH),a
+           ret
+;==================================================================
+; BIOS Func 12 - SETDMA
+; Set the address next disc operation will use
+; Entry
+; BC = Address to read or write from
+; Exit
+;==================================================================
+setdma     ld   (readdest+1),bc ;Save address into read func
+           ret
+;==================================================================
+; BIOS Func 13 - READ
+; Set the address next disc operation will use
+; Entry
+; Exit
+; A = 0 for OK
+;     1 for Unrecoverable error
+;     FF if media changed.
+;==================================================================
+read       ld   a,1
+           ld   (DISK_OP),a
+           ld   hl,DISK_ROUT
+           call call6502
+readdest   ld   de,0000H       ;Setup to copy result back
+           ld   hl,0F800H
+           ld   bc,0200H
+           ldir
+           ld   a,(DISK_ERR)   ;Disk read result
+           or   a              ;All ok?
+           ret  z              ;Go home
+           ld   c,7            ;Ring the bell
+           call conout
+           ld   a,1            ;Flag the error
+           ret
+;==================================================================
+; BIOS Func 11 - SETSEC
+; Set the sector next disc operation will use
+; Size is from the DPH
+; Entry
+; BC = Sector number
+; Exit
+;==================================================================
+setsec     ld   a,c
+           ld   (DISK_SECT),a
+           ret
+;==================================================================
+; BIOS Func 25 - MOVE
+; Copy memory (sadly wrong order for Z80)
+; Entry
+; BC = Number of bytes to move
+; DE = Source address
+; HL = Dest addresss
+; Exit
+;==================================================================
+move       ex   de,hl
+           ldir
+           ex   de,hl
+           ret
+           END
+
