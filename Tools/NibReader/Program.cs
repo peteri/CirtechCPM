@@ -14,7 +14,11 @@ class Program
             SaveSectors("CPMBoot.bin", tracks, bootList, prodosSectorMap);
             var d000List = CreateTrackSectors(0, 2, 14);
             SaveSectors("D000.bin", tracks, d000List, prodosSectorMap);
-            var CpmLdr = CreateTrackSectors(1, 0, 32);
+            var CCP = CreateTrackSectors(1, 0, 13);
+            SaveSectors("CCP.bin", tracks, CCP, prodosSectorMap);
+            var Toolkit = CreateTrackSectors(1, 13, 3);
+            SaveSectors("Toolkit.bin", tracks, Toolkit, prodosSectorMap);
+            var CpmLdr = CreateTrackSectors(2, 0, 16);
             SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
             // Now do the CPM bits
 
