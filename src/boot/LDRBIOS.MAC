@@ -84,7 +84,7 @@ DISK_ROUT  EQU 003DCH ; Disk routine to call
 ; Exit
 ;==================================================================
 boot:      ret
-           DS 440H,0           ;Pad out so other routines are right start point
+           ORG 498H
 ;==================================================================
 ; Call 6502 helper routine
 ; Entry
@@ -268,7 +268,10 @@ move:      ex   de,hl
 ; No Idea code at either $0396 or 0F396H
            DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
            DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
-
+           DB 080H,000H,000H,000H,000H,000H,000H,000H
+           DB 000H,000H,000H,000H
+; Could be devices found at $3b8
+           DB 002H,000H,000H,004H,000H,000H,000H,000H
 ; 6502 code at $3C0
 ; Loop endlessly bouncing between Z80 code
 ; and whatever 6502 routine we want to run
@@ -294,4 +297,4 @@ Z80_CARD:  DB 001H,0E7H        ; Address of card from Z80 side
            DB 04CH,000H,0D4H   ; JMP D400
            DB 000H,000H,080H   ; Dunno?
            END
-
+

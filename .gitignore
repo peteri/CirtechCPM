@@ -289,11 +289,13 @@ __pycache__/
 
 # Output files
 Tools/NibReader/*.bin
-# Don't want assembler listings
+# Don't want assembler listings or turbo pascal backup files
 *.BAK
 *.PRN
+*.SYM
 # Ignore the loader BIOS output from assembly
-LDRBIOS.REL
+src/boot/LDRBIOS.REL
+src/boot/CPMLDR.COM
 # CPM editors (I'm using Turbo pascal)
 # easiest to just copy them into the working folder
 # But best not to add them to git.

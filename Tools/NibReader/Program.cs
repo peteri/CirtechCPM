@@ -16,13 +16,38 @@ class Program
             SaveSectors("D000.bin", tracks, d000List, prodosSectorMap);
             var CCP = CreateTrackSectors(1, 0, 13);
             SaveSectors("CCP.bin", tracks, CCP, prodosSectorMap);
-            var Toolkit = CreateTrackSectors(1, 13, 3);
-            SaveSectors("Toolkit.bin", tracks, Toolkit, prodosSectorMap);
+            var Toolkey = CreateTrackSectors(1, 13, 3);
+            SaveSectors("Toolkey.bin", tracks, Toolkey, prodosSectorMap);
             var CpmLdr = CreateTrackSectors(2, 0, 16);
             SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
             // Now do the CPM bits
-
+            // Strip off high bits and display the Toolkey messages
+            DumpToolkitMessages();
         }
+    }
+
+    private static void DumpToolkitMessages()
+    {
+        var data = File.ReadAllBytes("Toolkey.bin");
+        int i = 0;
+        Console.WriteLine();
+        int l = 0;
+        while (data[i] != 0x1a)
+        {
+            Console.Write("{0}", (char)(data[i] & 0x7f));
+            i++;
+            if (i <= 42 * 5)
+            {
+                if ((i % 42) == 0)
+                    Console.WriteLine();
+            }
+            else
+            {
+                if (((i - 42 * 5) % 38)== 0)
+                    Console.WriteLine();
+            }
+        }
+        Console.WriteLine();
     }
 
     private static IEnumerable<(int sector, int track)> CreateTrackSectors(int track, int sector, int numberOfSectors)
