@@ -21,6 +21,7 @@ class Program
             var CpmLdr = CreateTrackSectors(2, 0, 16);
             SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
             // Now do the CPM bits
+            
             // Strip off high bits and display the Toolkey messages
             DumpToolkitMessages();
         }
@@ -31,7 +32,6 @@ class Program
         var data = File.ReadAllBytes("Toolkey.bin");
         int i = 0;
         Console.WriteLine();
-        int l = 0;
         while (data[i] != 0x1a)
         {
             Console.Write("{0}", (char)(data[i] & 0x7f));

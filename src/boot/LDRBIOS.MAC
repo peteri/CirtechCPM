@@ -15,13 +15,13 @@ X_6502     EQU 0F046H ; 6502 X reg
 Y_6502     EQU 0F047H ; 6502 Y reg
 FLAG_6502  EQU 0F048H ; 6502 flag
 ;
-;6502 stuff in $300 range as seen from Z80
+;6502 stuff in 0300 range as seen from Z80
 ;
 ROUT_6502  EQU 0F3D0H ; 6502 routine to call
 CARD_Z80   EQU 0F3DEH ; Card address from Z80 0E401H
 DISK_TRKL  EQU 0F380H ; Disk track low
 DISK_SECT  EQU 0F381H ; Disk sector
-DISK_DRV   EQU 0F384H ; Disk drive slot ($60
+DISK_DRV   EQU 0F384H ; Disk drive slot (060
 DISK_ACTD  EQU 0F385H ; Disk active drive
 DISK_TRKH  EQU 0F386H ; Disk track high
 DISK_OP    EQU 0F388H ; Disk operation
@@ -83,7 +83,166 @@ DISK_ROUT  EQU 003DCH ; Disk routine to call
 ; Entry
 ; Exit
 ;==================================================================
-boot:      ret
+boot:      ld   (01C73H),sp
+           ld   sp,topofstack
+           ld   hl,0E00H       ; Copy message for the Cirtech
+           ld   de,0FC00H      ; toolkeys into 00C00
+           ld   bc,0300H
+           ldir
+           ld   hl,0300H       ; Setup  vectors
+           ld   (0F3F2H),hl    ; 6502 reset vector
+           ld   (0F3F0H),hl    ; 6502 break vector
+           ld   (0F3FCH),hl    ; NMI jump
+           ld   a,0A6H         ; reset checksum
+           ld   (0F3F4H),a
+; Setup jumps etc
+           ld   a,(0F3DFH)     ; Save card in Z80 land
+           ld   hl,(0F3C7H)    ; Hi byte of Card address
+           exx
+           ld   hl,page300     ; Copy a bunch of code
+           ld   de,0F300H      ; into 0300 plus probably
+           ld   bc,page300end-page300
+           ldir
+           exx
+           ld   (0F3C7H),hl     ; put back card address
+           ld   (0F3DFH),a      ; put back high byte of card
+           ld   a,(0E088H)      ; LC1 Bank RAM
+           ld   hl,0BC00H       ; Copy from 0DC00 language card
+           ld   de,0FA00H       ; 6502 destination 0A00
+           ld   bc,00200H
+           ldir
+           ld   hl,05DBCH       ; Clear a bunch of memory
+           ld   (hl),000H       ; 06DBC-08400
+           ld   de,05DBDH       ; or 5DBCH-7400H
+           ld   bc,01644H
+           ldir
+           ld   hl,05E20H ;No idea what we're doing here
+           ld   (01EE0H),hl
+           ld   hl,05E00H
+           ld   (01ED2H),hl
+           ld   hl,06EA8H
+           ld   (01F4DH),hl
+           ld   a,005
+           ld   hl,05E2CH
+           call L1F14
+           ld   a,001
+           ld   hl,06A88H
+           call L1F14
+           ld   a,(0F004H) ;boot slot
+           ld   e,a
+           ld   d,000
+           ld   ix,0F3B8H
+           add  ix,de
+           or   0E0H
+           ld   h,a
+           ld   a,0A0H
+           jr   01BF7H
+           ld   ix,0F3BFH
+           ld   hl,0E700H
+           ld   a,0E0H
+           cp   h
+           jr   z,01C43H
+           ld   a,(0F004H)
+           or   0E0H
+           cp   h
+           ld   a,0A7H
+           ld   (01C42H),a
+           jr   z,01C3EH
+           call L1F6AH
+           xor  a
+           cp   b
+           jr   z,01C0BH
+           ld   a,c
+           cp   e
+           jr   nz,01C0BH
+           ld   a,d
+           cp   b
+           jr   z,01C0FH
+           ld   c,000
+           jr   01C3BH
+           ld   c,003
+           ld   de,01838H
+           call L1F7C
+           jr   z,01C3BH
+           inc  c
+           ld   de,03818H
+           call L1F7C
+           jr   nz,01C32H
+           ld   l,00BH
+           ld   a,001
+           cp   (hl)
+           jr   nz,01C3BH
+           inc  l
+           ld   a,(hl)
+           and  0F0H
+           or   006
+           ld   c,a
+           jr   01C3BH
+           inc  c
+           ld   de,04848H
+           call L1F7C
+           jr   nz,01C7AH
+           ld   (ix+000),c
+           dec  ix
+           dec  h
+           jr   01BE3H
+           ld   (0E005H),a ;Write to aux memory (48K)
+           xor  a
+           ld   (0F027H),a ;Store a zero in 6502?
+           ld   de,0F300H  ;Copy 0300 to aux memory
+           ld   h,d       ;Upto 0BFF
+           ld   l,e
+           ld   bc,008FFH
+           ldir
+           ld   (0E004H),a ; Back to main memory
+           ld   a,004
+           ld   (0F47EH),a
+           xor  a
+           ld   (0F4FEH),a
+           ld   a,(0E30DH)  ; 80 column card init
+           call call80col
+           ld   hl,06EBAH
+           ld   de,05E2EH
+           call L1C75
+           ld   de,06A8AH
+           ld   sp,00000
+STORE_DE_TO_HL_ADDR:
+           ld   (hl),e
+           inc  hl
+           ld   (hl),d
+           inc  hl
+           ret
+           ORG 41FH
+L1F14:     ld   d,h
+           ld   e,l
+           inc  de
+           inc  de
+           call STORE_DE_TO_HL_ADDR
+L1F1B:     call L1F2D
+           inc  hl
+           push hl
+           ld   de,00202H
+           add  hl,de
+           ex   de,hl
+           pop  hl
+           call STORE_DE_TO_HL_ADDR
+           ex   de,hl
+           dec  a
+           jr   nz,L1F1B
+L1F2D:     ld   (hl),0FFH
+           ld   de,0000AH
+           add  hl,de
+           push hl
+           pop  de
+           ld   bc,00005H
+           add  hl,bc
+           ex   de,hl
+           call STORE_DE_TO_HL_ADDR
+           ret
+           ORG 46AH
+L1F6A:     ret
+           ORG 47CH
+L1F7C:     ret
            ORG 498H
 ;==================================================================
 ; Call 6502 helper routine
@@ -98,8 +257,8 @@ call6502:  ld   a,04H          ;Set 6502 flags
            ld   (hl),a         ;6502 land
            ret
 ; Looks like 6502 code at 2FA8
-           DB   0ADH,088H,0C0H ;LDA $C088 ?
-           DB   020H,000H,000H ;JSR $0000
+           DB   0ADH,088H,0C0H ;LDA 0C088 ?
+           DB   020H,000H,000H ;JSR 00000
 ; Possibly back to Z80 code
            add hl,bc           ;01FAB?
            xor a
@@ -121,9 +280,9 @@ call6502:  ld   a,04H          ;Set 6502 flags
 conout:    ld   a,c            ;character to output
            ld   (ACC_6502),a
            ld   a,(0E30FH)     ;80 column card out
-           ld   hl,0C330H      ;Set X=$30
-           ld   (0F046H),hl    ;Set Y=$C3
-           ld   l,a            ;HL=$C3XX
+call80col: ld   hl,0C330H      ;Set X=030
+           ld   (0F046H),hl    ;Set Y=0C3
+           ld   l,a            ;HL=0C3XX
            jr   call6502
 ;==================================================================
 ; BIOS Func 16 - SECTRAN
@@ -205,14 +364,16 @@ readdest:  ld   de,0000H       ;Setup to copy result back
            call conout
            ld   a,1            ;Flag the error
            ret
-;6502 code in page $300
-page300:   DB 0A9H,0C3H      ;LDA #$C3
-           DB 08DH,000H,010H ;STA $1000
-           DB 0A9H,000H      ;LDA #$00
-           DB 08DH,001H,010H ;STA $1001
-           DB 0A9H,011H      ;LDA #$11
-           DB 08DH,002H,010H ;STA $1002
-           DB 04CH,0C0H,003H ;JMP $03C0
+; 6502 code in page 0300 reset vectors set to point to here.
+; This puts a jump to 01100 (the start of the CPM loader) into the Z80
+; reset vector then bounces back into the Z80
+page300:   DB 0A9H,0C3H        ; LDA #0C3
+           DB 08DH,000H,010H   ; STA 01000
+           DB 0A9H,000H        ; LDA #000
+           DB 08DH,001H,010H   ; STA 01001
+           DB 0A9H,011H        ; LDA #011
+           DB 08DH,002H,010H   ; STA 01002
+           DB 04CH,0C0H,003H   ; JMP 003C0
 ;Z80 screen locations probably used for scrolling
 z80scrn1:  DW 0F400H,0F480H,0F500H,0F580H ;Lines  1, 2, 3, 4
            DW 0F600H,0F680H,0F700H,0F780H ;Lines  5, 6, 7, 8
@@ -252,11 +413,11 @@ move:      ex   de,hl
            ldir
            ex   de,hl
            ret
-; No idea $380
+; No idea 0380
            DB 000H,000H,002H,010H
            DB 001H,001H,000H,000H
            DB 000H,000H
-; 6502 code at $38a
+; 6502 code at 038a
            DB 0A5H,048H        ; LDA FLAG_6502
            DB 048H             ; PHA
            DB 0A5H,045H        ; LDA ACC_6502
@@ -265,28 +426,28 @@ move:      ex   de,hl
            DB 028H             ; PLP
            DB 078H             ; SEI
            DB 060H             ; RTS
-; No Idea code at either $0396 or 0F396H
+; No Idea code at either 00396 or 0F396H
            DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
            DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
            DB 080H,000H,000H,000H,000H,000H,000H,000H
            DB 000H,000H,000H,000H
-; Could be devices found at $3b8
+; Could be devices found at 03b8
            DB 002H,000H,000H,004H,000H,000H,000H,000H
-; 6502 code at $3C0
+; 6502 code at 03C0
 ; Loop endlessly bouncing between Z80 code
 ; and whatever 6502 routine we want to run
            DB 02CH,083H,0C0H   ; BIT LCBANK2
            DB 02CH,083H,0C0H   ; BIT LCBANK2
-           DB 08DH,000H,0C4H   ; STA $C400
+           DB 08DH,000H,0C4H   ; STA 0C400
            DB 02CH,081H,0C0H   ; BIT ROMIN
-           DB 020H,08AH,003H   ; JSR $38A (save registers)
-           DB 020H,000H,000H   ; JSR $0000 (6502 routine to call)
+           DB 020H,08AH,003H   ; JSR 038A (save registers)
+           DB 020H,000H,000H   ; JSR 00000 (6502 routine to call)
            DB 08DH,081H,0C0H   ; STA ROMIN
            DB 078H             ; SEI
            DB 020H,04AH,0FFH   ; JSR F8ROM:SAVE
-           DB 04CH,0C0H,003H   ; JMP $3C0 ; back to Z80
+           DB 04CH,0C0H,003H   ; JMP 03C0 ; back to Z80
 ;
-; Call into $D400 Disk code in 6502 land
+; Call into 0D400 Disk code in 6502 land
 ;
            DB 0EAH             ; NOP
            DB 02CH             ; BIT Z80_CARD
@@ -296,5 +457,9 @@ Z80_CARD:  DB 001H,0E7H        ; Address of card from Z80 side
            DB 0D8H             ; CLD
            DB 04CH,000H,0D4H   ; JMP D400
            DB 000H,000H,080H   ; Dunno?
+page300end:
+           dseg
+           DS 100H
+topofstack:
            END
-
+
