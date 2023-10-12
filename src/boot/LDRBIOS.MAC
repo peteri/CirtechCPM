@@ -246,12 +246,65 @@ L1F2D:     ld   (hl),0FFH
            add  hl,bc
            ex   de,hl
            call STORE_DE_TO_HL_ADDR
-           ret       
-           ORG 46AH
-L1F6A:     ret
-           ORG 47CH
-L1F7C:     ret
-           ORG 498H
+           ret
+L1F3E:     ld   a,h
+           ld   (01D78H),a
+           and  0FH
+           rrca
+           rrca
+           rrca
+           rrca
+           ld   (01EDEH),a
+           ret
+L1F4C:     ld   de,06EA8H
+           ld   (hl),e
+           inc  hl
+           ld   (hl),d
+           inc  hl
+           push hl
+           ex   de,hl
+           add  hl,bc
+           call L1F61
+           ex   de,hl
+           pop  hl
+           ret  c
+           ld   (L1F4C+1),de
+           ret
+L1F61:     ex   de,hl
+           ld   hl,07400H
+           or   a
+           sbc  hl,de
+           ex   de,hl
+           ret
+L1F6A:     call L1F6F
+           ld   d,b
+           ld   e,c
+L1F6F:     xor  a
+           ld   l,a
+           ld   b,01H
+L1F73:     add  a,(hl)
+           jr   nc,L1F77
+           inc  b
+L1F77:     inc  l
+           jr   nz,L1F73
+           ld   c,a
+           ret
+L1F7C:     ld   l,005H
+           ld   a,(hl)
+           cp   d
+           ret  nz
+           ld   l,007H
+           ld   a,(hl)
+           cp   e
+           ret
+ L1F86:    ld   (01FABH),a
+           ld   a,h
+           ld   (01FB2H),a
+           ld   a,l
+           ld   (01FB4H),a
+           ld   a,c
+           ld   (01FB6H),a
+           ld   hl,XXX6502+01000H
 ;==================================================================
 ; Call 6502 helper routine
 ; Entry
@@ -264,8 +317,8 @@ call6502:  ld   a,04H          ;Set 6502 flags
            ld   hl,(CARD_Z80)  ;Bounce off to
            ld   (hl),a         ;6502 land
            ret
-; Looks like 6502 code at 2FA8
-           DB   0ADH,088H,0C0H ;LDA 0C088 ?
+; Looks like 6502 code at 2FA5
+XXX6502:   DB   0ADH,088H,0C0H ;LDA 0C088 ?
            DB   020H,000H,000H ;JSR 00000
 ; Possibly back to Z80 code
            add hl,bc           ;$1FAB?
