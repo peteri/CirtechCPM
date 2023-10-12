@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NibReader", "NibReader\NibReader.csproj", "{9F79B189-77A6-4852-915B-47F15603C3EA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CtrlZ", "CtrlZ\CtrlZ.csproj", "{6969D1EE-565E-4540-B571-7C6F356A4BB8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{9F79B189-77A6-4852-915B-47F15603C3EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F79B189-77A6-4852-915B-47F15603C3EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F79B189-77A6-4852-915B-47F15603C3EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6969D1EE-565E-4540-B571-7C6F356A4BB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6969D1EE-565E-4540-B571-7C6F356A4BB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6969D1EE-565E-4540-B571-7C6F356A4BB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6969D1EE-565E-4540-B571-7C6F356A4BB8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

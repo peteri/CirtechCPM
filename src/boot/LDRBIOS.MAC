@@ -21,7 +21,7 @@ ROUT_6502  EQU 0F3D0H ; 6502 routine to call
 CARD_Z80   EQU 0F3DEH ; Card address from Z80 0E401H
 DISK_TRKL  EQU 0F380H ; Disk track low
 DISK_SECT  EQU 0F381H ; Disk sector
-DISK_DRV   EQU 0F384H ; Disk drive slot (060
+DISK_DRV   EQU 0F384H ; Disk drive slot (060)
 DISK_ACTD  EQU 0F385H ; Disk active drive
 DISK_TRKH  EQU 0F386H ; Disk track high
 DISK_OP    EQU 0F388H ; Disk operation
@@ -30,6 +30,11 @@ DISK_ROUT  EQU 003DCH ; Disk routine to call
            cseg
 
            org 0
+;==========================================================
+;
+;  BIOS jump table
+;
+;==========================================================
            JP boot       ; initial entry point on coldstart
            JP boot       ; warm start
            ld a,00H
@@ -100,7 +105,7 @@ boot:      ld   (01C73H),sp
            ld   hl,(0F3C7H)    ; Hi byte of Card address
            exx
            ld   hl,page300     ; Copy a bunch of code
-           ld   de,0F300H      ; into 0300 plus probably
+           ld   de,0F300H      ; into $300 plus Z80 screen addresses
            ld   bc,page300end-page300
            ldir
            exx
@@ -108,11 +113,11 @@ boot:      ld   (01C73H),sp
            ld   (0F3DFH),a      ; put back high byte of card
            ld   a,(0E088H)      ; LC1 Bank RAM
            ld   hl,0BC00H       ; Copy from 0DC00 language card
-           ld   de,0FA00H       ; 6502 destination 0A00
+           ld   de,0FA00H       ; 6502 destination $A00
            ld   bc,00200H
            ldir
            ld   hl,05DBCH       ; Clear a bunch of memory
-           ld   (hl),000H       ; 06DBC-08400
+           ld   (hl),000H       ; $6DBC-$8400
            ld   de,05DBDH       ; or 5DBCH-7400H
            ld   bc,01644H
            ldir
@@ -128,7 +133,7 @@ boot:      ld   (01C73H),sp
            ld   a,001
            ld   hl,06A88H
            call L1F14
-           ld   a,(0F004H) ;boot slot
+           ld   a,(0F004H) ;boot slot?
            ld   e,a
            ld   d,000
            ld   ix,0F3B8H
@@ -260,7 +265,7 @@ call6502:  ld   a,04H          ;Set 6502 flags
            DB   0ADH,088H,0C0H ;LDA 0C088 ?
            DB   020H,000H,000H ;JSR 00000
 ; Possibly back to Z80 code
-           add hl,bc           ;01FAB?
+           add hl,bc           ;$1FAB?
            xor a
            cpl
            ld h,b
@@ -367,14 +372,14 @@ readdest:  ld   de,0000H       ;Setup to copy result back
 ; 6502 code in page 0300 reset vectors set to point to here.
 ; This puts a jump to 01100 (the start of the CPM loader) into the Z80
 ; reset vector then bounces back into the Z80
-page300:   DB 0A9H,0C3H        ; LDA #0C3
-           DB 08DH,000H,010H   ; STA 01000
-           DB 0A9H,000H        ; LDA #000
-           DB 08DH,001H,010H   ; STA 01001
-           DB 0A9H,011H        ; LDA #011
-           DB 08DH,002H,010H   ; STA 01002
-           DB 04CH,0C0H,003H   ; JMP 003C0
-;Z80 screen locations probably used for scrolling
+page300:   DB 0A9H,0C3H        ; LDA #$C3
+           DB 08DH,000H,010H   ; STA $1000
+           DB 0A9H,000H        ; LDA #$00
+           DB 08DH,001H,010H   ; STA $1001
+           DB 0A9H,011H        ; LDA #$11
+           DB 08DH,002H,010H   ; STA $1002
+           DB 04CH,0C0H,003H   ; JMP $03C0
+; Z80 screen locations probably used for scrolling
 z80scrn1:  DW 0F400H,0F480H,0F500H,0F580H ;Lines  1, 2, 3, 4
            DW 0F600H,0F680H,0F700H,0F780H ;Lines  5, 6, 7, 8
            DW 0F428H,0F4A8H,0F528H,0F5A8H ;Lines  9,10,11,12
@@ -413,7 +418,8 @@ move:      ex   de,hl
            ldir
            ex   de,hl
            ret
-; No idea 0380
+; $380 Was console status and vectors with a 
+; Microsoft soft card.
            DB 000H,000H,002H,010H
            DB 001H,001H,000H,000H
            DB 000H,000H
@@ -426,26 +432,36 @@ move:      ex   de,hl
            DB 028H             ; PLP
            DB 078H             ; SEI
            DB 060H             ; RTS
-; No Idea code at either 00396 or 0F396H
+; $396 - Software screen functions (Microsoft softcard compatibility)
            DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
+; $3A1 - Hardware screen functions (Microsoft softcard compatibility)
            DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
+; $3AC - Keyboard redefinition table (Microsoft softcard compatibility)           
            DB 080H,000H,000H,000H,000H,000H,000H,000H
            DB 000H,000H,000H,000H
-; Could be devices found at 03b8
-           DB 002H,000H,000H,004H,000H,000H,000H,000H
+; $3B8 - Number of disks (controllers * 2)  
+           DB 002H
+; $3B9 - Slot information (Numbers from Microsoft table)
+; 0 - Nothing
+; 1 - Unknown
+; 2 - Disk ][
+; 3 - Apple comms or CCS7710A
+; 4 - 80 colunn card or high speed serial
+; 5 - Parallel printer           
+           DB 000H,000H,004H,000H,000H,000H,000H
 ; 6502 code at 03C0
 ; Loop endlessly bouncing between Z80 code
 ; and whatever 6502 routine we want to run
            DB 02CH,083H,0C0H   ; BIT LCBANK2
            DB 02CH,083H,0C0H   ; BIT LCBANK2
-           DB 08DH,000H,0C4H   ; STA 0C400
+           DB 08DH,000H,0C4H   ; STA $C400
            DB 02CH,081H,0C0H   ; BIT ROMIN
-           DB 020H,08AH,003H   ; JSR 038A (save registers)
-           DB 020H,000H,000H   ; JSR 00000 (6502 routine to call)
+           DB 020H,08AH,003H   ; JSR $38A (save registers)
+           DB 020H,000H,000H   ; JSR $0000 (6502 routine to call)
            DB 08DH,081H,0C0H   ; STA ROMIN
            DB 078H             ; SEI
            DB 020H,04AH,0FFH   ; JSR F8ROM:SAVE
-           DB 04CH,0C0H,003H   ; JMP 03C0 ; back to Z80
+           DB 04CH,0C0H,003H   ; JMP $3C0 ; back to Z80
 ;
 ; Call into 0D400 Disk code in 6502 land
 ;
@@ -455,11 +471,10 @@ Z80_CARD:  DB 001H,0E7H        ; Address of card from Z80 side
            DB 02CH,08BH,0C0H   ; BIT LCBANK1
            DB 02CH,08BH,0C0H   ; BIT LCBANK1
            DB 0D8H             ; CLD
-           DB 04CH,000H,0D4H   ; JMP D400
+           DB 04CH,000H,0D4H   ; JMP $D400
            DB 000H,000H,080H   ; Dunno?
 page300end:
            dseg
            DS 100H
 topofstack:
            END
-
