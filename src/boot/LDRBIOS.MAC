@@ -26,7 +26,8 @@ DISK_ACTD  EQU 0F385H ; Disk active drive
 DISK_TRKH  EQU 0F386H ; Disk track high
 DISK_OP    EQU 0F388H ; Disk operation
 DISK_ERR   EQU 0F389H ; Disk Result
-DISK_ROUT  EQU 003DCH ; Disk routine to call
+DISK_ROUT  EQU 03DCH  ; Disk routine to call
+SLOT_INFO  EQU 0F3B8H ; Slot info
            cseg
 
            org 0
@@ -111,6 +112,7 @@ boot:      ld   (01C73H),sp
            exx
            ld   (0F3C7H),hl     ; put back card address
            ld   (0F3DFH),a      ; put back high byte of card
+; Copy BIOS bits that don't run from language card
            ld   a,(0E088H)      ; LC1 Bank RAM
            ld   hl,0BC00H       ; Copy from 0DC00 language card
            ld   de,0FA00H       ; 6502 destination $A00
@@ -136,66 +138,66 @@ boot:      ld   (01C73H),sp
            ld   a,(0F004H) ;boot slot?
            ld   e,a
            ld   d,000
-           ld   ix,0F3B8H
+           ld   ix,SLOT_INFO
            add  ix,de
            or   0E0H
            ld   h,a
            ld   a,0A0H
-           jr   01BF7H
-           ld   ix,0F3BFH
+           jr   L01BF7
+L01BE3:    ld   ix,SLOT_INFO+7
            ld   hl,0E700H
            ld   a,0E0H
            cp   h
-           jr   z,01C43H
+           jr   z,L01C43
            ld   a,(0F004H)
            or   0E0H
            cp   h
            ld   a,0A7H
-           ld   (01C42H),a
-           jr   z,01C3EH
-           call L1F6AH
+L01BF7:    ld   (01C42H),a
+           jr   z,L01C3E
+           call L1F6A
            xor  a
            cp   b
-           jr   z,01C0BH
+           jr   z,L1C0B
            ld   a,c
            cp   e
-           jr   nz,01C0BH
+           jr   nz,L1C0B
            ld   a,d
            cp   b
-           jr   z,01C0FH
-           ld   c,000
-           jr   01C3BH
-           ld   c,003
+           jr   z,L01C0F
+L1C0B:    ld   c,000
+           jr   L01C3B
+L01C0F:    ld   c,003
            ld   de,01838H
            call L1F7C
-           jr   z,01C3BH
+           jr   z,L01C3B
            inc  c
            ld   de,03818H
            call L1F7C
-           jr   nz,01C32H
+           jr   nz,L01C32
            ld   l,00BH
            ld   a,001
            cp   (hl)
-           jr   nz,01C3BH
+           jr   nz,L01C3B
            inc  l
            ld   a,(hl)
            and  0F0H
            or   006
            ld   c,a
-           jr   01C3BH
-           inc  c
+           jr   L01C3B
+L01C32:    inc  c
            ld   de,04848H
            call L1F7C
-           jr   nz,01C7AH
-           ld   (ix+000),c
-           dec  ix
+           jr   nz,L01C7A
+L01C3B:    ld   (ix+000),c
+L01C3E:    dec  ix
            dec  h
-           jr   01BE3H
-           ld   (0E005H),a ;Write to aux memory (48K)
+           jr   L01BE3
+L01C43:    ld   (0E005H),a ;Write to aux memory (48K)
            xor  a
            ld   (0F027H),a ;Store a zero in 6502?
            ld   de,0F300H  ;Copy 0300 to aux memory
-           ld   h,d       ;Upto 0BFF
+           ld   h,d        ;Upto 0BFF
            ld   l,e
            ld   bc,008FFH
            ldir
@@ -208,7 +210,7 @@ boot:      ld   (01C73H),sp
            call call80col
            ld   hl,06EBAH
            ld   de,05E2EH
-           call L1C75
+           call STORE_DE_TO_HL_ADDR
            ld   de,06A8AH
            ld   sp,00000
 STORE_DE_TO_HL_ADDR:
@@ -217,7 +219,8 @@ STORE_DE_TO_HL_ADDR:
            ld   (hl),d
            inc  hl
            ret
-           ORG 41FH
+L01C7A:    nop           
+           ORG 414H
 L1F14:     ld   d,h
            ld   e,l
            inc  de
@@ -226,7 +229,7 @@ L1F14:     ld   d,h
 L1F1B:     call L1F2D
            inc  hl
            push hl
-           ld   de,00202H
+           ld   de,0202H
            add  hl,de
            ex   de,hl
            pop  hl
@@ -243,7 +246,7 @@ L1F2D:     ld   (hl),0FFH
            add  hl,bc
            ex   de,hl
            call STORE_DE_TO_HL_ADDR
-           ret
+           ret       
            ORG 46AH
 L1F6A:     ret
            ORG 47CH
@@ -475,6 +478,6 @@ Z80_CARD:  DB 001H,0E7H        ; Address of card from Z80 side
            DB 000H,000H,080H   ; Dunno?
 page300end:
            dseg
-           DS 100H
+           DS 20H
 topofstack:
            END
