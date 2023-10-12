@@ -165,7 +165,7 @@ L01BF7:    ld   (01C42H),a
            ld   a,d
            cp   b
            jr   z,L01C0F
-L1C0B:    ld   c,000
+L1C0B:     ld   c,000
            jr   L01C3B
 L01C0F:    ld   c,003
            ld   de,01838H
@@ -477,7 +477,6 @@ Z80_CARD:  DB 001H,0E7H        ; Address of card from Z80 side
            DB 04CH,000H,0D4H   ; JMP $D400
            DB 000H,000H,080H   ; Dunno?
 page300end:
-           dseg
-           DS 20H
-topofstack:
+           
+topofstack EQU $+20H
            END
