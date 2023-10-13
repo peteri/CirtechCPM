@@ -10,6 +10,7 @@
 ;
 ;6502 Zero page stuff seen from Z80
 ;
+SLOTX      EQU 0F004H ; Boot slot 1..7
 ACC_6502   EQU 0F045H ; 6502 Acc
 X_6502     EQU 0F046H ; 6502 X reg
 Y_6502     EQU 0F047H ; 6502 Y reg
@@ -28,6 +29,8 @@ DISK_OP    EQU 0F388H ; Disk operation
 DISK_ERR   EQU 0F389H ; Disk Result
 DISK_ROUT  EQU 03DCH  ; Disk routine to call
 SLOT_INFO  EQU 0F3B8H ; Slot info
+
+DPH        EQU 6EA8H  ; DPH for Disk 0
            cseg
 
            org 0
@@ -118,43 +121,52 @@ boot:      ld   (01C73H),sp
            ld   de,0FA00H       ; 6502 destination $A00
            ld   bc,00200H
            ldir
+; probably setting up for DPH etc           
            ld   hl,05DBCH       ; Clear a bunch of memory
            ld   (hl),000H       ; $6DBC-$8400
            ld   de,05DBDH       ; or 5DBCH-7400H
            ld   bc,01644H
            ldir
-           ld   hl,05E20H ;No idea what we're doing here
-           ld   (01EE0H),hl
+           ld   hl,5E20H ;No idea what we're doing here
+           ld   (L1EDF+1),hl
            ld   hl,05E00H
-           ld   (01ED2H),hl
-           ld   hl,06EA8H
-           ld   (01F4DH),hl
+           ld   (L1ED1+1),hl
+           ld   hl,DPH
+           ld   (L1F4C+1),hl
            ld   a,005
            ld   hl,05E2CH
            call L1F14
            ld   a,001
            ld   hl,06A88H
            call L1F14
-           ld   a,(0F004H) ;boot slot?
+;==================================================================
+;
+; Scan slots           
+; Tricky loop code here, where the JR at the end
+; gets rewritten first time through does the boot 
+; slot, loops back to do count down from slot 7.
+;
+;==================================================================
+           ld   a,(SLOTX)       ; Get the boot slot
            ld   e,a
-           ld   d,000
-           ld   ix,SLOT_INFO
+           ld   d,0
+           ld   ix,SLOT_INFO    ; set ix to SLOT_INFO+SLOTX
            add  ix,de
-           or   0E0H
+           or   0E0H            ; Convert slot to 0Ex00H
            ld   h,a
-           ld   a,0A0H
-           jr   L01BF7
-L01BE3:    ld   ix,SLOT_INFO+7
+           ld   a,SLOT_SCAN-(SLOTJR+2) ; Patch jr to do rest of loop
+           jr   SAVE_BOOT       ; Save boot slot
+SLOT_SCAN: ld   ix,SLOT_INFO+7
            ld   hl,0E700H
-           ld   a,0E0H
+NEXT_SLOT: ld   a,0E0H          ; Slot zero?
            cp   h
-           jr   z,L01C43
-           ld   a,(0F004H)
-           or   0E0H
+           jr   z,BOOTEXIT      ; Yes go finish this boot code
+           ld   a,(SLOTX)       ; get back boot slot
+           or   0E0H            ; Set zero flag 
            cp   h
-           ld   a,0A7H
-L01BF7:    ld   (01C42H),a
-           jr   z,L01C3E
+           ld   a,NEXT_SLOT-(SLOTJR+2)
+SAVE_BOOT: ld   (SLOTJR+1),a    ; Patch loop
+           jr   z,SKIPBOOT      ; Already done boot slot? Skip it.
            call L1F6A
            xor  a
            cp   b
@@ -166,11 +178,11 @@ L01BF7:    ld   (01C42H),a
            cp   b
            jr   z,L01C0F
 L1C0B:     ld   c,000
-           jr   L1C3B
+           jr   SAVECARD
 L01C0F:    ld   c,003
            ld   de,01838H
            call L1F7C
-           jr   z,L1C3B
+           jr   z,SAVECARD
            inc  c
            ld   de,03818H
            call L1F7C
@@ -178,22 +190,22 @@ L01C0F:    ld   c,003
            ld   l,00BH
            ld   a,001
            cp   (hl)
-           jr   nz,L1C3B
+           jr   nz,SAVECARD
            inc  l
            ld   a,(hl)
            and  0F0H
            or   006
            ld   c,a
-           jr   L1C3B
+           jr   SAVECARD
 L01C32:    inc  c
            ld   de,04848H
            call L1F7C
            jr   nz,L01C7A
-L1C3B:    ld   (ix+000),c
-L01C3E:    dec  ix
-           dec  h
-           jr   L01BE3
-L01C43:    ld   (0E005H),a ;Write to aux memory (48K)
+SAVECARD:  ld   (ix+0),c
+SKIPBOOT:  dec  ix              ; Decrement SLOT_INFO pointer
+           dec  h               ; Decrement current slot
+SLOTJR:    jr   SLOT_SCAN       ; Gets overwritten
+BOOTEXIT:  ld   (0E005H),a ;Write to aux memory (48K)
            xor  a
            ld   (0F027H),a ;Store a zero in 6502?
            ld   de,0F300H  ;Copy 0300 to aux memory
@@ -210,10 +222,10 @@ L01C43:    ld   (0E005H),a ;Write to aux memory (48K)
            call call80col
            ld   hl,06EBAH
            ld   de,05E2EH
-           call STORE_DE_TO_HL_ADDR
+           call ST_DE_TO_HL
            ld   de,06A8AH
            ld   sp,00000
-STORE_DE_TO_HL_ADDR:
+ST_DE_TO_HL:
            ld   (hl),e
            inc  hl
            ld   (hl),d
@@ -289,7 +301,7 @@ L1CFE: ld   l,07H
        or   a
        jr   z,L1D09
 L1D04: ld   c,01H
-       jp   L1C3B
+       jp   SAVECARD
 L1D09: ld   l,0FBH
        ld   a,(hl)
        cp   0A5H
@@ -341,7 +353,7 @@ L1D5B: ld   l,c
        call L1D77
 L1D72: pop  hl
        ld   c,l
-       jp   L1C3B
+       jp   SAVECARD
 L1D77: ld   h,000H
        ld   l,0FFH
        ld   l,(hl)
@@ -463,9 +475,9 @@ L1E48: push hl
        ld   (hl),000H
        inc  hl
        pop  de
-       call STORE_DE_TO_HL_ADDR
+       call ST_DE_TO_HL
        ld   de,00000H
-       call STORE_DE_TO_HL_ADDR
+       call ST_DE_TO_HL
        ld   (hl),000H
        inc  hl
        inc  hl
@@ -494,7 +506,7 @@ L1E75: ld   hl,(01F4DH)
        inc  hl
        push iy
        pop  de
-       call STORE_DE_TO_HL_ADDR
+       call ST_DE_TO_HL
        ld   c,(iy+00bH)
        ld   b,(iy+00cH)
        bit  7,b
@@ -517,20 +529,20 @@ L1EAB: ld   c,(iy+005H)
        call L1F4C
        ret  c
        ld   de,05E2CH
-       call STORE_DE_TO_HL_ADDR
+       call ST_DE_TO_HL
        ld   de,06A88H
-       call STORE_DE_TO_HL_ADDR
+       call ST_DE_TO_HL
        ld   de,0FFFFH
-       call STORE_DE_TO_HL_ADDR
-       ld   hl,05E00H
+       call ST_DE_TO_HL
+L1ED1:     ld   hl,05E00H
        ld   de,0
-       call STORE_DE_TO_HL_ADDR
+       call ST_DE_TO_HL
        ld   (01ED2H),hl
        ld   a,00H
-       ld   hl,05E20H
+L1EDF:     ld   hl,5E20H
        ld   (hl),a
        inc  hl
-       ld   (01EE0H),hl
+       ld   (L1EDF+1),hl
        or   a
        ret
        jr   nz,L1EEB
@@ -562,7 +574,7 @@ L1F14:     ld   d,h
            ld   e,l
            inc  de
            inc  de
-           call STORE_DE_TO_HL_ADDR
+           call ST_DE_TO_HL
 L1F1B:     call L1F2D
            inc  hl
            push hl
@@ -570,7 +582,7 @@ L1F1B:     call L1F2D
            add  hl,de
            ex   de,hl
            pop  hl
-           call STORE_DE_TO_HL_ADDR
+           call ST_DE_TO_HL
            ex   de,hl
            dec  a
            jr   nz,L1F1B
@@ -582,7 +594,7 @@ L1F2D:     ld   (hl),0FFH
            ld   bc,00005H
            add  hl,bc
            ex   de,hl
-           call STORE_DE_TO_HL_ADDR
+           call ST_DE_TO_HL
            ret
 L1F3E:     ld   a,h
            ld   (01D78H),a
@@ -593,7 +605,7 @@ L1F3E:     ld   a,h
            rrca
            ld   (01EDEH),a
            ret
-L1F4C:     ld   de,06EA8H
+L1F4C:     ld   de,DPH
            ld   (hl),e
            inc  hl
            ld   (hl),d
@@ -708,7 +720,7 @@ sectran:   ld   h,b            ;Copy BC to HL as we don't translate
 ;==================================================================
 seldsk:    ld   a,(5E20H)      ;presumably boot drive
            ld   (DISK_DRV),a   ;save it for our caller
-           ld   hl,6EA8H       ;return back boot DPH
+           ld   hl,DPH       ;return back boot DPH
            ret
 ;==================================================================
 ; BIOS Func 8 - HOME
