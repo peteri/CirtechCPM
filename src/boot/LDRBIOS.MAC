@@ -297,7 +297,7 @@ L1F7C:     ld   l,005H
            ld   a,(hl)
            cp   e
            ret
- L1F86:    ld   (01FABH),a
+L1F86:     ld   (01FABH),a
            ld   a,h
            ld   (01FB2H),a
            ld   a,l
