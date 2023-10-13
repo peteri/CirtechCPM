@@ -166,11 +166,11 @@ L01BF7:    ld   (01C42H),a
            cp   b
            jr   z,L01C0F
 L1C0B:     ld   c,000
-           jr   L01C3B
+           jr   L1C3B
 L01C0F:    ld   c,003
            ld   de,01838H
            call L1F7C
-           jr   z,L01C3B
+           jr   z,L1C3B
            inc  c
            ld   de,03818H
            call L1F7C
@@ -178,18 +178,18 @@ L01C0F:    ld   c,003
            ld   l,00BH
            ld   a,001
            cp   (hl)
-           jr   nz,L01C3B
+           jr   nz,L1C3B
            inc  l
            ld   a,(hl)
            and  0F0H
            or   006
            ld   c,a
-           jr   L01C3B
+           jr   L1C3B
 L01C32:    inc  c
            ld   de,04848H
            call L1F7C
            jr   nz,L01C7A
-L01C3B:    ld   (ix+000),c
+L1C3B:    ld   (ix+000),c
 L01C3E:    dec  ix
            dec  h
            jr   L01BE3
@@ -219,8 +219,345 @@ STORE_DE_TO_HL_ADDR:
            ld   (hl),d
            inc  hl
            ret
-L01C7A:    nop           
-           ORG 414H
+L01C7A:    ld   c,07H
+       ld   l,05H
+       ld   a,(hl)
+       cp   03H
+       jp   nz,L1D04
+       ld   de,2000H
+       ld   l,01H
+       ld   a,(hl)
+       cp   d
+       jr   nz,L1D04
+       ld   l,03H
+       call L1F83
+       jr   nz,L1D04
+       ld   l,0FFH
+       ld   a,(hl)
+       or   a
+       jr   nz,L1CD6
+       ld   l,02H
+       push hl
+       call L1F3E
+       ld   iy,05DBCH
+       ld   l,04H
+L1CA6: ld   a,(iy+02H)
+       or   a
+       jr   z,L1CBB
+       cp   03H
+       jr   z,L1CC6
+       ld   de,0011H
+       add  iy,de
+       dec  l
+       jr   nz,L1CA6
+L1CB8: pop  hl
+       jr   L1D04
+L1CBB: push iy
+       pop  de
+       ld   hl,01EE9H
+       ld   bc,00011H
+       ldir
+L1CC6: call L1E75
+       jr   c,L1CB8
+       ld   hl,1EDEH
+       set  7,(hl)
+       call L1E75
+       jp   L1D72
+L1CD6: cp   0FAH
+       jr   nc,L1D04
+       add  a,03H
+       ld   (1FA9H),a
+       ld   a,h
+       sub  20H
+       ld   (1FAAH),a
+       dec  l
+       ld   a,(hl)
+       ld   b,a
+       and  07H
+       cp   07H
+       jr   nz,L1D04
+       ld   l,0FBH
+       bit  0,(hl)
+       jr   nz,L1CFE
+       inc  c
+       bit  7,b
+       jp   nz,L1D5B
+       inc  c
+       jp   L1D5B
+L1CFE: ld   l,07H
+       ld   a,(hl)
+       or   a
+       jr   z,L1D09
+L1D04: ld   c,01H
+       jp   L1C3B
+L1D09: ld   l,0FBH
+       ld   a,(hl)
+       cp   0A5H
+       exx
+       jr   z,L1D4D
+       ld   a,008H
+       ld   hl,03202H
+       ld   c,000H
+       call L1F86
+       ld   hl,0F800H
+       ld   de,02200H
+       ld   b,010H
+L1D23: ld   a,(de)
+       cp   (hl)
+       jr   nz,L1D2D
+       inc  l
+       inc  e
+       djnz L1D23
+       jr   L1D5A
+L1D2D: call L1EFA
+       ld   a,0E5H
+       ld   hl,02200H
+       ld   (hl),a
+       ld   de,02201H
+       ld   bc,01FFFH
+       ldir
+       ld   hl,03220H
+       ld   c,030H
+       call L1F89
+       ld   c,050H
+       call L1F91
+       jr   L1D5A
+L1D4D: ld   hl,(01FA9H)
+       ld   a,l
+       sub  00DH
+       ld   l,a
+       call call6502
+       call L1EFA
+L1D5A: exx
+L1D5B: ld   l,c
+       push hl
+       ld   a,c
+       ld   (01E07H),a
+       call L1F3E
+       call L1D77
+       jp   c,L1CB8
+       ld   hl,01EDEH
+       set  7,(hl)
+       call L1D77
+L1D72: pop  hl
+       ld   c,l
+       jp   L1C3B
+L1D77: ld   h,000H
+       ld   l,0FFH
+       ld   l,(hl)
+       res  5,h
+       ld   (0F3D0H),hl
+       ld   a,(01EDEH)
+       ld   (0F043H),a
+       xor  a
+       ld   (0F042H),a
+       ld   hl,(0F3DEH)
+       ld   (hl),a
+       ld   a,(0F045H)
+       cp   028H
+       ld   hl,(0F046H)
+       scf
+       ret  z
+       ld   de,00018H
+       or   a
+       sbc  hl,de
+       ex   de,hl
+       srl  d
+       rr   e
+       srl  d
+       rr   e
+       ld   a,d
+       cp   010H
+       jr   c,L1DB5
+       bit  5,a
+       ld   a,010H
+       jr   z,L1DB5
+       set  2,a
+L1DB5: srl  a
+       srl  a
+       srl  a
+       push af
+       inc  a
+       ld   b,a
+L1DBE: srl  d
+       rr   e
+       djnz L1DBE
+       dec  de
+       ld   (01E1CH),de
+       ld   l,a
+       add  a,004H
+       ld   (01E1FH),a
+       ld   b,a
+       ld   a,001H
+L1DD2: sla  a
+       djnz L1DD2
+       dec  a
+       ld   (01E53H),a
+       xor  a
+       cp   d
+       jr   nz,L1DDF
+       inc  a
+L1DDF: ld   b,l
+       ld   hl,00040H
+L1DE3: scf
+       rl   a
+       add  hl,hl
+       djnz L1DE3
+       ld   (01E56H),a
+       ld   b,080H
+       pop  af
+       jr   nc,L1DF5
+       add  hl,hl
+       scf
+       rr   b
+L1DF5: dec  hl
+       ld   (01E5DH),hl
+       ld   a,b
+       ld   (01E63H),a
+       inc  hl
+       srl  h
+       rr   l
+       srl  h
+       rr   l
+       ld   a,000H
+       cp   008H
+       jr   z,L1E0F
+       ld   hl,08000H
+L1E0F: ld   a,l
+       ld   (01E67H),a
+       ld   a,h
+       ld   (01E6AH),a
+       ld   iy,05DBCH
+       ld   hl,00000H
+       ld   c,000H
+       ld   b,004H
+L1E22: ld   a,(iy+002H)
+       or   a
+       jr   z,L1E48
+       cp   c
+       jr   nz,L1E3F
+       ld   a,(iy+005H)
+       cp   l
+       jr   nz,L1E3F
+       ld   a,(iy+006H)
+       cp   h
+       jr   nz,L1E3F
+       ld   a,(01E6AH)
+       cp   (iy+00cH)
+       jr   z,L1E75
+L1E3F: ld   de,00011H
+       add  iy,de
+       djnz L1E22
+       scf
+       ret
+L1E48: push hl
+       push iy
+       pop  hl
+       ld   (hl),020H
+       inc  hl
+       inc  hl
+       ld   (hl),c
+       inc  hl
+       ld   (hl),000H
+       inc  hl
+       ld   (hl),000H
+       inc  hl
+       pop  de
+       call STORE_DE_TO_HL_ADDR
+       ld   de,00000H
+       call STORE_DE_TO_HL_ADDR
+       ld   (hl),000H
+       inc  hl
+       inc  hl
+       ld   (hl),000H
+       inc  hl
+       ld   (hl),000H
+       inc  hl
+       ld   (hl),003H
+       inc  hl
+       inc  hl
+       ld   (hl),002H
+       inc  hl
+       ld   (hl),003H
+L1E75: ld   hl,(01F4DH)
+       ld   (01ED5H),hl
+       push hl
+       ld   de,00019H
+       add  hl,de
+       call L1F61
+       ld   (01F4DH),hl
+       pop  hl
+       ret  c
+       ld   de,0000BH
+       add  hl,de
+       ld   (hl),0FFH
+       inc  hl
+       push iy
+       pop  de
+       call STORE_DE_TO_HL_ADDR
+       ld   c,(iy+00bH)
+       ld   b,(iy+00cH)
+       bit  7,b
+       jr   z,L1EA7
+       ld   (hl),000
+       inc  hl
+       ld   (hl),000
+       inc  hl
+       jr   L1EAB
+L1EA7: call L1F4C
+       ret  c
+L1EAB: ld   c,(iy+005H)
+       ld   b,(iy+006H)
+       inc  bc
+       srl  b
+       rr   c
+       srl  b
+       rr   c
+       inc  bc
+       call L1F4C
+       ret  c
+       ld   de,05E2CH
+       call STORE_DE_TO_HL_ADDR
+       ld   de,06A88H
+       call STORE_DE_TO_HL_ADDR
+       ld   de,0FFFFH
+       call STORE_DE_TO_HL_ADDR
+       ld   hl,05E00H
+       ld   de,0
+       call STORE_DE_TO_HL_ADDR
+       ld   (01ED2H),hl
+       ld   a,00H
+       ld   hl,05E20H
+       ld   (hl),a
+       inc  hl
+       ld   (01EE0H),hl
+       or   a
+       ret
+       jr   nz,L1EEB
+L1EEB: inc  bc
+       rlca
+       nop
+       adc  a,e
+       nop
+       ccf
+       nop
+       ret  nz
+       nop
+       djnz L1EF6
+L1EF6: inc  bc
+       nop
+DB   01H,01H ;ld   bc,03E01H
+L1EFA: DB   3EH
+       add  hl,bc
+       ld   c,000H
+       ld   hl,00802H
+       call L1F86
+       ld   c,002H
+       ld   hl,0D00EH
+       call L1F89
+       ld   c,010H
+       ld   hl,01120H
+       jp   L1F89
 L1F14:     ld   d,h
            ld   e,l
            inc  de
@@ -294,15 +631,15 @@ L1F7C:     ld   l,005H
            cp   d
            ret  nz
            ld   l,007H
-           ld   a,(hl)
+L1F83:     ld   a,(hl)
            cp   e
            ret
 L1F86:     ld   (01FABH),a
-           ld   a,h
+L1F89:     ld   a,h
            ld   (01FB2H),a
            ld   a,l
            ld   (01FB4H),a
-           ld   a,c
+L1F91:     ld   a,c
            ld   (01FB6H),a
            ld   hl,XXX6502+01000H
 ;==================================================================
