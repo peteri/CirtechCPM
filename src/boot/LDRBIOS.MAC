@@ -177,29 +177,29 @@ SAVE_BOOT: ld   (SLOTJR+1),a    ; Patch loop
            ld   a,d
            cp   b
            jr   z,L01C0F
-L1C0B:     ld   c,000
+L1C0B:     ld   c,0
            jr   SAVECARD
-L01C0F:    ld   c,003
+L01C0F:    ld   c,3
            ld   de,01838H
-           call L1F7C
+           call CHECKCARDSIG
            jr   z,SAVECARD
            inc  c
            ld   de,03818H
-           call L1F7C
+           call CHECKCARDSIG
            jr   nz,L01C32
-           ld   l,00BH
-           ld   a,001
+           ld   l,0BH
+           ld   a,1
            cp   (hl)
            jr   nz,SAVECARD
            inc  l
            ld   a,(hl)
            and  0F0H
-           or   006
+           or   6H
            ld   c,a
            jr   SAVECARD
-L01C32:    inc  c
-           ld   de,04848H
-           call L1F7C
+L01C32:    inc  c              ; C=5
+           ld   de,04848H      ; Original Apple parallel card 
+           call CHECKCARDSIG
            jr   nz,L01C7A
 SAVECARD:  ld   (ix+0),c
 SKIPBOOT:  dec  ix              ; Decrement SLOT_INFO pointer
@@ -232,30 +232,30 @@ ST_DE_TO_HL:
            inc  hl
            ret
 L01C7A:    ld   c,07H
-       ld   l,05H
-       ld   a,(hl)
-       cp   03H
-       jp   nz,L1D04
-       ld   de,2000H
-       ld   l,01H
-       ld   a,(hl)
-       cp   d
-       jr   nz,L1D04
-       ld   l,03H
-       call L1F83
-       jr   nz,L1D04
-       ld   l,0FFH
-       ld   a,(hl)
-       or   a
-       jr   nz,L1CD6
-       ld   l,02H
-       push hl
-       call L1F3E
-       ld   iy,05DBCH
-       ld   l,04H
-L1CA6: ld   a,(iy+02H)
-       or   a
-       jr   z,L1CBB
+           ld   l,05H
+           ld   a,(hl)
+           cp   03H
+           jp   nz,L1D04
+           ld   de,2000H
+           ld   l,01H
+           ld   a,(hl)
+           cp   d
+           jr   nz,L1D04
+           ld   l,03H
+           call L1F83
+           jr   nz,L1D04
+           ld   l,0FFH
+           ld   a,(hl)
+           or   a
+           jr   nz,L1CD6
+           ld   l,02H
+           push hl
+           call L1F3E
+           ld   iy,05DBCH
+           ld   l,04H
+L1CA6:     ld   a,(iy+02H)
+           or   a
+        jr   z,L1CBB
        cp   03H
        jr   z,L1CC6
        ld   de,0011H
@@ -638,11 +638,11 @@ L1F77:     inc  l
            jr   nz,L1F73
            ld   c,a
            ret
-L1F7C:     ld   l,005H
+CHECKCARDSIG:     ld   l,5H
            ld   a,(hl)
            cp   d
            ret  nz
-           ld   l,007H
+           ld   l,7H
 L1F83:     ld   a,(hl)
            cp   e
            ret
