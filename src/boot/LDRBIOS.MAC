@@ -99,7 +99,7 @@ DPH            EQU 6EA8H               ; DPH for Disk 0
 boot:          ld   (01C73H),sp
                ld   sp,topofstack
                ld   hl,0E00H           ; Copy message for the Cirtech
-               ld   de,0FC00H          ; toolkeys into 00C00
+               ld   de,0FC00H          ; toolkeys into $C00
                ld   bc,0300H
                ldir
                ld   hl,0300H           ; Setup  vectors
@@ -197,14 +197,14 @@ CHKCARD:       ld   c,3                ; Apple comms or
                jr   nz,SAVECARD        ; Not pascal but save as card type 4
                inc  l               
                ld   a,(hl)             ; Get device signature type
-               and  0F0H               ; Keep high nibble
+               and  0F0H               ; Keep high nibble (class of card)
                or   006H               ; Set low nibble to six  
                ld   c,a
                jr   SAVECARD           ; and save
 CHKPARAL:      inc  c                  ; C=5
                ld   de,04848H          ; Original Apple parallel card? 
                call CHECKCARDSIG
-               jr   nz,CHKSMART
+               jr   nz,CHKSLDRIVE
 SAVECARD:      ld   (ix+0),c
 SKIPBOOT:      dec  ix                 ; Decrement SLOT_INFO pointer
                dec  h                  ; Decrement current slot
@@ -234,22 +234,22 @@ ST_DE_TO_HL:   ld   (hl),e
                ld   (hl),d
                inc  hl
                ret
-CHKSMART:      ld   c,07H              ; Smart port
+CHKSLDRIVE:    ld   c,07H              ; Check for a drive
                ld   l,05H              ; Check $Cn05 for
                ld   a,(hl)         
                cp   03H                ; $03
-               jp   nz,CARDUNK         ; Not a Smart port
+               jp   nz,CARDUNK         ; Not a disk drive
                ld   de,2000H           ; Check more signature bytes
                ld   l,01H              ; Check $Cn01
                ld   a,(hl)         
                cp   d                  ; $20
-               jr   nz,CARDUNK         ; Not a smart port
-               ld   l,03H              ;
-               call CPHLTOE            ; Check if (HL) is E
-               jr   nz,CARDUNK         ; Not a smart port
-               ld   l,0FFH
+               jr   nz,CARDUNK         ; Not a disk drive
+               ld   l,03H              ; Check $Cn03 for zero 
+               call CPHLTOE            ; Check if (HL) is E ($00)
+               jr   nz,CARDUNK         ; Not a disk drive
+               ld   l,0FFH             ; Check $CnFF
                ld   a,(hl)
-               or   a
+               or   a                  ; Zero means Disk ][
                jr   nz,L1CD6
                ld   l,02H
                push hl
@@ -269,7 +269,7 @@ L1CB8:         pop  hl
                jr   CARDUNK
 L1CBB:         push iy
                pop  de
-               ld   hl,01EE9H
+               ld   hl,DISKIIDPH
                ld   bc,00011H
                ldir
 L1CC6:         call L1E75
@@ -278,23 +278,23 @@ L1CC6:         call L1E75
                set  7,(hl)
                call L1E75
                jp   L1D72
-L1CD6:         cp   0FAH
-               jr   nc,CARDUNK
-               add  a,03H
-               ld   (1FA9H),a
-               ld   a,h
+L1CD6:         cp   0FAH               ; Jump out of range
+               jr   nc,CARDUNK         ; Yeah unknown card
+               add  a,03H              ; Add three to get Smart port
+               ld   (JSR6502+1),a      ; Save it away
+               ld   a,h                ; Convert 0En00H to $Cn00
                sub  20H
-               ld   (1FAAH),a
-               dec  l
-               ld   a,(hl)
-               ld   b,a
-               and  07H
-               cp   07H
-               jr   nz,CARDUNK
-               ld   l,0FBH
-               bit  0,(hl)
+               ld   (JSR6502+2),a
+               dec  l                  ; get byte at $cnFE
+               ld   a,(hl)             
+               ld   b,a                ;
+               and  07H                ; Mask off Prodos status bits
+               cp   07H                ; Check for Status/Read/Write
+               jr   nz,CARDUNK         ; Can't read / write not for us
+               ld   l,0FBH             ; Load smart port ID byte at $CnFB
+               bit  0,(hl)             ; 
                jr   nz,L1CFE
-               inc  c
+               inc  c                  ;Set c to 8
                bit  7,b
                jp   nz,L1D5B
                inc  c
@@ -540,30 +540,27 @@ L1EAB:         ld   c,(iy+005H)
 L1ED1:         ld   hl,05E00H
                ld   de,0
                call ST_DE_TO_HL
-               ld   (01ED2H),hl
-               ld   a,00H
+               ld   (L1ED1+1),hl
+L1EDD:         ld   a,00H
 L1EDF:         ld   hl,5E20H
                ld   (hl),a
                inc  hl
                ld   (L1EDF+1),hl
                or   a
                ret
-               jr   nz,L1EEB
-L1EEB:         inc  bc
-               rlca
-               nop
-               adc  a,e
-               nop
-               ccf
-               nop
-               ret  nz
-               nop
-               djnz L1EF6
-L1EF6:         inc  bc
-               nop
-               DB   01H,01H ;ld   bc,03E01H
-L1EFA:         DB   3EH
-               add  hl,bc
+DISKIIDPH:     DW 0020H                ; SPT number of 128 records per track
+               DB 03                   ; BLS Block shift factor (1K blocks)
+               DB 07                   ; BLM Block mask (1K blocks)
+               DB 0                    ; EXM extant mask
+               DW (35*4)-1             ; DSM Blocks on drive
+               DW 63                   ; DRM Number of directory entries
+               DB 0C0H                 ; AL0 (Two reserved blocks for directory 2K)
+               DB 00H                  ; AL1
+               DW 0010H                ; CKS size of directory check vector
+               DW 0003H                ; OFF 3 reserved tracks
+               DB 01H                  ; PSH Physical Shift (256 byte sectors)
+               DB 01H                  ; PHM Physical Mask  (256 byte sectors) 
+L1EFA:         ld   a,09H
                ld   c,000H
                ld   hl,00802H
                call L1F86
@@ -590,23 +587,23 @@ L1F1B:         call L1F2D
                dec  a
                jr   nz,L1F1B
 L1F2D:         ld   (hl),0FFH
-               ld   de,0000AH
+               ld   de,000AH
                add  hl,de
                push hl
                pop  de
-               ld   bc,00005H
+               ld   bc,0005H
                add  hl,bc
                ex   de,hl
                call ST_DE_TO_HL
                ret
 L1F3E:         ld   a,h
-               ld   (01D78H),a
+               ld   (L1D77+1),a
                and  0FH
                rrca
                rrca
                rrca
                rrca
-               ld   (01EDEH),a
+               ld   (L1EDD+1),a
                ret
 L1F4C:         ld   de,DPH
                ld   (hl),e
@@ -683,7 +680,7 @@ call6502:      ld   a,04H              ;Set 6502 flags
                ret
 ; Looks like 6502 code at 2FA5
 XXX6502:       DB   0ADH,088H,0C0H     ;LDA 0C088 ?
-               DB   020H,000H,000H     ;JSR 00000
+JSR6502:       DB   020H,000H,000H     ;JSR 00000
 ; Possibly back to Z80 code
                add hl,bc               ;$1FAB?
                xor a
@@ -868,7 +865,7 @@ move:          ex   de,hl
 ; 3 - Apple comms or CCS7710A
 ; 4 - 80 colunn card or high speed serial
 ; 5 - Parallel printer 
-; 6 - Pascal card (hi nibble comes from card)
+; 6 - Pascal card (hi nibble comes from card with type)
 ; 7 - Smart drive
                DB 000H,000H,004H,000H,000H,000H,000H
 ; 6502 code at 03C0
