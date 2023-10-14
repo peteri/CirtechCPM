@@ -625,7 +625,8 @@ L1F61:         ex   de,hl
                sbc  hl,de
                ex   de,hl
                ret
-; Read ROM from a slot and sum it up. 
+; Reads the ROM from a slot and sum it up.
+; Does the read twice to check for randomness. 
 ; Entry       
 ;      hl = 0En00H, slot
 ; Exit de = sum of bytes between 0En00H an 0EnFFH

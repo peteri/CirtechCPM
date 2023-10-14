@@ -1010,7 +1010,7 @@
 "3113":"Possibly serial card",
 "3117":"High speed serial",
 "3121":"Parallel printer",
-"3125":"Dunno Softcard manual is silent"},
+"3125":"Pascal based card"},
 
 "LongComments":{
 "-2147483647":{
@@ -2149,6 +2149,41 @@
 "Value":54784,
 "Source":"User",
 "Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3339":{
+"Label":"ROMSLOT",
+"Value":2827,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3350":{
+"Label":"READROMSLOT",
+"Value":2838,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3237":{
+"Label":"CARD3",
+"Value":2725,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3217":{
+"Label":"CARD4",
+"Value":2705,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3214":{
+"Label":"CARDRETFF",
+"Value":2702,
+"Source":"User",
+"Type":"GlobalAddr",
 "LabelAnno":"None"}},
 
 "OperandFormats":{
@@ -2984,6 +3019,14 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"LCBANK1",
+"Part":"Low"}},
+
+"3344":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"READROMSLOT",
 "Part":"Low"}}},
 
 "LvTables":{
