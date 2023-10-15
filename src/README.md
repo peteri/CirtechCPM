@@ -19,3 +19,6 @@ There are a few more items to be added but most of the code is now understood:
 | 1   | 0-C     | `$1100` | CCP.COM |
 | 1   | D-F     | `$1E00` | Cirtech toolkit strings |
 | 2   | 0-F     | `$2100` | CPMLDR.COM - CP/M loader loaded |
+
+## cpm3bios
+`cmp3bios` contains the various SPR files

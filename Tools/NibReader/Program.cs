@@ -1,7 +1,11 @@
-﻿namespace NibReader;
+﻿using System.Runtime.CompilerServices;
+
+namespace NibReader;
 class Program
 {
     static int[] prodosSectorMap = { 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15 };
+    static int[] cpmSectorMap = { 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13 };
+
 
     static void Main(string[] args)
     {
@@ -21,6 +25,8 @@ class Program
             var CpmLdr = CreateTrackSectors(2, 0, 16);
             SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
             // Now do the CPM bits
+            var CpmDirectory = CreateTrackSectors(3, 0, 8);
+            var cpmDir = ReadSectors(tracks, CpmDirectory, cpmSectorMap);
             
             // Strip off high bits and display the Toolkey messages
             DumpToolkitMessages();
@@ -43,7 +49,7 @@ class Program
             }
             else
             {
-                if (((i - 42 * 5) % 38)== 0)
+                if (((i - 42 * 5) % 38) == 0)
                     Console.WriteLine();
             }
         }
@@ -67,6 +73,27 @@ class Program
         return sectors;
     }
 
+    private static byte[] ReadSectors(
+        List<NibSector>[] nibTracks,
+        IEnumerable<(int sector, int track)> trackSectors,
+        int[] sectorMap)
+    {
+        using (var stream = new MemoryStream(0x8000))
+        {
+            using (var writer = new BinaryWriter(stream))
+            {
+                foreach (var ts in trackSectors)
+                {
+                    var mappedSector = sectorMap[ts.sector];
+                    Console.Write("(T:{0:X2} S:{1:X} M:{2:X}) ", ts.track, ts.sector, mappedSector);
+                    var sector = nibTracks[ts.track].Where(s => s.Header.Sector == mappedSector).First();
+                    writer.Write(sector.Data.Bytes);
+                }
+            }
+            return stream.ToArray();
+        }
+    }
+
     private static void SaveSectors(
         string filename,
         List<NibSector>[] nibTracks,
@@ -78,13 +105,7 @@ class Program
         {
             using (var writer = new BinaryWriter(stream))
             {
-                foreach (var ts in trackSectors)
-                {
-                    var mappedSector = sectorMap[ts.sector];
-                    Console.Write("(T:{0:X2} S:{1:X} M:{2:X}) ", ts.track, ts.sector, mappedSector);
-                    var sector = nibTracks[ts.track].Where(s => s.Header.Sector == mappedSector).First();
-                    writer.Write(sector.Data.Bytes);
-                }
+                writer.Write(ReadSectors(nibTracks, trackSectors, sectorMap));
             }
         }
         Console.WriteLine(" Done.");
