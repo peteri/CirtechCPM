@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Tools/NibReader/bin/Debug/net6.0/NibReader.dll",
+            "program": "${workspaceFolder}/Tools/NibReader/bin/Debug/net8.0/NibReader.dll",
             "args": ["${workspaceFolder}/DiskImages/BlankBootableCPM3.nib"],
             "cwd": "${workspaceFolder}/Tools/NibReader",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

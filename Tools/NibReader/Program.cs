@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 
 namespace NibReader;
 class Program
@@ -38,40 +39,75 @@ class Program
         return MemoryExtensions.SequenceEqual(name.AsSpan(), dirEntry);
     }
 
-    private static void SaveCpmFile(string filename, byte[] cpmDir, List<NibSector>[] tracks, int[] cpmSectorMap)
+    private static void SaveCpmFile(string filename, byte[] cpmDir, List<NibSector>[] nibTracks, int[] sectorMap)
     {
-        List<int> blocks = new();
-        int currentExtent = 0;
-        int lastBlockSectors = 0;
-        byte[] name =
+        var cpmSectors = GetCpmSectors(filename, cpmDir);
+        using (var stream = File.Open(filename, FileMode.Create))
+        {
+            using (var writer = new BinaryWriter(stream))
             {
-                0x20,0x20,0x20,0x20, 0x20,0x20,0x20,0x20,
-                0x20,0x20,0x20
-            };
+                foreach (int cpmSector in cpmSectors)
+                {
+                    int track = cpmSector / 32 + 3;
+                    int sector128 = cpmSector % 32;
+                    int sector = sectorMap[sector128 / 2];
+                    var dataOffs = (sector128 & 0x01) == 0x01 ? 0x80 : 00;
+
+                    var sect = nibTracks[track].Where(s => s.Header.Sector == sector).First();
+                    writer.Write(sect.Data.Bytes.AsSpan(dataOffs, 128));
+                }
+            }
+        }
+    }
+
+    // This only works for a 143K apple ][ disk.
+    // File name must be 8.3
+    // Converts 1K disk blocks in CP/M directory into
+    // 128 byte CP/M sectors 
+    // Doesn't deal with wrap around > 35 tracks
+    private static IEnumerable<int> GetCpmSectors(string filename, byte[] cpmDir)
+    {
+        List<int> sectors = new();
+        int currentExtent = 0;
+        byte[] name = [0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20];
         // Copy file name into the name.
         int i = 0;
         foreach (var c in filename)
-        {
-            if (c == '.')
-                i = 8;
-            else
-                name[i++] = (byte)c;
-        }
+            if (c == '.') i = 8; else name[i++] = (byte)c;
+
         // Scan the directory looking for our file bits
-        for (int x = 0; x < 64; x++)
+        bool scanAgain = true;   // If we found some extents, then keep scanning
+        while (scanAgain)        // as we the extents might be out of order.
         {
-            int currentEntryOffs = x * 32;
-            if (cpmDir[currentEntryOffs] == 0 && // User area 0
-                NameEquals(name, cpmDir.AsSpan(currentEntryOffs + 1, 11)) &&
-                cpmDir[currentEntryOffs + 13] == currentExtent)
+            for (int x = 0; x < 64; x++)
             {
-                currentExtent++;
-                lastBlockSectors = cpmDir[currentEntryOffs + 15];
-                for (int b = 16; b < 32; b++)
-                    if (cpmDir[currentEntryOffs + b] != 0) blocks.Add(b);
+                scanAgain = false;  // We might have done everything
+                int currentEntryOffs = x * 32;
+                if (cpmDir[currentEntryOffs] == 0 && // User area 0
+                    NameEquals(name, cpmDir.AsSpan(currentEntryOffs + 1, 11)) &&
+                    cpmDir[currentEntryOffs + 12] == currentExtent)
+                {
+                    scanAgain = true; // Force a rescan.
+                    currentExtent++;
+                    int sectorCount = cpmDir[currentEntryOffs + 15];
+                    for (int b = 16; b < 32; b++)
+                    {
+                        int block = cpmDir[currentEntryOffs + b];
+                        if (block != 0)
+                        {
+                            int sectOffs = 0;
+                            while ((sectorCount > 0) && (sectOffs != 8))
+                            {
+                                sectors.Add(block * 8 + sectOffs);
+                                sectorCount--;
+                                sectOffs++;
+                            }
+                        }
+                    }
+                }
             }
         }
-        
+        return sectors;
     }
 
     private static void DumpToolkitMessages()
