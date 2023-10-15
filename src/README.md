@@ -10,7 +10,8 @@ NTVCM from https://github.com/davidly/ntvcm has been used to run the CP/M binari
 ## boot
 
 `boot` contains code for the boot tracks, currently contains code for the `LDRBIOS.REL` which gets linked with `CPMLDR.REL` from DRI.
-There are a few more items to be added but most of the code is now understood:
+There are a few more items to be added but most of the code is now understood.
+*Note* the sectors on the first three tracks are in ProDOS sector order.
 
 |Track| Sectors | 6502 load address | Code |
 |-----|---------|-------------------|------|
@@ -21,4 +22,5 @@ There are a few more items to be added but most of the code is now understood:
 | 2   | 0-F     | `$2100` | CPMLDR.COM - CP/M loader loaded |
 
 ## cpm3bios
-`cmp3bios` contains the various SPR files
+
+`cmp3bios` contains the source code to the main BIOS (or at least will do) along with the SPR files to build CPM3.SYS.

@@ -27,10 +27,51 @@ class Program
             // Now do the CPM bits
             var CpmDirectory = CreateTrackSectors(3, 0, 8);
             var cpmDir = ReadSectors(tracks, CpmDirectory, cpmSectorMap);
-            
+            SaveCpmFile("CPM3.SYS", cpmDir, tracks, cpmSectorMap);
             // Strip off high bits and display the Toolkey messages
             DumpToolkitMessages();
         }
+    }
+
+    private static bool NameEquals(byte[] name, Span<byte> dirEntry)
+    {
+        return MemoryExtensions.SequenceEqual(name.AsSpan(), dirEntry);
+    }
+
+    private static void SaveCpmFile(string filename, byte[] cpmDir, List<NibSector>[] tracks, int[] cpmSectorMap)
+    {
+        List<int> blocks = new();
+        int currentExtent = 0;
+        int lastBlockSectors = 0;
+        byte[] name =
+            {
+                0x20,0x20,0x20,0x20, 0x20,0x20,0x20,0x20,
+                0x20,0x20,0x20
+            };
+        // Copy file name into the name.
+        int i = 0;
+        foreach (var c in filename)
+        {
+            if (c == '.')
+                i = 8;
+            else
+                name[i++] = (byte)c;
+        }
+        // Scan the directory looking for our file bits
+        for (int x = 0; x < 64; x++)
+        {
+            int currentEntryOffs = x * 32;
+            if (cpmDir[currentEntryOffs] == 0 && // User area 0
+                NameEquals(name, cpmDir.AsSpan(currentEntryOffs + 1, 11)) &&
+                cpmDir[currentEntryOffs + 13] == currentExtent)
+            {
+                currentExtent++;
+                lastBlockSectors = cpmDir[currentEntryOffs + 15];
+                for (int b = 16; b < 32; b++)
+                    if (cpmDir[currentEntryOffs + b] != 0) blocks.Add(b);
+            }
+        }
+        
     }
 
     private static void DumpToolkitMessages()

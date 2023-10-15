@@ -8,4 +8,4 @@
 
 **CtrlZ** - dotnet 8.0 tool that either adds or strips Ctrl-Z to and from text files before using them with CPM tools running under NTVCM.
 
-**NibReader** - Reads from a nibble boot disk image file and dumps out binaries from the DiskImage
+**NibReader** - Reads from a nibble boot disk image file and dumps out binaries from the DiskImage.
