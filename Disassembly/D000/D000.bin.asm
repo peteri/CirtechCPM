@@ -5,10 +5,12 @@
                    CURSOR_STATE    .eq     $23               ;Bit 7 high if cursor on screen
                    CURSORX         .eq     $25               ;Cursor X (80 col)
                    ZP_TEMP1        .eq     $26               ;Zero page temporary
-                   MON_GBASH       .eq     $27               ;base address for lo-res drawing (hi)
+                   D2_CHECK_SUM    .eq     $27               ;Checksum for disk routines
                    CURSORY         .eq     $29               ;Cursor Y (80 col)
-                   MON_H2          .eq     $2c               ;right end of horizontal line drawn by HLINE
-                   MON_V2          .eq     $2d               ;bottom of vertical line drawn by VLINE
+                   HEADER_CHECKSUM .eq     $2c               ;Checksum for the sector header
+                   HEADER_SECTOR   .eq     $2d
+                   HEADER_TRACK    .eq     $2e               ;Track from sector header
+                   HEADER_VOLUME   .eq     $2f
                    MON_INVFLAG     .eq     $32               ;text mask (255=normal, 127=flash, 63=inv)
                    MON_A1H         .eq     $3d               ;general purpose
                    MON_A2L         .eq     $3e               ;general purpose
@@ -21,9 +23,11 @@
                    PRODOS_BLKNUM   .eq     $46
                    DISK_TRKL       .eq     $0380             ;Disk track low (From Z80)
                    DISK_SECT       .eq     $0381             ;Disk sector (from Z80)
+                   DISK_TRK_ADDR   .eq     $0382             ;While track read/write page
                    DISK_DRV        .eq     $0384             ;Drive to use from CPM (Slot)
                    DISK_ACTD       .eq     $0385             ;Current active disk ][ drive
                    DISK_TRKH       .eq     $0386             ;Disk track high (from Z80)
+                   DISK_VOL        .eq     $0387             ;Disk volume
                    DISK_OP         .eq     $0388             ;Disk operation
                    DISK_ERR        .eq     $0389             ;Disk Error back
                    SLOT_INFO       .eq     $03b8
@@ -50,6 +54,8 @@
                    IWM_Q7_OFF      .eq     $c08e             ;IWM WP-sense/read
                    IWM_Q7_ON       .eq     $c08f             ;IWM write
                    CLRROM          .eq     $cfff             ;disable slot C8 ROM
+                   SIX_BIT_DATA    .eq     $de00             ;Six bit data bytes
+                   TWO_BIT_DATA    .eq     $df00             ;56 bytes of 2 bit data
 
                    ********************************************************************************
                    *                                                                              *
@@ -601,7 +607,7 @@ d446: bd 89 c0                     lda     IWM_MOTOR_ON,x
 d449: a9 ef                        lda     #$ef
 d44b: 85 46                        sta     PRODOS_BLKNUM
 d44d: a9 d8                        lda     #$d8
-d44f: 85 47                        sta     $47
+d44f: 85 47                        sta     PRODOS_BLKNUM+1
 d451: ad 84 03                     lda     DISK_DRV          ;Get selected drive
 d454: cd 85 03                     cmp     DISK_ACTD         ;Same as active drive
 d457: f0 07                        beq     SELECT_DRIVE
@@ -635,10 +641,10 @@ d48a: 20 cb d7                     jsr     MOVE_TO_TRACK
 d48d: ad 88 03                     lda     DISK_OP
 d490: 28                           plp
 d491: d0 07                        bne     LD49A
-d493: c9 01                        cmp     #$01
+d493: c9 01                        cmp     #$01              ;Read?
 d495: f0 03                        beq     LD49A
 d497: 20 c4 d8                     jsr     LD8C4
-d49a: c9 04        LD49A           cmp     #$04
+d49a: c9 04        LD49A           cmp     #$04              ;Read multiple sectors
 d49c: d0 03                        bne     LD4A1
 d49e: 4c 1a da                     jmp     LDA1A
 
@@ -649,11 +655,11 @@ d4a5: 4c 1a da                     jmp     LDA1A
 d4a8: 6a           LD4A8           ror     A
 d4a9: 08                           php
 d4aa: b0 03                        bcs     LD4AF
-d4ac: 20 8e d6                     jsr     LD68E
+d4ac: 20 8e d6                     jsr     NIBBLIZE62
 d4af: a0 30        LD4AF           ldy     #$30
 d4b1: 8c 78 05                     sty     SCRNHOLE2
 d4b4: ae f8 05     LD4B4           ldx     DISKSLOTCX
-d4b7: 20 6f d7                     jsr     LD76F
+d4b7: 20 6f d7                     jsr     D2_READ_HEADER
 d4ba: 90 22                        bcc     LD4DE
 d4bc: ce 78 05     LD4BC           dec     SCRNHOLE2
 d4bf: 10 f3                        bpl     LD4B4
@@ -669,11 +675,11 @@ d4d5: ad 80 03                     lda     DISK_TRKL
 d4d8: 20 cb d7     LD4D8           jsr     MOVE_TO_TRACK
 d4db: 4c af d4                     jmp     LD4AF
 
-d4de: a5 2f        LD4DE           lda     $2f
-d4e0: 8d 87 03                     sta     DISK_OP-1
+d4de: a5 2f        LD4DE           lda     HEADER_VOLUME
+d4e0: 8d 87 03                     sta     DISK_VOL
 d4e3: 48                           pha
 d4e4: 68                           pla
-d4e5: a4 2e                        ldy     $2e
+d4e5: a4 2e                        ldy     HEADER_TRACK
 d4e7: cc 80 03                     cpy     DISK_TRKL
 d4ea: f0 16                        beq     LD502
 d4ec: ad 78 04                     lda     SCRNHOLE0
@@ -688,34 +694,34 @@ d4fa: f0 c5                        beq     LD4C1
 d4fc: a9 01        LD4FC           lda     #$01
 d4fe: 28                           plp
 d4ff: 38                           sec
-d500: b0 22        LD500           bcs     LD524
+d500: b0 22        LD500           bcs     DISKII_ERR
 
 d502: ad 81 03     LD502           lda     DISK_SECT
 d505: a8                           tay
 d506: b9 35 d5     LD506           lda     CPM_TRAN_SECT,y
-d509: c5 2d                        cmp     MON_V2
+d509: c5 2d                        cmp     HEADER_SECTOR
 d50b: d0 af                        bne     LD4BC
 d50d: 28                           plp
 d50e: 90 1b                        bcc     LD52B
-d510: 20 07 d7                     jsr     LD707
+d510: 20 07 d7                     jsr     D2_READ_SECTOR_DATA
 d513: 08                           php
 d514: b0 a6                        bcs     LD4BC
 d516: 28                           plp
 d517: a2 00                        ldx     #$00
 d519: 86 26                        stx     ZP_TEMP1
-d51b: 20 be d6                     jsr     LD6BE
+d51b: 20 be d6                     jsr     MERGE62
 d51e: ae f8 05                     ldx     DISKSLOTCX
-d521: a9 00        LD521           lda     #$00
+d521: a9 00        DISKII_OK       lda     #$00              ;Clear error
 d523: 18                           clc
-d524: 8d 89 03     LD524           sta     DISK_ERR
-d527: bd 88 c0                     lda     IWM_MOTOR_OFF,x
+d524: 8d 89 03     DISKII_ERR      sta     DISK_ERR          ;Setup disk error
+d527: bd 88 c0                     lda     IWM_MOTOR_OFF,x   ;Turn off motor
 d52a: 60                           rts
 
-d52b: 20 00 d6     LD52B           jsr     LD600
-d52e: 90 f1                        bcc     LD521
+d52b: 20 00 d6     LD52B           jsr     D2_WRITE_SECTOR_DATA
+d52e: 90 f1                        bcc     DISKII_OK
 d530: a9 10                        lda     #$10
 d532: 38                           sec
-d533: b0 ef                        bcs     LD524
+d533: b0 ef                        bcs     DISKII_ERR
 
 d535: 00 03 06 09+ CPM_TRAN_SECT   .bulk   $00,$03,$06,$09,$0c,$0f,$02,$05
 d53d: 08 0b 0e 01+                 .bulk   $08,$0b,$0e,$01,$04,$07,$0a,$0d
@@ -735,119 +741,28 @@ d572: d6 d7 d9 da+                 .bulk   $d6,$d7,$d9,$da,$db,$dc,$dd,$de
 d57a: df e5 e6 e7+                 .bulk   $df,$e5,$e6,$e7,$e9,$ea,$eb,$ec
 d582: ed ee ef f2+                 .bulk   $ed,$ee,$ef,$f2,$f3,$f4,$f5,$f6
 d58a: f7 f9 fa fb+                 .bulk   $f7,$f9,$fa,$fb,$fc,$fd,$fe,$ff
-d592: 00 00 00 00+                 .fill   5,$00
-d597: 01                           .dd1    $01
-d598: 98                           .dd1    $98
-d599: 99                           .dd1    $99
-d59a: 02                           .dd1    $02
-d59b: 03                           .dd1    $03
-d59c: 9c                           .dd1    $9c
-d59d: 04                           .dd1    $04
-d59e: 05                           .dd1    $05
-d59f: 06                           .dd1    $06
-d5a0: a0                           .dd1    $a0
-d5a1: a1                           .dd1    $a1
-d5a2: a2                           .dd1    $a2
-d5a3: a3                           .dd1    $a3
-d5a4: a4                           .dd1    $a4
-d5a5: a5                           .dd1    $a5
-d5a6: 07                           .dd1    $07
-d5a7: 08                           .dd1    $08
-d5a8: a8                           .dd1    $a8
-d5a9: a9                           .dd1    $a9
-d5aa: aa                           .dd1    $aa
-d5ab: 09                           .dd1    $09
-d5ac: 0a                           .dd1    $0a
-d5ad: 0b                           .dd1    $0b
-d5ae: 0c                           .dd1    $0c
-d5af: 0d                           .dd1    $0d
-d5b0: b0                           .dd1    $b0
-d5b1: b1                           .dd1    $b1
-d5b2: 0e                           .dd1    $0e
-d5b3: 0f                           .dd1    $0f
-d5b4: 10                           .dd1    $10
-d5b5: 11                           .dd1    $11
-d5b6: 12                           .dd1    $12
-d5b7: 13                           .dd1    $13
-d5b8: b8                           .dd1    $b8
-d5b9: 14                           .dd1    $14
-d5ba: 15                           .dd1    $15
-d5bb: 16                           .dd1    $16
-d5bc: 17                           .dd1    $17
-d5bd: 18                           .dd1    $18
-d5be: 19                           .dd1    $19
-d5bf: 1a                           .dd1    $1a
-d5c0: c0                           .dd1    $c0
-d5c1: c1                           .dd1    $c1
-d5c2: c2                           .dd1    $c2
-d5c3: c3                           .dd1    $c3
-d5c4: c4                           .dd1    $c4
-d5c5: c5                           .dd1    $c5
-d5c6: c6                           .dd1    $c6
-d5c7: c7                           .dd1    $c7
-d5c8: c8                           .dd1    $c8
-d5c9: c9                           .dd1    $c9
-d5ca: ca                           .dd1    $ca
-d5cb: 1b                           .dd1    $1b
-d5cc: cc                           .dd1    $cc
-d5cd: 1c                           .dd1    $1c
-d5ce: 1d                           .dd1    $1d
-d5cf: 1e                           .dd1    $1e
-d5d0: d0                           .dd1    $d0
-d5d1: d1                           .dd1    $d1
-d5d2: d2                           .dd1    $d2
-d5d3: 1f                           .dd1    $1f
-d5d4: d4                           .dd1    $d4
-d5d5: d5                           .dd1    $d5
-d5d6: 20                           .dd1    $20
-d5d7: 21                           .dd1    $21
-d5d8: d8                           .dd1    $d8
-d5d9: 22                           .dd1    $22
-d5da: 23                           .dd1    $23
-d5db: 24                           .dd1    $24
-d5dc: 25                           .dd1    $25
-d5dd: 26                           .dd1    $26
-d5de: 27                           .dd1    $27
-d5df: 28                           .dd1    $28
-d5e0: e0                           .dd1    $e0
-d5e1: e1                           .dd1    $e1
-d5e2: e2                           .dd1    $e2
-d5e3: e3                           .dd1    $e3
-d5e4: e4                           .dd1    $e4
-d5e5: 29                           .dd1    $29
-d5e6: 2a                           .dd1    $2a
-d5e7: 2b                           .dd1    $2b
-d5e8: e8                           .dd1    $e8
-d5e9: 2c                           .dd1    $2c
-d5ea: 2d                           .dd1    $2d
-d5eb: 2e                           .dd1    $2e
-d5ec: 2f                           .dd1    $2f
-d5ed: 30                           .dd1    $30
-d5ee: 31                           .dd1    $31
-d5ef: 32                           .dd1    $32
-d5f0: f0                           .dd1    $f0
-d5f1: f1                           .dd1    $f1
-d5f2: 33                           .dd1    $33
-d5f3: 34                           .dd1    $34
-d5f4: 35                           .dd1    $35
-d5f5: 36                           .dd1    $36
-d5f6: 37                           .dd1    $37
-d5f7: 38                           .dd1    $38
-d5f8: f8                           .dd1    $f8
-d5f9: 39                           .dd1    $39
-d5fa: 3a                           .dd1    $3a
-d5fb: 3b                           .dd1    $3b
-d5fc: 3c                           .dd1    $3c
-d5fd: 3d                           .dd1    $3d
-d5fe: 3e                           .dd1    $3e
-d5ff: 3f                           .dd1    $3f
-d600: 38           LD600           sec
-d601: 86 27                        stx     MON_GBASH
+d592: 00 00 00 00+                 .bulk   $00,$00,$00,$00,$00,$01
+d598: 98 99 02 03+                 .bulk   $98,$99,$02,$03,$9c,$04,$05,$06
+d5a0: a0 a1 a2 a3+                 .bulk   $a0,$a1,$a2,$a3,$a4,$a5,$07,$08
+d5a8: a8 a9 aa 09+                 .bulk   $a8,$a9,$aa,$09,$0a,$0b,$0c,$0d
+d5b0: b0 b1 0e 0f+                 .bulk   $b0,$b1,$0e,$0f,$10,$11,$12,$13
+d5b8: b8 14 15 16+                 .bulk   $b8,$14,$15,$16,$17,$18,$19,$1a
+d5c0: c0 c1 c2 c3+                 .bulk   $c0,$c1,$c2,$c3,$c4,$c5,$c6,$c7
+d5c8: c8 c9 ca 1b+                 .bulk   $c8,$c9,$ca,$1b,$cc,$1c,$1d,$1e
+d5d0: d0 d1 d2 1f+                 .bulk   $d0,$d1,$d2,$1f,$d4,$d5,$20,$21
+d5d8: d8 22 23 24+                 .bulk   $d8,$22,$23,$24,$25,$26,$27,$28
+d5e0: e0 e1 e2 e3+                 .bulk   $e0,$e1,$e2,$e3,$e4,$29,$2a,$2b
+d5e8: e8 2c 2d 2e+                 .bulk   $e8,$2c,$2d,$2e,$2f,$30,$31,$32
+d5f0: f0 f1 33 34+                 .bulk   $f0,$f1,$33,$34,$35,$36,$37,$38
+d5f8: f8 39 3a 3b+                 .bulk   $f8,$39,$3a,$3b,$3c,$3d,$3e,$3f
+                   D2_WRITE_SECTOR_DATA
+d600: 38                           sec
+d601: 86 27                        stx     D2_CHECK_SUM
 d603: 8e 78 06                     stx     SCRNHOLE4
 d606: bd 8d c0                     lda     IWM_Q6_ON,x
 d609: bd 8e c0                     lda     IWM_Q7_OFF,x
 d60c: 30 7c                        bmi     LD68A
-d60e: ad 00 df                     lda     $df00
+d60e: ad 00 df                     lda     TWO_BIT_DATA
 d611: 85 26                        sta     ZP_TEMP1
 d613: a9 ff                        lda     #$ff              ;Write sync bytes
 d615: 9d 8f c0                     sta     IWM_Q7_ON,x
@@ -872,29 +787,29 @@ d637: 98                           tya
 d638: a0 56                        ldy     #$56
 d63a: d0 03                        bne     LD63F
 
-d63c: b9 00 df     LD63C           lda     $df00,y
-d63f: 59 ff de     LD63F           eor     $deff,y
+d63c: b9 00 df     LD63C           lda     TWO_BIT_DATA,y
+d63f: 59 ff de     LD63F           eor     TWO_BIT_DATA-1,y
 d642: aa                           tax
 d643: bd 52 d5                     lda     TRANS62,x
-d646: a6 27                        ldx     MON_GBASH
+d646: a6 27                        ldx     D2_CHECK_SUM
 d648: 9d 8d c0                     sta     IWM_Q6_ON,x
 d64b: bd 8c c0                     lda     IWM_Q6_OFF,x
 d64e: 88                           dey
 d64f: d0 eb                        bne     LD63C
 d651: a5 26                        lda     ZP_TEMP1
 d653: ea                           nop
-d654: 59 00 de     LD654           eor     $de00,y
+d654: 59 00 de     LD654           eor     SIX_BIT_DATA,y
 d657: aa                           tax
 d658: bd 52 d5                     lda     TRANS62,x
 d65b: ae 78 06                     ldx     SCRNHOLE4
 d65e: 9d 8d c0                     sta     IWM_Q6_ON,x
 d661: bd 8c c0                     lda     IWM_Q6_OFF,x
-d664: b9 00 de                     lda     $de00,y
+d664: b9 00 de                     lda     SIX_BIT_DATA,y
 d667: c8                           iny
 d668: d0 ea                        bne     LD654
 d66a: aa                           tax
 d66b: bd 52 d5                     lda     TRANS62,x
-d66e: a6 27                        ldx     MON_GBASH
+d66e: a6 27                        ldx     D2_CHECK_SUM
 d670: 20 b7 d6                     jsr     WRITE             ;Write checksum
 d673: a9 de                        lda     #$de              ;Write trailer bytes
 d675: 20 b4 d6                     jsr     WRITE9
@@ -908,14 +823,15 @@ d687: bd 8e c0                     lda     IWM_Q7_OFF,x
 d68a: bd 8c c0     LD68A           lda     IWM_Q6_OFF,x
 d68d: 60                           rts
 
-d68e: a2 55        LD68E           ldx     #$55
+d68e: a2 55        NIBBLIZE62      ldx     #$55
 d690: a9 00                        lda     #$00
-d692: 9d 00 df     LD692           sta     $df00,x
+d692: 9d 00 df     LD692           sta     TWO_BIT_DATA,x
 d695: ca                           dex
 d696: 10 fa                        bpl     LD692
 d698: a8                           tay
 d699: a2 ac                        ldx     #$ac
-d69b: 2c                           bit ▼   $aaa2
+d69b: 2c                           .dd1    $2c
+
 d69c: a2 aa        LD69C           ldx     #$aa
 d69e: 88           LD69E           dey
 d69f: b9 00 08     LD69F           lda     $0800,y
@@ -923,7 +839,7 @@ d6a2: 4a                           lsr     A
 d6a3: 3e 56 de                     rol     $de56,x
 d6a6: 4a                           lsr     A
 d6a7: 3e 56 de                     rol     $de56,x
-d6aa: 99 00 de                     sta     $de00,y
+d6aa: 99 00 de                     sta     SIX_BIT_DATA,y
 d6ad: e8                           inx
 d6ae: d0 ee                        bne     LD69E
 d6b0: 98                           tya
@@ -948,19 +864,19 @@ d6b7: 9d 8d c0     WRITE           sta     IWM_Q6_ON,x       ;5 cycles - Write l
 d6ba: 1d 8c c0                     ora     IWM_Q6_OFF,x      ;5 cycles - write byte
 d6bd: 60                           rts                       ;6 cycles - return to caller 
 
-d6be: a0 00        LD6BE           ldy     #$00
-d6c0: a2 56        LD6C0           ldx     #$56
-d6c2: ca           LD6C2           dex
-d6c3: 30 fb                        bmi     LD6C0
-d6c5: b9 00 de                     lda     $de00,y
-d6c8: 5e 00 df                     lsr     $df00,x
+d6be: a0 00        MERGE62         ldy     #$00              ;Merge together 6 and 2 bits
+d6c0: a2 56        RESET2PTR       ldx     #$56
+d6c2: ca           MERGE_NXTBYTE   dex
+d6c3: 30 fb                        bmi     RESET2PTR
+d6c5: b9 00 de                     lda     SIX_BIT_DATA,y
+d6c8: 5e 00 df                     lsr     TWO_BIT_DATA,x
 d6cb: 2a                           rol     A
-d6cc: 5e 00 df                     lsr     $df00,x
+d6cc: 5e 00 df                     lsr     TWO_BIT_DATA,x
 d6cf: 2a                           rol     A
 d6d0: 99 00 08     LD6D0           sta     $0800,y
 d6d3: c8                           iny
 d6d4: c4 26                        cpy     ZP_TEMP1
-d6d6: d0 ea                        bne     LD6C2
+d6d6: d0 ea                        bne     MERGE_NXTBYTE
 d6d8: 60                           rts
 
 d6d9: a2 11        LD6D9           ldx     #$11
@@ -980,7 +896,7 @@ d6ee: 48           LD6EE           pha
 d6ef: ad 84 03                     lda     DISK_DRV
 d6f2: 2a                           rol     A
 d6f3: 66 35                        ror     $35
-d6f5: 20 9a da                     jsr     LDA9A
+d6f5: 20 9a da                     jsr     SLOT_TO_Y
 d6f8: 68                           pla
 d6f9: 0a                           asl     A
 d6fa: 24 35                        bit     $35
@@ -991,100 +907,103 @@ d701: 10 03                        bpl     LD706
 d703: 99 78 04     LD703           sta     SCRNHOLE0,y
 d706: 60           LD706           rts
 
-d707: a0 20        LD707           ldy     #$20
-d709: 88           LD709           dey
-d70a: f0 61                        beq     LD76D
-d70c: bd 8c c0     LD70C           lda     IWM_Q6_OFF,x
-d70f: 10 fb                        bpl     LD70C
-d711: 49 d5        LD711           eor     #$d5
-d713: d0 f4                        bne     LD709
+                   D2_READ_SECTOR_DATA
+d707: a0 20                        ldy     #$20              ;Try to find a D5 32 times (we've seen a sector header)
+                   D2_READ_SECT_RETRY
+d709: 88                           dey
+d70a: f0 61                        beq     SEC_AND_RET
+d70c: bd 8c c0     D2_READ_SECT_D5 lda     IWM_Q6_OFF,x
+d70f: 10 fb                        bpl     D2_READ_SECT_D5
+d711: 49 d5        D2_WAIT_SECT_D5 eor     #$d5              ;Look for D5 (and zero ACC)
+d713: d0 f4                        bne     D2_READ_SECT_RETRY ;Not yet try again
 d715: ea                           nop
-d716: bd 8c c0     LD716           lda     IWM_Q6_OFF,x
-d719: 10 fb                        bpl     LD716
-d71b: c9 aa                        cmp     #$aa
-d71d: d0 f2                        bne     LD711
-d71f: a0 56                        ldy     #$56
-d721: bd 8c c0     LD721           lda     IWM_Q6_OFF,x
-d724: 10 fb                        bpl     LD721
-d726: c9 ad                        cmp     #$ad
-d728: d0 e7                        bne     LD711
+d716: bd 8c c0     D2_READ_SECT_AA lda     IWM_Q6_OFF,x      ;Try and read AA
+d719: 10 fb                        bpl     D2_READ_SECT_AA
+d71b: c9 aa                        cmp     #$aa              ;Not AA, wait for a D5
+d71d: d0 f2                        bne     D2_WAIT_SECT_D5
+d71f: a0 56                        ldy     #$56              ;Setup to read in 56 bytes of twos
+d721: bd 8c c0     D2_READ_SECT_AD lda     IWM_Q6_OFF,x
+d724: 10 fb                        bpl     D2_READ_SECT_AD
+d726: c9 ad                        cmp     #$ad              ;End of header?
+d728: d0 e7                        bne     D2_WAIT_SECT_D5   ;Nope, lets start again
 d72a: a9 00                        lda     #$00
-d72c: 88           LD72C           dey
-d72d: 84 26                        sty     ZP_TEMP1
-d72f: bc 8c c0     LD72F           ldy     IWM_Q6_OFF,x
-d732: 10 fb                        bpl     LD72F
+d72c: 88           D2_READ_2BYTES  dey
+d72d: 84 26                        sty     ZP_TEMP1          ;Save away counter
+d72f: bc 8c c0     D2_WAIT_2BYTES  ldy     IWM_Q6_OFF,x      ;Read a data byte for our 2 bits
+d732: 10 fb                        bpl     D2_WAIT_2BYTES
 d734: 59 00 d5                     eor     LD500,y
-d737: a4 26                        ldy     ZP_TEMP1
-d739: 99 00 df                     sta     $df00,y
-d73c: d0 ee                        bne     LD72C
-d73e: 84 26        LD73E           sty     ZP_TEMP1
-d740: bc 8c c0     LD740           ldy     IWM_Q6_OFF,x
-d743: 10 fb                        bpl     LD740
+d737: a4 26                        ldy     ZP_TEMP1          ;Restore counter
+d739: 99 00 df                     sta     TWO_BIT_DATA,y
+d73c: d0 ee                        bne     D2_READ_2BYTES
+d73e: 84 26        D2_READ_6BYTES  sty     ZP_TEMP1          ;Save counter
+d740: bc 8c c0     D2_WAIT_6BYES   ldy     IWM_Q6_OFF,x
+d743: 10 fb                        bpl     D2_WAIT_6BYES
 d745: 59 00 d5                     eor     LD500,y
 d748: a4 26                        ldy     ZP_TEMP1
-d74a: 99 00 de                     sta     $de00,y
+d74a: 99 00 de                     sta     SIX_BIT_DATA,y
 d74d: c8                           iny
-d74e: d0 ee                        bne     LD73E
+d74e: d0 ee                        bne     D2_READ_6BYTES
 d750: bc 8c c0     LD750           ldy     IWM_Q6_OFF,x
 d753: 10 fb                        bpl     LD750
 d755: d9 00 d5                     cmp     LD500,y
-d758: d0 13                        bne     LD76D
+d758: d0 13                        bne     SEC_AND_RET
 d75a: bd 8c c0     LD75A           lda     IWM_Q6_OFF,x
 d75d: 10 fb                        bpl     LD75A
 d75f: c9 de                        cmp     #$de
-d761: d0 0a                        bne     LD76D
+d761: d0 0a                        bne     SEC_AND_RET
 d763: ea                           nop
 d764: bd 8c c0     LD764           lda     IWM_Q6_OFF,x
 d767: 10 fb                        bpl     LD764
 d769: c9 aa                        cmp     #$aa
 d76b: f0 5c                        beq     LD7C9
-d76d: 38           LD76D           sec
+d76d: 38           SEC_AND_RET     sec                       ;Set carry flag and return
 d76e: 60                           rts
 
-d76f: a0 fc        LD76F           ldy     #$fc
+d76f: a0 fc        D2_READ_HEADER  ldy     #$fc
 d771: 84 26                        sty     ZP_TEMP1
-d773: c8           LD773           iny
-d774: d0 04                        bne     LD77A
+d773: c8           D2_WAIT_HEADER  iny
+d774: d0 04                        bne     D2_READ_HEAD_D5
 d776: e6 26                        inc     ZP_TEMP1
-d778: f0 f3                        beq     LD76D
-d77a: bd 8c c0     LD77A           lda     IWM_Q6_OFF,x
-d77d: 10 fb                        bpl     LD77A
-d77f: c9 d5        LD77F           cmp     #$d5
-d781: d0 f0                        bne     LD773
+d778: f0 f3                        beq     SEC_AND_RET
+d77a: bd 8c c0     D2_READ_HEAD_D5 lda     IWM_Q6_OFF,x
+d77d: 10 fb                        bpl     D2_READ_HEAD_D5
+d77f: c9 d5        D2_WAIT_FOR_D5  cmp     #$d5
+d781: d0 f0                        bne     D2_WAIT_HEADER
 d783: ea                           nop
-d784: bd 8c c0     LD784           lda     IWM_Q6_OFF,x
-d787: 10 fb                        bpl     LD784
+d784: bd 8c c0     D2_READ_HEAD_AA lda     IWM_Q6_OFF,x
+d787: 10 fb                        bpl     D2_READ_HEAD_AA
 d789: c9 aa                        cmp     #$aa
-d78b: d0 f2                        bne     LD77F
-d78d: a0 03                        ldy     #$03
-d78f: bd 8c c0     LD78F           lda     IWM_Q6_OFF,x
-d792: 10 fb                        bpl     LD78F
-d794: c9 96                        cmp     #$96
-d796: d0 e7                        bne     LD77F
-d798: a9 00                        lda     #$00
-d79a: 85 27        LD79A           sta     MON_GBASH
-d79c: bd 8c c0     LD79C           lda     IWM_Q6_OFF,x
-d79f: 10 fb                        bpl     LD79C
-d7a1: 2a                           rol     A
-d7a2: 85 26                        sta     ZP_TEMP1
-d7a4: bd 8c c0     LD7A4           lda     IWM_Q6_OFF,x
-d7a7: 10 fb                        bpl     LD7A4
-d7a9: 25 26                        and     ZP_TEMP1
-d7ab: 99 2c 00                     sta     MON_H2,y
-d7ae: 45 27                        eor     MON_GBASH
-d7b0: 88                           dey
-d7b1: 10 e7                        bpl     LD79A
+d78b: d0 f2                        bne     D2_WAIT_FOR_D5
+d78d: a0 03                        ldy     #$03              ;Setup counter for header bytes
+d78f: bd 8c c0     D2_READ_HEAD_96 lda     IWM_Q6_OFF,x
+d792: 10 fb                        bpl     D2_READ_HEAD_96
+d794: c9 96                        cmp     #$96              ;Last byte of header?
+d796: d0 e7                        bne     D2_WAIT_FOR_D5    ;Nope loop back to beginning
+d798: a9 00                        lda     #$00              ;Reset checksum byte
+                   READ_NXT_HDR_BYTE
+d79a: 85 27                        sta     D2_CHECK_SUM
+d79c: bd 8c c0     WAIT_44_BYTE1   lda     IWM_Q6_OFF,x      ;Read first byte of our 44 encoding
+d79f: 10 fb                        bpl     WAIT_44_BYTE1     ;Read in 1A1C1E1G
+d7a1: 2a                           rol     A                 ;A1C1E1G1 (Carry is set by CMP #96)
+d7a2: 85 26                        sta     ZP_TEMP1          ;Save for later
+d7a4: bd 8c c0     WAIT_44_BYTE2   lda     IWM_Q6_OFF,x
+d7a7: 10 fb                        bpl     WAIT_44_BYTE2     ;Read in  1B1D1F1H
+d7a9: 25 26                        and     ZP_TEMP1          ;And with A1C1E1G1
+d7ab: 99 2c 00                     sta     HEADER_CHECKSUM,y ;Store away the data
+d7ae: 45 27                        eor     D2_CHECK_SUM
+d7b0: 88                           dey                       ;Count backwards
+d7b1: 10 e7                        bpl     READ_NXT_HDR_BYTE ;Done all four bytes
 d7b3: a8                           tay
-d7b4: d0 b7                        bne     LD76D
+d7b4: d0 b7                        bne     SEC_AND_RET
 d7b6: bd 8c c0     LD7B6           lda     IWM_Q6_OFF,x
 d7b9: 10 fb                        bpl     LD7B6
 d7bb: c9 de                        cmp     #$de
-d7bd: d0 ae                        bne     LD76D
+d7bd: d0 ae                        bne     SEC_AND_RET
 d7bf: ea                           nop
 d7c0: bd 8c c0     LD7C0           lda     IWM_Q6_OFF,x
 d7c3: 10 fb                        bpl     LD7C0
 d7c5: c9 aa                        cmp     #$aa
-d7c7: d0 a4                        bne     LD76D
+d7c7: d0 a4                        bne     SEC_AND_RET
 d7c9: 18           LD7C9           clc
 d7ca: 60                           rts
 
@@ -1094,7 +1013,7 @@ d7cf: 4e 78 04                     lsr     SCRNHOLE0
 d7d2: 60                           rts
 
 d7d3: 85 2a        LD7D3           sta     $2a
-d7d5: 20 9a da                     jsr     LDA9A
+d7d5: 20 9a da                     jsr     SLOT_TO_Y
 d7d8: b9 78 04                     lda     SCRNHOLE0,y
 d7db: 24 35                        bit     $35
 d7dd: 30 03                        bmi     LD7E2
@@ -1114,7 +1033,7 @@ d7fa: f0 53                        beq     LD84F
 d7fc: a9 00                        lda     #$00
 d7fe: 85 26                        sta     ZP_TEMP1
 d800: ad 78 04     LD800           lda     SCRNHOLE0
-d803: 85 27                        sta     MON_GBASH
+d803: 85 27                        sta     D2_CHECK_SUM
 d805: 38                           sec
 d806: e5 2a                        sbc     $2a
 d808: f0 33                        beq     LD83D
@@ -1135,7 +1054,7 @@ d823: 38           LD823           sec
 d824: 20 41 d8                     jsr     LD841
 d827: b9 8e da                     lda     LDA8E,y
 d82a: 20 d9 d6                     jsr     LD6D9
-d82d: a5 27                        lda     MON_GBASH
+d82d: a5 27                        lda     D2_CHECK_SUM
 d82f: 18                           clc
 d830: 20 44 d8                     jsr     LD844
 d833: b9 45 d5                     lda     LD545,y
@@ -1234,47 +1153,26 @@ d8e6: 9d 8d c0                     sta     IWM_Q6_ON,x
 d8e9: dd 8c c0                     cmp     IWM_Q6_OFF,x
 d8ec: 60           LD8EC           rts
 
-d8ed: a2                           .dd1    $a2
-d8ee: 07                           .dd1    $07
-d8ef: e0                           .dd1    $e0
-d8f0: 06                           .dd1    $06
-d8f1: f0                           .dd1    $f0
-d8f2: 05                           .dd1    $05
-d8f3: dd                           .dd1    $dd
-d8f4: b8                           .dd1    $b8
-d8f5: 03                           .dd1    $03
-d8f6: f0                           .dd1    $f0
-d8f7: 08                           .dd1    $08
-d8f8: ca                           .dd1    $ca
-d8f9: d0                           .dd1    $d0
-d8fa: f4                           .dd1    $f4
-d8fb: 68                           .dd1    $68
-d8fc: 68                           .dd1    $68
-d8fd: 4c                           .dd1    $4c
-d8fe: c5                           .dd1    $c5
-d8ff: da                           .dd1    $da
-d900: 8a                           .dd1    $8a
-d901: 0a                           .dd1    $0a
-d902: 0a                           .dd1    $0a
-d903: 0a                           .dd1    $0a
-d904: 0a                           .dd1    $0a
-d905: 60                           .dd1    $60
-d906: 00                           .dd1    $00
-d907: 02                           .dd1    $02
-d908: 04                           .dd1    $04
-d909: 06                           .dd1    $06
-d90a: 08                           .dd1    $08
-d90b: 0a                           .dd1    $0a
-d90c: 0c                           .dd1    $0c
-d90d: 0e                           .dd1    $0e
-d90e: 01                           .dd1    $01
-d90f: 03                           .dd1    $03
-d910: 05                           .dd1    $05
-d911: 07                           .dd1    $07
-d912: 09                           .dd1    $09
-d913: 0b                           .dd1    $0b
-d914: 0d                           .dd1    $0d
-d915: 0f                           .dd1    $0f
+d8ed: a2 07                        ldx     #$07
+d8ef: e0 06        LD8EF           cpx     #$06
+d8f1: f0 05                        beq     LD8F8
+d8f3: dd b8 03                     cmp     SLOT_INFO,x
+d8f6: f0 08                        beq     LD900
+d8f8: ca           LD8F8           dex
+d8f9: d0 f4                        bne     LD8EF
+d8fb: 68                           pla
+d8fc: 68                           pla
+d8fd: 4c c5 da                     jmp     SET_DISK_ERR1
+
+d900: 8a           LD900           txa
+d901: 0a                           asl     A
+d902: 0a                           asl     A
+d903: 0a                           asl     A
+d904: 0a                           asl     A
+d905: 60                           rts
+
+d906: 00 02 04 06+                 .bulk   $00,$02,$04,$06,$08,$0a,$0c,$0e
+d90e: 01 03 05 07+                 .bulk   $01,$03,$05,$07,$09,$0b,$0d,$0f
 
 d916: a9 00        LD916           lda     #$00
 d918: 85 3f                        sta     MON_A2H
@@ -1284,7 +1182,7 @@ d91c: d0 02                        bne     LD920
 d91e: a4 45        LD91E           ldy     PRODOS_BUFPTRH
 d920: 20 57 d8     LD920           jsr     LD857
 d923: b0 c7                        bcs     LD8EC
-d925: 20 00 d6                     jsr     LD600
+d925: 20 00 d6                     jsr     D2_WRITE_SECTOR_DATA
 d928: ea                           nop
 d929: ea                           nop
 d92a: e6 3f                        inc     MON_A2H
@@ -1307,9 +1205,9 @@ d94d: 68                           pla
 d94e: ea                           nop
 d94f: 88                           dey
 d950: d0 f1                        bne     LD943
-d952: 20 6f d7                     jsr     LD76F
+d952: 20 6f d7                     jsr     D2_READ_HEADER
 d955: b0 23                        bcs     LD97A
-d957: a5 2d                        lda     MON_V2
+d957: a5 2d                        lda     HEADER_SECTOR
 d959: f0 15                        beq     LD970
 d95b: a9 10                        lda     #$10
 d95d: c5 45                        cmp     PRODOS_BUFPTRH
@@ -1320,18 +1218,18 @@ d965: c9 05                        cmp     #$05
 d967: b0 11                        bcs     LD97A
 d969: 90 24                        bcc     LD98F
 
-d96b: 20 6f d7     LD96B           jsr     LD76F
+d96b: 20 6f d7     LD96B           jsr     D2_READ_HEADER
 d96e: b0 05                        bcs     LD975
-d970: 20 07 d7     LD970           jsr     LD707
+d970: 20 07 d7     LD970           jsr     D2_READ_SECTOR_DATA
 d973: 90 1e                        bcc     LD993
 d975: ce 78 05     LD975           dec     SCRNHOLE2
 d978: d0 f1                        bne     LD96B
-d97a: 20 6f d7     LD97A           jsr     LD76F
+d97a: 20 6f d7     LD97A           jsr     D2_READ_HEADER
 d97d: b0 0b                        bcs     LD98A
-d97f: a5 2d                        lda     MON_V2
+d97f: a5 2d                        lda     HEADER_SECTOR
 d981: c9 0f                        cmp     #$0f
 d983: d0 05                        bne     LD98A
-d985: 20 07 d7                     jsr     LD707
+d985: 20 07 d7                     jsr     D2_READ_SECTOR_DATA
 d988: 90 8c                        bcc     LD916
 d98a: ce 78 05     LD98A           dec     SCRNHOLE2
 d98d: d0 eb                        bne     LD97A
@@ -1339,7 +1237,7 @@ d98f: a9 01        LD98F           lda     #$01
 d991: 38           LD991           sec
 d992: 60           LD992           rts
 
-d993: a4 2d        LD993           ldy     MON_V2
+d993: a4 2d        LD993           ldy     HEADER_SECTOR
 d995: b9 57 df                     lda     $df57,y
 d998: 30 db                        bmi     LD975
 d99a: a9 ff                        lda     #$ff
@@ -1357,7 +1255,7 @@ d9b1: 18           LD9B1           clc
 d9b2: 60                           rts
 
 d9b3: 20 c4 d8     LD9B3           jsr     LD8C4
-d9b6: ad 87 03                     lda     DISK_OP-1
+d9b6: ad 87 03                     lda     DISK_VOL
 d9b9: 85 41                        sta     MON_A3H
 d9bb: a9 aa                        lda     #$aa
 d9bd: 85 3e                        sta     MON_A2L
@@ -1365,11 +1263,11 @@ d9bf: a0 56                        ldy     #$56
 d9c1: a9 00                        lda     #$00
 d9c3: 85 44                        sta     PRDOOS_BUFPTRL
 d9c5: a9 2a                        lda     #$2a
-d9c7: 99 ff de     LD9C7           sta     $deff,y
+d9c7: 99 ff de     LD9C7           sta     TWO_BIT_DATA-1,y
 d9ca: 88                           dey
 d9cb: d0 fa                        bne     LD9C7
 d9cd: a9 39                        lda     #$39
-d9cf: 99 00 de     LD9CF           sta     $de00,y
+d9cf: 99 00 de     LD9CF           sta     SIX_BIT_DATA,y
 d9d2: 88                           dey
 d9d3: d0 fa                        bne     LD9CF
 d9d5: a9 23                        lda     #$23
@@ -1387,11 +1285,11 @@ d9ee: 8d 78 05                     sta     SCRNHOLE2
 d9f1: 38           LD9F1           sec
 d9f2: ce 78 05                     dec     SCRNHOLE2
 d9f5: f0 1a                        beq     LDA11
-d9f7: 20 6f d7                     jsr     LD76F
+d9f7: 20 6f d7                     jsr     D2_READ_HEADER
 d9fa: b0 f5                        bcs     LD9F1
-d9fc: a5 2d                        lda     MON_V2
+d9fc: a5 2d                        lda     HEADER_SECTOR
 d9fe: d0 f1                        bne     LD9F1
-da00: 20 07 d7                     jsr     LD707
+da00: 20 07 d7                     jsr     D2_READ_SECTOR_DATA
 da03: b0 ec                        bcs     LD9F1
 da05: e6 44                        inc     PRDOOS_BUFPTRL
 da07: a5 3d                        lda     MON_A1H
@@ -1419,7 +1317,7 @@ da37: a9 d9                        lda     #$d9
 da39: 8d 08 d5                     sta     LD506+2
 da3c: a9 06                        lda     #$06
 da3e: 8d 07 d5                     sta     LD506+1
-da41: ad 82 03                     lda     $0382
+da41: ad 82 03                     lda     DISK_TRK_ADDR
 da44: 8d a1 d6                     sta     LD69F+2
 da47: 8d d2 d6                     sta     LD6D0+2
 da4a: a9 02        LDA4A           lda     #$02
@@ -1433,7 +1331,7 @@ da5c: bd 89 c0                     lda     IWM_MOTOR_ON,x
 da5f: ee a1 d6                     inc     LD69F+2
 da62: ee d2 d6                     inc     LD6D0+2
 da65: ee 81 03                     inc     DISK_SECT
-da68: ee 82 03                     inc     $0382
+da68: ee 82 03                     inc     DISK_TRK_ADDR
 da6b: a9 10                        lda     #$10
 da6d: cd 81 03                     cmp     DISK_SECT
 da70: d0 d8                        bne     LDA4A
@@ -1449,17 +1347,23 @@ da8a: 8d 08 d5                     sta     LD506+2
 da8d: 60                           rts
 
 da8e: 01           LDA8E           .dd1    $01
-da8f: 30 28 24 20                  .str    “0($ ”
+da8f: 30                           .dd1    $30
+da90: 28                           .dd1    $28
+da91: 24                           .dd1    $24
+da92: 20                           .dd1    $20
 da93: 1e                           .dd1    $1e
 da94: 1d                           .dd1    $1d
-da95: 1c 1c 1c 1c+                 .fill   5,$1c
-
-da9a: ad f8 05     LDA9A           lda     DISKSLOTCX
-da9d: 4a                           lsr     A
+da95: 1c                           .dd1    $1c
+da96: 1c                           .dd1    $1c
+da97: 1c                           .dd1    $1c
+da98: 1c                           .dd1    $1c
+da99: 1c                           .dd1    $1c
+da9a: ad f8 05     SLOT_TO_Y       lda     DISKSLOTCX        ;Get slot number *16
+da9d: 4a                           lsr     A                 ;Divide by 16
 da9e: 4a                           lsr     A
 da9f: 4a                           lsr     A
 daa0: 4a                           lsr     A
-daa1: a8                           tay
+daa1: a8                           tay                       ;Put Acc into Y
 daa2: 60                           rts
 
                    ; What sort of not Disk ][ is it?
@@ -1505,7 +1409,7 @@ dae9: 20 00 00     SMARTDRV_CALL   jsr     $0000
 daec: 08           SMARTDRV_CMD    .dd1    $08
 daed: a3 db                        .dd2    SMARTDRV_PARAM
 
-daef: a2 00        LDAEF           ldx     #$00              ;Everything happy
+daef: a2 00        PD_CHECK_ERR    ldx     #$00              ;Everything happy
 daf1: 90 07                        bcc     SET_DISK_ERRX     ;Yeah store success and return
 daf3: e8                           inx                       ;Nope setup for a error
 daf4: c9 2b                        cmp     #$2b              ;Write protected error?
@@ -1519,80 +1423,93 @@ dafd: 60                           rts
                    ********************************************************************************
 dafe: 8a           PRODOS          txa
 daff: 09 c0                        ora     #$c0
-db01: 8d 2c db                     sta     PD_CALL_DRIVER+2
-db04: 8d 09 db                     sta     PD_GET_ENTRY+2
-db07: ad ff c7     PD_GET_ENTRY    lda     $c7ff
-db0a: 8d 2b db                     sta     PD_CALL_DRIVER+1
+db01: 8d 2c db                     sta     PD_CALL_DRIVER+2  ;Patch up the driver call
+db04: 8d 09 db                     sta     PD_GET_ENTRY+2    ;Patch the call to find the driver entry
+db07: ad ff c7     PD_GET_ENTRY    lda     $c7ff             ;Get the entry point
+db0a: 8d 2b db                     sta     PD_CALL_DRIVER+1  ;Patch the call
 db0d: ad 84 03                     lda     DISK_DRV
 db10: 85 43                        sta     PRODOS_UNITNUM
 db12: ad 88 03                     lda     DISK_OP           ;Status commmand? Return eror
 db15: f0 ae                        beq     SET_DISK_ERR1
-db17: c9 04                        cmp     #$04
-db19: b0 3c                        bcs     LDB57
+db17: c9 04                        cmp     #$04              ;Greater than 3 not simple.
+db19: b0 3c                        bcs     PD_MULT_SECT_OP
 db1b: 48                           pha
-db1c: 20 8d db                     jsr     LDB8D
+db1c: 20 8d db                     jsr     TRKSEC2PD_BLK     ;Convert track / sector to ProDosBloc
 db1f: 68                           pla
-db20: 85 42        LDB20           sta     PRODOS_CMD
+db20: 85 42        PD_ALT_CALL     sta     PRODOS_CMD        ;Copy the command over
 db22: a9 00                        lda     #$00
-db24: 85 44                        sta     PRDOOS_BUFPTRL
+db24: 85 44                        sta     PRDOOS_BUFPTRL    ;Buffer is at $800
 db26: a9 08                        lda     #$08
 db28: 85 45                        sta     PRDOOS_BUFPTRL+1
 db2a: 20 00 00     PD_CALL_DRIVER  jsr     $0000
-db2d: 20 ef da                     jsr     LDAEF
-db30: b0 06                        bcs     LDB38
+db2d: 20 ef da                     jsr     PD_CHECK_ERR
+db30: b0 06                        bcs     PD_EXIT           ;Did we have an error?
 db32: a5 42                        lda     PRODOS_CMD
-db34: c9 03                        cmp     #$03
-db36: f0 01                        beq     LDB39
-db38: 60           LDB38           rts
+db34: c9 03                        cmp     #$03              ;Was it initialise?
+db36: f0 01                        beq     PD_INIT_DATA      ;Do the rest of the track
+db38: 60           PD_EXIT         rts
 
-db39: a9 18        LDB39           lda     #$18
+db39: a9 18        PD_INIT_DATA    lda     #$18              ;Looks like this skips the first three tracks
 db3b: 8d 81 03                     sta     DISK_SECT
-db3e: a9 00        LDB3E           lda     #$00
+db3e: a9 00        PD_INIT_WR      lda     #$00              ;Zero the high block
 db40: 85 47                        sta     PRODOS_BLKNUM+1
-db42: ad 81 03                     lda     DISK_SECT
+db42: ad 81 03                     lda     DISK_SECT         ;Which block to write
 db45: 85 46                        sta     PRODOS_BLKNUM
-db47: a9 02                        lda     #$02
-db49: 20 20 db                     jsr     LDB20
-db4c: b0 ea                        bcs     LDB38
-db4e: ee 81 03                     inc     DISK_SECT
-db51: ce 80 03                     dec     DISK_TRKL
-db54: d0 e8                        bne     LDB3E
+db47: a9 02                        lda     #$02              ;Setup for a write
+db49: 20 20 db                     jsr     PD_ALT_CALL       ;Write out sector
+db4c: b0 ea                        bcs     PD_EXIT           ;Error go home
+db4e: ee 81 03                     inc     DISK_SECT         ;Next sector
+db51: ce 80 03                     dec     DISK_TRKL         ;Until the counter =0
+db54: d0 e8                        bne     PD_INIT_WR
 db56: 60                           rts
 
-db57: 38           LDB57           sec
+                   ********************************************************************************
+                   * We get here if the command is greater than or equal to four.                 *
+                   * Normal ProDOS commands are                                                   *
+                   * 0 - Status                                                                   *
+                   * 1 - Read                                                                     *
+                   * 2 - Write                                                                    *
+                   * 3 - Init                                                                     *
+                   * Extended commands (read / write a whole track?)                              *
+                   * 4 - gets translated as (4-3)^3 so to a 2 - Write                             *
+                   * 5 - gets translated as (5-3)^3 so to a 1 - Read                              *
+                   * 6 - gets translated as (6-3)^3 so to a 0 - status                            *
+                   ********************************************************************************
+db57: 38           PD_MULT_SECT_OP sec                       ;Do the conversion
 db58: e9 03                        sbc     #$03
 db5a: 49 03                        eor     #$03
-db5c: 85 42                        sta     PRODOS_CMD
-db5e: a9 08                        lda     #$08
-db60: 8d ac db                     sta     PRODOS_XXX
-db63: ad 82 03                     lda     $0382
+db5c: 85 42                        sta     PRODOS_CMD        ;Set the command
+db5e: a9 08                        lda     #$08              ;Whole track?
+db60: 8d ac db                     sta     PD_TRACK_OP_CNT
+db63: ad 82 03                     lda     DISK_TRK_ADDR     ;Get disk data pointer
 db66: 85 45                        sta     PRODOS_BUFPTRH
 db68: a9 00                        lda     #$00
-db6a: 8d 81 03                     sta     DISK_SECT
+db6a: 8d 81 03                     sta     DISK_SECT         ;We're doing the whole track
 db6d: 85 44                        sta     PRDOOS_BUFPTRL
-db6f: 20 8d db                     jsr     LDB8D
-db72: 20 2a db     LDB72           jsr     PD_CALL_DRIVER
-db75: b0 c1                        bcs     LDB38
-db77: ee 82 03                     inc     $0382
-db7a: ee 82 03                     inc     $0382
-db7d: e6 46                        inc     PRODOS_BLKNUM
-db7f: d0 02                        bne     LDB83
-db81: e6 47                        inc     $47
-db83: e6 45        LDB83           inc     PRODOS_BUFPTRH
+db6f: 20 8d db                     jsr     TRKSEC2PD_BLK     ;Convert to PD block
+                   PD_TRACK_OP_LOOP
+db72: 20 2a db                     jsr     PD_CALL_DRIVER
+db75: b0 c1                        bcs     PD_EXIT           ;Flag we had an error
+db77: ee 82 03                     inc     DISK_TRK_ADDR     ;Add 512 bytes to destination / source
+db7a: ee 82 03                     inc     DISK_TRK_ADDR
+db7d: e6 46                        inc     PRODOS_BLKNUM     ;Bounce the block number along
+db7f: d0 02                        bne     PD_BLK_NO_WRAP
+db81: e6 47                        inc     PRODOS_BLKNUM+1
+db83: e6 45        PD_BLK_NO_WRAP  inc     PRODOS_BUFPTRH    ;Do the ProDOS address
 db85: e6 45                        inc     PRODOS_BUFPTRH
-db87: ce ac db                     dec     PRODOS_XXX
-db8a: d0 e6                        bne     LDB72
+db87: ce ac db                     dec     PD_TRACK_OP_CNT   ;Do the loop
+db8a: d0 e6                        bne     PD_TRACK_OP_LOOP
 db8c: 60                           rts
 
-db8d: ad 86 03     LDB8D           lda     DISK_TRKH
-db90: 85 47                        sta     $47
+db8d: ad 86 03     TRKSEC2PD_BLK   lda     DISK_TRKH         ;Prodos block is TRACK*8 + SECT
+db90: 85 47                        sta     PRODOS_BLKNUM+1
 db92: ad 80 03                     lda     DISK_TRKL
 db95: a2 03                        ldx     #$03
-db97: 0a           LDB97           asl     A
+db97: 0a           BLK_MULT_2      asl     A                 ;Multiply by two
 db98: 26 47                        rol     $47
 db9a: ca                           dex
-db9b: d0 fa                        bne     LDB97
-db9d: 0d 81 03                     ora     DISK_SECT
+db9b: d0 fa                        bne     BLK_MULT_2
+db9d: 0d 81 03                     ora     DISK_SECT         ;Add sector
 dba0: 85 46                        sta     PRODOS_BLKNUM
 dba2: 60                           rts
 
@@ -1606,90 +1523,8 @@ dba7: 00 02                        .dd2    $0200
 dba9: 00                           .dd1    $00
 dbaa: 00                           .dd1    $00
 dbab: 00                           .dd1    $00
-dbac: 00           PRODOS_XXX      .dd1    $00
-dbad: 00                           .dd1    $00
-dbae: 00                           .dd1    $00
-dbaf: 00                           .dd1    $00
-dbb0: 00                           .dd1    $00
-dbb1: 00                           .dd1    $00
-dbb2: 00                           .dd1    $00
-dbb3: 00                           .dd1    $00
-dbb4: 00                           .dd1    $00
-dbb5: 00                           .dd1    $00
-dbb6: 00                           .dd1    $00
-dbb7: 00                           .dd1    $00
-dbb8: 00                           .dd1    $00
-dbb9: 00                           .dd1    $00
-dbba: 00                           .dd1    $00
-dbbb: 00                           .dd1    $00
-dbbc: 00                           .dd1    $00
-dbbd: 00                           .dd1    $00
-dbbe: 00                           .dd1    $00
-dbbf: 00                           .dd1    $00
-dbc0: 00                           .dd1    $00
-dbc1: 00                           .dd1    $00
-dbc2: 00                           .dd1    $00
-dbc3: 00                           .dd1    $00
-dbc4: 00                           .dd1    $00
-dbc5: 00                           .dd1    $00
-dbc6: 00                           .dd1    $00
-dbc7: 00                           .dd1    $00
-dbc8: 00                           .dd1    $00
-dbc9: 00                           .dd1    $00
-dbca: 00                           .dd1    $00
-dbcb: 00                           .dd1    $00
-dbcc: 00                           .dd1    $00
-dbcd: 00                           .dd1    $00
-dbce: 00                           .dd1    $00
-dbcf: 00                           .dd1    $00
-dbd0: 00                           .dd1    $00
-dbd1: 00                           .dd1    $00
-dbd2: 00                           .dd1    $00
-dbd3: 00                           .dd1    $00
-dbd4: 00                           .dd1    $00
-dbd5: 00                           .dd1    $00
-dbd6: 00                           .dd1    $00
-dbd7: 00                           .dd1    $00
-dbd8: 00                           .dd1    $00
-dbd9: 00                           .dd1    $00
-dbda: 00                           .dd1    $00
-dbdb: 00                           .dd1    $00
-dbdc: 00                           .dd1    $00
-dbdd: 00                           .dd1    $00
-dbde: 00                           .dd1    $00
-dbdf: 00                           .dd1    $00
-dbe0: 00                           .dd1    $00
-dbe1: 00                           .dd1    $00
-dbe2: 00                           .dd1    $00
-dbe3: 00                           .dd1    $00
-dbe4: 00                           .dd1    $00
-dbe5: 00                           .dd1    $00
-dbe6: 00                           .dd1    $00
-dbe7: 00                           .dd1    $00
-dbe8: 00                           .dd1    $00
-dbe9: 00                           .dd1    $00
-dbea: 00                           .dd1    $00
-dbeb: 00                           .dd1    $00
-dbec: 00                           .dd1    $00
-dbed: 00                           .dd1    $00
-dbee: 00                           .dd1    $00
-dbef: 00                           .dd1    $00
-dbf0: 00                           .dd1    $00
-dbf1: 00                           .dd1    $00
-dbf2: 00                           .dd1    $00
-dbf3: 00                           .dd1    $00
-dbf4: 00                           .dd1    $00
-dbf5: 00                           .dd1    $00
-dbf6: 00                           .dd1    $00
-dbf7: 00                           .dd1    $00
-dbf8: 00                           .dd1    $00
-dbf9: 00                           .dd1    $00
-dbfa: 00                           .dd1    $00
-dbfb: 00                           .dd1    $00
-dbfc: 00                           .dd1    $00
-dbfd: 00                           .dd1    $00
-dbfe: 00                           .dd1    $00
-dbff: 00                           .dd1    $00
+dbac: 00           PD_TRACK_OP_CNT .dd1    $00
+dbad: 00 00 00 00+                 .fill   83,$00
 
                    ********************************************************************************
                    * Various routines                                                             *

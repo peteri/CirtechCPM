@@ -287,11 +287,20 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
-# code coverage
-ClassicBasic_coverage.xml
-/ClassicBasic/ClassicBasic.xml
-/ClassicBasic.Interpreter/ClassicBasic.Interpreter.xml
-/ClassicBasic.Test/ClassicBasic.Test.xml
-Tools/NibReader/D000.bin
-Tools/NibReader/CPMBoot.bin
-Tools/NibReader/CPMLDR.bin
+# Output files
+Tools/NibReader/*.bin
+Tools/NibReader/CPM3.SYS
+# Don't want assembler listings or turbo pascal backup files
+*.BAK
+*.PRN
+*.SYM
+# Ignore the loader BIOS output from assembly
+src/boot/LDRBIOS.REL
+src/boot/CPMLDR.COM
+src/cpm3sys/
+# CPM editors (I'm using Turbo pascal)
+# easiest to just copy them into the working folder
+# But best not to add them to git.
+TINST.*
+TURBO.*
+

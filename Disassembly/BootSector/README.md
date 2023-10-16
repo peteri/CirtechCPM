@@ -18,7 +18,7 @@ Mame has quite good debugging tools for the Z80 and 6502 but this let me check o
 
 [Apple //c Technical reference second edition](https://archive.org/details/AppleIIcTechnicalReference2ndEd/page/n241/mode/2up)
 
-[Apple //e Technical reference] (https://archive.org/details/Apple_IIe_Technical_Reference_Manual/)
+[Apple //e Technical reference](https://archive.org/details/Apple_IIe_Technical_Reference_Manual/)
 
 [Cirtech SCSI card](https://www.whatisthe2gs.apple2.org.za/files/CirtechSCSICard/Manual/Cirtech_SCSI_Interface_Card-Manual.pdf)
 
