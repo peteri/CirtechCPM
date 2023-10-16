@@ -17,15 +17,15 @@ This should mean once completed the build process can be self hosted on a RC2014
 
 ## Folders
 
-[Disassembly](Disassembly\README.md) contains notes and various chunks of  disassembled code used to create the source code.
+[Disassembly](Disassembly/README.md) contains notes and various chunks of  disassembled code used to create the source code.
 
-[src](src\README.md) Source code and powershell scripts to build them.
+[src](src/README.md) Source code and powershell scripts to build them.
 
-[DiskImages](DiskImages\README.md) Misc disk images created on the Apple //e
+[DiskImages](DiskImages/README.md) Misc disk images created on the Apple //e
 
 [images](images) contains jpegs \ png files used for readme files.
 
-[Tools](Tools\README.md) tools, some in dotnet 8.0, some that run in CP/M
+[Tools](Tools/README.md) tools, some in dotnet 8.0, some that run in CP/M
 
 ## Copyrights
 Any code that I generate will be MIT licensed.
