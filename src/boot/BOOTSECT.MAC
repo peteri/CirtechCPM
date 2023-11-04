@@ -188,19 +188,13 @@ VECTOR6502      lda     LCBANK2         ;$3C0
                 sei                     ;$3D5
                 jsr     MON_SAVE        ;$3D6 Save away the registers
                 jmp     $03c0           ;$3D9 Back to z80 land
-
-VECTORZ80       db     $af             ;xor a
-                db     $32             ;xor ($0000),a
-                db     $00
-                db     $00
-                db     $2a             ;ld hl,($F3DE) Card return address to 6502
-                db     $de
-                db     $f3
-                db     $77             ;ld (hl),a
-                db     $c3             ;jp $1100
-                db     $00
-                db     $11
-
+                .z80
+VECTORZ80:      xor a
+                ld (0000H),a             ;Tell 6502 we're here
+                ld hl,(0F3DEH)          ;Card return address to 6502
+                ld (hl),a               ;Return back to 6502
+                jp 1100H                ;Fire up loader
+                .6502
 IDCFOUND        jsr     CLRSCR_ENABLELANGCARD
                 lda     READCXFF+2      ;Get back Cx00 slot
                 sta     SMARTDRV_CALL+2 ;Patch up various things
