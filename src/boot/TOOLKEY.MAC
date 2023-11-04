@@ -6,22 +6,33 @@
 ;*                                                                              *
 ;********************************************************************************
 HIBYTE          MACRO MSG
-                IRPC X,<MSG>
-                IF '&X' NE '"'
-                DB '&X'+080h
-                ENDIF
+                  IRPC X,<MSG>
+                    IF '&X' NE '"'
+                      DB '&X'+080h
+                    ENDIF
+                  ENDM
                 ENDM
-                ENDM
-                CSEG                    ;Absolute mode
+                
                 HIBYTE " __________ CIRTECH ToolKey _____________ "
                 HIBYTE "|                                        |"
-                HIBYTE "| Duplicate  Format  Print  Empty  eXtra |"
+                HIBYTE "| "
+                DB 'D'-040H
+                HIBYTE "uplicate  "
+                DB 'F'-040H
+                HIBYTE "ormat  "
+                DB 'P'-040H
+                HIBYTE "rint  "
+                DB 'E'-040H
+                HIBYTE "mpty  e"
+                DB 'X'-040H
+                HIBYTE "tra |"
                 HIBYTE "|                                        |"
                 HIBYTE "|___________Press  ESC to quit___________|"
                 HIBYTE " Format disk in which drive (A to P)? "
                 HIBYTE " Insert disk in drive and press <RTN> "
                 HIBYTE "     Formatting...... please wait     "
                 HIBYTE " Format successful.   Do again (Y/N)? "
+                HIBYTE " Disk error          Try again (Y/N)? "
                 HIBYTE "Disk Write Protected. Try Again (Y/N)?"
                 HIBYTE " Which drive is the SOURCE  (A to P)? "
                 HIBYTE " Which is the  DESTINATION  (A to P)? "
