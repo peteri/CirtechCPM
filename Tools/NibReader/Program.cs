@@ -4,6 +4,7 @@ class Program
     static int[] prodosSectorMap = { 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15 };
     static int[] cpmSectorMap = { 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13 };
     static bool noDiag;
+    static bool cpm3Sys;
     static string nibbleFname = "";
 
     static void Main(string[] args)
@@ -12,8 +13,18 @@ class Program
         {
             foreach (var arg in args)
             {
-                if (arg.ToLower() == "-nodiag")
-                    noDiag = true;
+                if (arg.StartsWith("-"))
+                {
+                    switch (arg.ToLower())
+                    {
+                        case "-nodiag":
+                            noDiag = true;
+                            break;
+                        case "-cpm3sys":
+                            cpm3Sys=true;
+                            break;
+                    }
+                }
                 else
                     nibbleFname = arg;
             }
@@ -28,15 +39,18 @@ class Program
             SaveSectors("CCP.bin", tracks, CCP, prodosSectorMap);
             var Toolkey = CreateTrackSectors(1, 13, 3);
             SaveSectors("TOOLKEY.bin", tracks, Toolkey, prodosSectorMap);
-            var CpmLdr = CreateTrackSectors(2, 0, 16);
-            SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
-            // Now do the CPM bits
-            var CpmDirectory = CreateTrackSectors(3, 0, 8);
-            var cpmDir = ReadSectors(tracks, CpmDirectory, cpmSectorMap);
-            SaveCpmFile("CPM3.SYS", cpmDir, tracks, cpmSectorMap);
             // Strip off high bits and display the Toolkey messages
             if (!noDiag)
                 DumpToolkitMessages();
+            var CpmLdr = CreateTrackSectors(2, 0, 16);
+            SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
+            // Now do the CPM bits
+            if (cpm3Sys)
+            {
+                var CpmDirectory = CreateTrackSectors(3, 0, 8);
+                var cpmDir = ReadSectors(tracks, CpmDirectory, cpmSectorMap);
+                SaveCpmFile("CPM3.SYS", cpmDir, tracks, cpmSectorMap);
+            }
         }
     }
 
