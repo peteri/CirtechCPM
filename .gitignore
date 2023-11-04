@@ -295,8 +295,11 @@ Tools/NibReader/CPM3.SYS
 *.PRN
 *.SYM
 # Ignore the loader BIOS output from assembly
+src/boot/BOOTSECT.REL
 src/boot/LDRBIOS.REL
 src/boot/CPMLDR.COM
+src/boot/BOOTSECT.COM
+src/boot/*.bin
 src/cpm3sys/
 # CPM editors (I'm using Turbo pascal)
 # easiest to just copy them into the working folder
