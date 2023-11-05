@@ -1,0 +1,233 @@
+;
+; Incomplete disassembly
+; Exported from SourceGen using the cc65 mode then some search and replace.
+; temporary test build
+; Code status
+; D400-DBFF requires more work
+; DC00-DE00 requires more work
+;
+         cseg 
+         .6502
+SCRLINEL EQU       $20        ;Address of current line in $400
+SCRLINEH EQU       $21        ;Screen address high
+ESCAPE_STATE EQU   $22        ;State for ESCAPE leadin
+CURSOR_STATE EQU   $23        ;Bit 7 high if cursor on screen
+CURSORX  EQU       $25        ;Cursor X (80 col)
+ZP_TEMP1 EQU       $26        ;Zero page temporary
+D2_CHECK_SUM EQU   $27        ;Checksum for disk routines
+CURSORY  EQU       $29        ;Cursor Y (80 col)
+HEADER_CHECKSUM EQU $2c       ;Checksum for the sector header
+HEADER_SECTOR EQU  $2d
+HEADER_TRACK EQU   $2e        ;Track from sector header
+HEADER_VOLUME EQU  $2f
+MON_INVFLAG EQU    $32        ;text mask (255=normal, 127=flash, 63=inv)
+MON_A1H  EQU       $3d        ;general purpose
+MON_A2L  EQU       $3e        ;general purpose
+MON_A2H  EQU       $3f        ;general purpose
+MON_A3H  EQU       $41        ;general purpose
+PRODOS_CMD EQU     $42
+PRODOS_UNITNUM EQU $43
+PRDOOS_BUFPTRL EQU $44
+PRODOS_BUFPTRH EQU $45        ;Prodos buffer pointer high
+PRODOS_BLKNUM EQU  $46
+DISK_TRKL EQU      $0380      ;Disk track low (From Z80)
+DISK_SECT EQU      $0381      ;Disk sector (from Z80)
+DISK_TRK_ADDR EQU  $0382      ;While track read/write page
+DISK_DRV EQU       $0384      ;Drive to use from CPM (Slot)
+DISK_ACTD EQU      $0385      ;Current active disk ][ drive
+DISK_TRKH EQU      $0386      ;Disk track high (from Z80)
+DISK_VOL EQU       $0387      ;Disk volume
+DISK_OP  EQU       $0388      ;Disk operation
+DISK_ERR EQU       $0389      ;Disk Error back
+SLOT_INFO EQU      $03b8
+SCRNHOLE0 EQU      $0478      ;text page 1 screen holes
+SCRNHOLE1 EQU      $04f8      ;text page 1 screen holes
+SCRNHOLE2 EQU      $0578      ;text page 1 screen holes
+DISKSLOTCX EQU     $05f8      ;Disk slot $60
+SCRNHOLE4 EQU      $0678      ;text page 1 screen holes
+SCRNHOLE5 EQU      $06f8      ;text page 1 screen holes
+SET80COL EQU       $c001      ;W use PAGE2 for aux mem (80STOREON)
+SET80VID EQU       $c00d      ;W enable 80-column display mode
+SETALTCHAR EQU     $c00f      ;W use alternate char set
+SPKR     EQU       $c030      ;RW toggle speaker
+TXTPAGE1 EQU       $c054      ;RW display page 1
+TXTPAGE2 EQU       $c055      ;RW display page 2 (or read/write aux mem)
+IWM_PH0_OFF EQU    $c080      ;IWM phase 0 off
+IWM_MOTOR_OFF EQU  $c088      ;IWM motor off
+IWM_MOTOR_ON EQU   $c089      ;IWM motor on
+IWM_DRIVE_1 EQU    $c08a      ;IWM select drive 1
+IWM_DRIVE_2 EQU    $c08b      ;IWM select drive 2
+LCBANK1  EQU       $c08b      ;RWx2 read/write RAM bank 1
+IWM_Q6_OFF EQU     $c08c      ;IWM read
+IWM_Q6_ON EQU      $c08d      ;IWM WP-sense
+IWM_Q7_OFF EQU     $c08e      ;IWM WP-sense/read
+IWM_Q7_ON EQU      $c08f      ;IWM write
+CLRROM   EQU       $cfff      ;disable slot C8 ROM
+SIX_BIT_DATA EQU   $de00      ;Six bit data bytes
+TWO_BIT_DATA EQU   $df00      ;56 bytes of 2 bit data
+LD000              EQU $d000
+PRINT_STACK_CHAR   EQU  $d003
+;*******************************************************************************
+;* Various routines                                                            *
+;* These get copied out of $DC00 into $0A00                                    *
+;* They also get copied into the other bank of memory                          *
+;* So probably have some banking code in there.                                *
+;*******************************************************************************
+         cld
+         pha
+         txa
+         bne     XL0A0E
+         bit     LCBANK1
+         bit     LCBANK1
+         jmp     PRINT_STACK_CHAR
+
+XL0A0E:  bpl     XL0A19
+         bit     LCBANK1
+         bit     LCBANK1
+         jmp     LD000
+
+XL0A19:  stx     ROMSLOT+1
+         lda     SLOT_INFO,x
+         and     #$0f
+         pha
+         txa
+         asl     A
+         asl     A
+         asl     A
+         asl     A
+         tax
+         pla
+         cmp     #$03       ;Possibly serial card
+         beq     CARD3
+         cmp     #$04       ;High speed serial
+         beq     CARD4
+         cmp     #$05       ;Parallel printer
+         beq     CARD5
+         cmp     #$06       ;Pascal based card
+         beq     CARD6
+         pla
+         bne     L0AA2
+CARD6:   pla
+         cpy     #$0e
+         beq     XL0A54
+         cpy     #$0f
+         beq     XL0A54
+         cpy     #$0d
+         beq     XL0A54
+         cpy     #$10
+         bne     L0AA2
+         jsr     XL0A54
+         bcs     CARDRETFF
+         bcc     L0AA2
+
+XL0A54:  sty     XL0A61+1
+         pha
+         jsr     L0B06
+         stx     XL0A61+2
+         stx     XL0A68+2
+XL0A61:  lda     $c100
+         sta     XL0A68+1
+         pla
+XL0A68:  jmp     $c100
+
+CARD5:   pla
+         cpy     #$0d
+         beq     CARDRETFF
+         cpy     #$10
+         beq     XL0A83
+         cpy     #$0f
+         bne     L0AA2
+         pha
+XL0A79:  jsr     XL0A83
+         beq     XL0A79
+         pla
+         sta     IWM_PH0_OFF,y
+         rts
+
+XL0A83:  jsr     L0B06
+         stx     XL0A89+2
+XL0A89:  lda     $c0c1
+         bmi     L0AA2
+CARDRETFF:
+         lda     #$ff
+         rts
+
+CARD4:   pla
+         cpy     #$10
+         beq     CARDRETFF
+         cpy     #$0d
+         beq     L0B00
+         cpy     #$0f
+         beq     L0AF5
+         cpy     #$0e
+         beq     L0AEB
+L0AA2:   lda     #$00
+         rts
+
+CARD3:   pla
+         cpy     #$10
+         beq     XL0AD2
+         cpy     #$0f
+         beq     XL0AC3
+         cpy     #$0d
+         beq     XL0ADF
+         cpy     #$0e
+         bne     L0AA2
+XL0AB6:  lda     #$01
+         jsr     XL0AD2
+         beq     XL0AB6
+         lda     IWM_Q7_ON,x
+         lda     #$ff
+         rts
+
+XL0AC3:  pha
+XL0AC4:  lda     #$00
+         jsr     XL0AD2
+         beq     XL0AC4
+         pla
+         sta     IWM_Q7_ON,x
+         lda     #$ff
+         rts
+
+XL0AD2:  tay
+         lda     IWM_Q7_OFF,x
+         lsr     A
+         dey
+         beq     XL0ADB
+         lsr     A
+XL0ADB:  bcc     L0AA2
+         bcs     CARDRETFF
+
+XL0ADF:  lda     #$03
+         sta     IWM_Q7_OFF,x
+         lda     #$15
+         sta     IWM_Q7_OFF,x
+         bne     CARDRETFF
+
+L0AEB:   jsr     L0B06
+         jsr     $c84d
+         lda     $05b8,x
+         rts
+
+L0AF5:   pha
+         jsr     L0B06
+         pla
+         sta     $05b8,x
+         jmp     $c9aa
+
+L0B00:   jsr     L0B06
+         jmp     $c800
+
+L0B06:   stx     SCRNHOLE5
+         txa
+         tay
+ROMSLOT: lda     #$00
+         ora     #$c0
+         tax
+         stx     READROMSLOT+2
+         bit     CLRROM
+READROMSLOT:
+         lda     $c100
+         rts
+         DS 080H,01AH
+        END

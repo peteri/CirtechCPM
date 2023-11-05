@@ -10,11 +10,17 @@ Write-Host 'Building files'
 .\M80.ps1 LDRBIOS
 .\M80.ps1 BIOSVID
 .\M80.ps1 BIOSDISK
+.\M80.ps1 BIOSMISC
 Write-Host 'Linking'
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BOOTSECT[L0800,NR,NL]=BOOTSECT
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK TOOLKEY[L0000,NR,NL]=TOOLKEY
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK D000[LD000,NR,NL]=BIOSVID,BIOSDISK
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSMISC[L0A00,NR,NL]=BIOSMISC
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSVID[LD000,NR,NL]=BIOSVID
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSDISK[LD400,NR,NL]=BIOSDISK
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK CPMLDR[L1100,NL]=CPMLDR,LDRBIOS
+# Use cmd to copy the binaries into a single file
+Write-Host 'Merging for language card D000'
+cmd /c copy BIOSVID.COM /b + BIOSDISK.COM /b + BIOSMISC.COM /b D000.COM
 Write-Host 'Comparing binaries for BOOTSECT'
 fc.exe /b BOOTSECT.COM BOOTSECT.bin
 Write-Host 'Comparing binaries for TOOLKEY'
