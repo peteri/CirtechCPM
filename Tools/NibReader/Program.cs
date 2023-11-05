@@ -21,7 +21,7 @@ class Program
                             noDiag = true;
                             break;
                         case "-cpm3sys":
-                            cpm3Sys=true;
+                            cpm3Sys = true;
                             break;
                     }
                 }
@@ -30,26 +30,30 @@ class Program
             }
             // Read in our nibbles
             var tracks = NibReader.ReadTracks(File.ReadAllBytes(nibbleFname));
-            // Save away the prodos ordered sectors
-            var bootList = CreateTrackSectors(0, 0, 2);
-            SaveSectors("BOOTSECT.bin", tracks, bootList, prodosSectorMap);
-            var d000List = CreateTrackSectors(0, 2, 14);
-            SaveSectors("D000.bin", tracks, d000List, prodosSectorMap);
-            var CCP = CreateTrackSectors(1, 0, 13);
-            SaveSectors("CCP.bin", tracks, CCP, prodosSectorMap);
-            var Toolkey = CreateTrackSectors(1, 13, 3);
-            SaveSectors("TOOLKEY.bin", tracks, Toolkey, prodosSectorMap);
-            // Strip off high bits and display the Toolkey messages
-            if (!noDiag)
-                DumpToolkitMessages();
-            var CpmLdr = CreateTrackSectors(2, 0, 16);
-            SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
-            // Now do the CPM bits
             if (cpm3Sys)
             {
+                // Do CPM3.SYS
                 var CpmDirectory = CreateTrackSectors(3, 0, 8);
                 var cpmDir = ReadSectors(tracks, CpmDirectory, cpmSectorMap);
                 SaveCpmFile("CPM3.SYS", cpmDir, tracks, cpmSectorMap);
+            }
+            else
+            {
+                // Do the boot tracks
+                // Save away the prodos ordered sectors
+                var bootList = CreateTrackSectors(0, 0, 2);
+                SaveSectors("BOOTSECT.bin", tracks, bootList, prodosSectorMap);
+                var d000List = CreateTrackSectors(0, 2, 14);
+                SaveSectors("D000.bin", tracks, d000List, prodosSectorMap);
+                var CCP = CreateTrackSectors(1, 0, 13);
+                SaveSectors("CCP.bin", tracks, CCP, prodosSectorMap);
+                var Toolkey = CreateTrackSectors(1, 13, 3);
+                SaveSectors("TOOLKEY.bin", tracks, Toolkey, prodosSectorMap);
+                // Strip off high bits and display the Toolkey messages
+                if (!noDiag)
+                    DumpToolkitMessages();
+                var CpmLdr = CreateTrackSectors(2, 0, 16);
+                SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
             }
         }
     }

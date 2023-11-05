@@ -16,13 +16,13 @@ The other file provided by DRI is the `CCP.bin` which is `CCP.COM` from a CP/M p
 There are a few more comments to be added but most of the code is now understood.
 *Note* the sectors on the first three tracks are in ProDOS sector order.
 
-|Track| Sectors | 6502 load address | Code |
-|-----|---------|-------------------|------|
-| 0   | 0-1     | `$0800` | initial 6502 boot sector. |
-| 0   | 2-F     | `$D000` | 6502 BIOS code. |
-| 1   | 0-C     | `$1100` | CCP.COM |
-| 1   | D-F     | `$1E00` | Cirtech toolkit strings |
-| 2   | 0-F     | `$2100` | CPMLDR.COM - CP/M loader |
+|Track| Sectors | 6502 load address | Z80 Address | Code |
+|-----|---------|-------------------|-------------|------|
+| 0   | 0-1     | `$0800` | NA |initial 6502 boot sector. |
+| 0   | 2-F     | `$D000` | NA | 6502 BIOS code. |
+| 1   | 0-C     | `$1100` | `0100H` | CCP.COM |
+| 1   | D-F     | `$1E00` | `0E00H` | Cirtech toolkit strings |
+| 2   | 0-F     | `$2100` | `1100H` | CPMLDR.COM - CP/M loader |
 
 The `build.ps1` powershell script runs the NibReader tool over an image created from a
 Cirtech CP/M boot disk, creating `.bin` binary image files. It then builds the assembler files
