@@ -8,11 +8,12 @@ Write-Host 'Building files'
 .\M80.ps1 BOOTSECT
 .\M80.ps1 TOOLKEY
 .\M80.ps1 LDRBIOS
-.\M80.ps1 D000
+.\M80.ps1 BIOSVID
+.\M80.ps1 BIOSDISK
 Write-Host 'Linking'
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BOOTSECT[L0800,NR,NL]=BOOTSECT
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK TOOLKEY[L0000,NR,NL]=TOOLKEY
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK D000[LD000,NR,NL]=D000
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK D000[LD000,NR,NL]=BIOSVID,BIOSDISK
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK CPMLDR[L1100,NL]=CPMLDR,LDRBIOS
 Write-Host 'Comparing binaries for BOOTSECT'
 fc.exe /b BOOTSECT.COM BOOTSECT.bin
