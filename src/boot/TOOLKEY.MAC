@@ -12,7 +12,7 @@ HIBYTE          MACRO MSG
                     ENDIF
                   ENDM
                 ENDM
-                cseg
+                aseg
                 org 0
                 HIBYTE " __________ CIRTECH ToolKey _____________ "
                 HIBYTE "|                                        |"

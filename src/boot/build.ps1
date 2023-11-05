@@ -9,9 +9,9 @@ Write-Host 'Building files'
 .\M80.ps1 TOOLKEY
 .\M80.ps1 LDRBIOS
 Write-Host 'Linking'
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BOOTSECT[NR,NL]=BOOTSECT
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK TOOLKEY[NR,NL]=TOOLKEY
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK CPMLDR[L1100]=CPMLDR,LDRBIOS
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BOOTSECT[L0800,NR,NL]=BOOTSECT
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK TOOLKEY[L0000,NR,NL]=TOOLKEY
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK CPMLDR[L1100,NL]=CPMLDR,LDRBIOS
 Write-Host 'Comparing binaries for BOOTSECT'
 fc.exe /b BOOTSECT.COM BOOTSECT.bin
 Write-Host 'Comparing binaries for TOOLKEY'

@@ -8,10 +8,9 @@
 ;*                                                                              *
 ;* Generated using 6502bench SourceGen v1.8.5                                   *
 ;********************************************************************************
-                CSEG                    ;Absolute mode
-                ORG 0H                  ;
+                ASEG                    ;Absolute segment
+                ORG 800H                ;Start at zero
                 .6502                   ;Into 6502 mode
-                .PHASE $800             ;We're really at $800
 SLOTX16         equ     $01             ;Boot slot times sixteen
 SLOTX           equ     $04             ;SLOTX
 ZP_PRODOS_CMD   equ     $42             ;ProDOS command in zeropage

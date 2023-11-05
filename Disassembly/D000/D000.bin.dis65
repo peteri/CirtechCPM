@@ -543,6 +543,13 @@
 "IsRelative":false},
 
 {
+"Offset":1024,
+"Addr":54272,
+"Length":-1024,
+"PreLabel":"",
+"IsRelative":false},
+
+{
 "Offset":3072,
 "Addr":2560,
 "Length":-1024,
