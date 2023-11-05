@@ -7,8 +7,8 @@
 ; D400-DBFF requires more work
 ; DC00-DE00 requires more work
 ;
-         aseg 
-         org    0d000h
+         cseg 
+;         org    0d000h
          .6502
 SCRLINEL EQU       $20        ;Address of current line in $400
 SCRLINEH EQU       $21        ;Screen address high
@@ -1648,7 +1648,7 @@ PD_TRACK_OP_CNT:
 ;* They also get copied into the other bank of memory                          *
 ;* So probably have some banking code in there.                                *
 ;*******************************************************************************
-;         .PHASE 0A00H
+         .PHASE 0A00H
          cld
          pha
          txa
@@ -1805,5 +1805,6 @@ ROMSLOT: lda     #$00
 READROMSLOT:
          lda     $c100
          rts
-;         .DEPHASE
+         .DEPHASE
+         DS 080H,01AH
         END
