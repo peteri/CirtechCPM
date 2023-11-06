@@ -1,0 +1,149 @@
+RDMAINRAM EQU 0E002H
+RDCARDRAM EQU 0E003H
+WRMAINRAM EQU 0E004H
+WRCARDRAM EQU 0E005H
+
+DE03: C3 F8 DE jp   $DEF8 1  - WBOOT - Warm Start
+DE0C: C3 04 DF jp   $DF04 4  - CONOUT - Write console
+DE0F: C3 0E DF jp   $DF0E 5  - LIST - Write to list
+DE12: C3 09 DF jp   $DF09 6  - AUXOUT
+DE33: C3 16 DF jp   $DF16 17 - CONOST - Output status of console
+DE39: C3 1B DF jp   $DF1B 19 - AUXOST - Output status of Aux port
+DE2D: C3 20 DF jp   $DF20 15 - LISTST - List Status
+DE06: C3 35 DF jp   $DF35 2  - CONST - Console input character read
+DE36: C3 3A DF jp   $DF3A 18 - AUXIST - Input status of Aux port
+DE09: C3 42 DF jp   $DF42 3  - CONIN - Read console in
+DE15: C3 47 DF jp   $DF47 7  - AUXIN
+DE3F: C3 4F DF jp   $DF4F 21 - DEVINI
+DE4B: C3 54 DF jp   $DF54 25 - MOVE
+DE51: C3 7A DF jp   $DF7A 27 - SELMEM
+DE3C: C3 A4 DF jp   $DFA4 20 - DEVTBL - Address of char IO Table
+DE5A: C3 A8 DF jp   $DFA8 30 - USERF
+
+DE27: C3 3A A5 jp   $A53A 13 - READ
+DE2A: C3 64 A5 jp   $A564 14 - WRITE
+DE00: C3 23 A6 jp   $A623 0  - CBOOT
+DE42: C3 01 A8 jp   $A801 22 - DRVTBL - Drive table
+DE57: C3 05 A8 jp   $A805 29 - XMOVE
+DE48: C3 12 A8 jp   $A812 24 - FLUSH
+DE54: C3 14 A8 jp   $A814 28 - SETBNK
+DE30: C3 18 A8 jp   $A818 16 - SECTRAN
+DE1B: C3 1B A8 jp   $A81B 9  - SELDSK
+DE18: C3 4C A8 jp   $A84C 8  - HOME
+DE1E: C3 4E A8 jp   $A84E 10 - SETTRK
+DE21: C3 6F A8 jp   $A86F 11 - SETSEC 
+DE24: C3 74 A8 jp   $A874 12 - SETDMA
+DE45: C3 79 A8 jp   $A879 23 - MULTIO 
+DE4E: C9 C9 C9 ret        26 - TIME
+DE5D: C3 00 00 jp   $0000 31 - RESERV1
+DE60: C3 00 00 jp   $0000 32 - RESERV2
+
+DE64: CURBANK DB 00
+
+
+WBOOT:
+
+
+
+
+
+
+DEEF: 32 02 E0    ld   (RDMAINRAM),a
+DEF2: 32 04 E0    ld   (WRMAINRAM),a
+DEF5: C3 C3 A6    jp   $A6C3
+B_WBOOT:
+DEF8: 32 02 E0    ld   (RDMAINRAM),a
+DEFB: C3 12 A5    jp   $A512
+DEFE: 32 03 E0    ld   (RDCARDRAM),a
+DF01: C3 00 01    jp   $0100
+; Console out
+B_CONOUT:         ld   hl,(@COVEC)   ;Get console out vector
+                  jr   JPOUT         ;Off to output routine
+; Aux out
+B_AUXOUT:         ld   hl,(@AOVEC)
+                  jr   JPOUT
+; List out
+B_LIST:           ld   hl,(@LOVEC)
+JPOUT:            ld   de,VECOUT        ;A8F1
+                  jr   JPIOFUNC
+; Console out status
+B_CONOST:         ld   hl,(@COVEC)
+                  jr   JPOST
+; Aux out status
+B_AUXOST:         ld   hl,(@AOVEC)
+                  jr   JPOST
+; List status
+B_LISTST:         ld   hl,(@LOVEC)
+JPOST:            ld   de,VECOST         ;Output status A910
+JPIOFUNC:         ld   (RDMAINRAM),a
+                  jp   $A4F5
+; Dunno
+DF2C: 47          ld   b,a
+DF2D: 3A 64 DE    ld   a,($DE64)
+DF30: B7          or   a
+DF31: 78          ld   a,b
+DF32: C8          ret  z
+DF33: 18 52       jr   $DF87
+; Console in status
+B_CONIST:         ld   hl,(@CIVEC)
+                  jr   JPIST
+; Aux in status
+B_AUXIST:         ld   hl,(@AIVEC)
+JPIST:            ld   de,VECIST      ;A969
+                  jr   JPIOFUNC
+; Console in char
+B_CONIN:          ld   hl,(@CIVEC)
+                  jr   JPIN
+; Aux in char
+B_AUXIN:          ld   hl,(@AIVEC)
+JPIN:             ld   de,VECIN      ;A980
+                  jr   JPIOFUNC
+; Device initialise
+B_DEVINI:         ld   de,$AF12
+DF52: 18 D2       jr   JPIOFUNC
+B_MOVE:
+DF54: 3E 00       ld   a,$00
+DF56: B7          or   a
+DF57: 20 1A       jr   nz,$DF73
+DF59: 3C          inc  a
+DF5A: 32 55 DF    ld   ($DF55),a
+DF5D: 3E 00       ld   a,$00
+DF5F: 32 02 E0    ld   (RDMAINRAM),a
+DF62: B7          or   a
+DF63: 28 03       jr   z,$DF68
+DF65: 32 03 E0    ld   (RDCARDRAM),a
+DF68: 3E 00       ld   a,$00
+DF6A: 32 04 E0    ld   (WRMAINRAM),a
+DF6D: B7          or   a
+DF6E: 28 03       jr   z,$DF73
+DF70: 32 05 E0    ld   (WRCARDRAM),a
+DF73: EB          ex   de,hl
+DF74: ED B0       ldir
+DF76: EB          ex   de,hl
+DF77: 3A 64 DE    ld   a,($DE64)
+B_SELMEM:
+DF7A: 32 64 DE    ld   ($DE64),a
+DF7D: B7          or   a
+DF7E: 20 07       jr   nz,$DF87
+DF80: 32 02 E0    ld   (RDMAINRAM),a
+DF83: 32 04 E0    ld   (WRMAINRAM),a
+DF86: C9          ret
+DF87: 32 03 E0    ld   (RDCARDRAM),a
+DF8A: 32 05 E0    ld   (WRCARDRAM),a
+DF8D: C9          ret
+DF8E: 28 03       jr   z,$DF93
+DF90: 32 03 E0    ld   (RDCARDRAM),a
+DF93: 11 00 F8    ld   de,$F800
+DF96: 2A 66 DE    ld   hl,($DE66)
+DF99: 18 03       jr   $DF9E
+DF9B: 32 03 E0    ld   (RDCARDRAM),a
+DF9E: ED B0       ldir
+DFA0: 32 02 E0    ld   (RDMAINRAM),a
+DFA3: C9          ret
+B_DEVTBL:
+DFA4: 21 AE DE    ld   hl,$DEAE
+DFA7: C9          ret
+B_USERF:
+DFA8: ED 53 68 DE ld   ($DE68),de
+DFAC: 11 7B A8    ld   de,$A87B
+DFAF: C3 26 DF    jp   $DF26
