@@ -1,0 +1,35 @@
+DE00: C3 23 A6 jp   $A623 0  - Cold Start
+DE03: C3 F8 DE jp   $DEF8 1  - WBOOT - Warm Start
+DE06: C3 35 DF jp   $DF35 2  - CONST - Console input character read
+DE09: C3 42 DF jp   $DF42 3  - CONIN - Read console in
+DE0C: C3 04 DF jp   $DF04 4  - CONOUT - Write console
+DE0F: C3 0E DF jp   $DF0E 5  - LIST - Write to list
+DE12: C3 09 DF jp   $DF09 6  - AUXOUT
+DE15: C3 47 DF jp   $DF47 7  - AUXIN
+DE18: C3 4C A8 jp   $A84C 8  - HOME
+DE1B: C3 1B A8 jp   $A81B 9  - SELDSK
+DE1E: C3 4E A8 jp   $A84E 10 - SETTRK
+DE21: C3 6F A8 jp   $A86F 11 - SETSEC 
+DE24: C3 74 A8 jp   $A874 12 - SETDMA
+DE27: C3 3A A5 jp   $A53A 13 - READ
+DE2A: C3 64 A5 jp   $A564 14 - WRITE
+DE2D: C3 20 DF jp   $DF20 15 - LISTST - List Status
+DE30: C3 18 A8 jp   $A818 16 - SECTRAN
+DE33: C3 16 DF jp   $DF16 17 - CONOST - Output status of console
+DE36: C3 3A DF jp   $DF3A 18 - AUXIST - Input status of Aux port
+DE39: C3 1B DF jp   $DF1B 19 - AUXOST - Output status of Aux port
+DE3C: C3 A4 DF jp   $DFA4 20 - DEVTBL - Address of char IO Table
+DE3F: C3 4F DF jp   $DF4F 21 - DEVINI
+DE42: C3 01 A8 jp   $A801 22 - DRVTBL - Drive table
+DE45: C3 79 A8 jp   $A879 23 - MULTIO 
+DE48: C3 12 A8 jp   $A812 24 - FLUSH
+DE4B: C3 54 DF jp   $DF54 25 - MOVE
+DE4E: C9 C9 C9 ret        26 - TIME
+DE51: C3 7A DF jp   $DF7A 27 - SELMEM
+DE54: C3 14 A8 jp   $A814 28 - SETBNK
+DE57: C3 05 A8 jp   $A805 29 - XMOVE
+DE5A: C3 A8 DF jp   $DFA8 30 - USERF
+DE5D: C3 00 00 jp   $0000 31 - RESERV1
+DE60: C3 00 00 jp   $0000 32 - RESERV2
+DE63: 07       rlca
+DE64: 00       nop
