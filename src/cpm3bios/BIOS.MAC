@@ -20,6 +20,8 @@ DE51: C3 7A DF jp   $DF7A 27 - SELMEM
 DE3C: C3 A4 DF jp   $DFA4 20 - DEVTBL - Address of char IO Table
 DE5A: C3 A8 DF jp   $DFA8 30 - USERF
 
+                    $A512    - WARMBOOT2
+
 DE27: C3 3A A5 jp   $A53A 13 - READ
 DE2A: C3 64 A5 jp   $A564 14 - WRITE
 DE00: C3 23 A6 jp   $A623 0  - CBOOT
@@ -34,6 +36,10 @@ DE1E: C3 4E A8 jp   $A84E 10 - SETTRK
 DE21: C3 6F A8 jp   $A86F 11 - SETSEC 
 DE24: C3 74 A8 jp   $A874 12 - SETDMA
 DE45: C3 79 A8 jp   $A879 23 - MULTIO 
+                    $A8F1    - VECOUT
+                    $A910    - VECOST         ;Output status 
+                    $A969    - VECIST         ;Input status
+                    $A980    - VECIN      ;      
 DE4E: C9 C9 C9 ret        26 - TIME
 DE5D: C3 00 00 jp   $0000 31 - RESERV1
 DE60: C3 00 00 jp   $0000 32 - RESERV2
