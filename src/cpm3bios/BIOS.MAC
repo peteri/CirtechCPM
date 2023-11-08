@@ -6,81 +6,94 @@ WRCARDRAM   EQU 0E005H
 ;
 ;6502 Zero page stuff seen from Z80
 ;
-ZSLOTX         EQU 0F004H              ; Boot slot 1..7
-ZACC_6502      EQU 0F045H              ; 6502 Acc
-ZFLAG_6502     EQU 0F048H              ; 6502 flag
+ZSLOTX      EQU 0F004H       ; Boot slot 1..7
+ZACC_6502   EQU 0F045H       ; 6502 Acc
+ZFLAG_6502  EQU 0F048H       ; 6502 flag
 ;
 ;6502 stuff in 0300 range as seen from Z80
 ;
-PAGE300Z80     EQU 0F300H              ; Page 300
-ROUT_6502      EQU 0F3D0H              ; 6502 routine to call
-CARD_Z80       EQU 0F3DEH              ; Card address from Z80 0E401H
-DISK_TRKL      EQU 0F380H              ; Disk track low
-DISK_SECT      EQU 0F381H              ; Disk sector
-DISK_DRV       EQU 0F384H              ; Disk drive slot (060)
-DISK_ACTD      EQU 0F385H              ; Disk active drive
-DISK_TRKH      EQU 0F386H              ; Disk track high
-DISK_OP        EQU 0F388H              ; Disk operation
-DISK_ERR       EQU 0F389H              ; Disk Result
-DISK_ROUT      EQU 03DCH               ; Disk routine to call
-SLOT_INFO      EQU 0F3B8H              ; Slot info
-            .cseg           ;CSeg stuff lives in common memory
-            EXTRN @COVEC    ;Console out vectors
-            EXTRN @CIVEC    ;Console in vectors
-            EXTRN @AOVEC    ;Aux out vectors
-            EXTRN @AIVEC    ;Aux in vectors
-            EXTRN @LOVEC    ;List out vectors
+PAGE300Z80  EQU 0F300H          ; Page 300
+ROUT_6502   EQU 0F3D0H          ; 6502 routine to call
+CARD_Z80    EQU 0F3DEH          ; Card address from Z80 0E401H
+DISK_TRKL   EQU 0F380H          ; Disk track low
+DISK_SECT   EQU 0F381H          ; Disk sector
+DISK_DRV    EQU 0F384H          ; Disk drive slot (060)
+DISK_ACTD   EQU 0F385H          ; Disk active drive
+DISK_TRKH   EQU 0F386H          ; Disk track high
+DISK_OP     EQU 0F388H          ; Disk operation
+DISK_ERR    EQU 0F389H          ; Disk Result
+DISK_ROUT   EQU 03DCH           ; Disk routine to call
+SLOT_INFO   EQU 0F3B8H          ; Slot info
+DISK_BUFF   EQU 0F800H          ; Disk buffer for BIOS
+;
+; Shared stuff between ldr bios and here
+;
+WBOOTJP     EQU  00000H
+BDOSJP      EQU  00005H
+CCP         EQU  00100H         ; CCP entry
+WARMCOPYLEN EQU  05CFFH         ; Warm copy length
+DRVMAP      EQU  05E20H         ; Map of drives to apple land
+            .cseg               ; CSeg stuff lives in common memory
+            ; Externs from SCB.MAC
+            EXTRN @COVEC        ; Console out vectors
+            EXTRN @CIVEC        ; Console in vectors
+            EXTRN @AOVEC        ; Aux out vectors
+            EXTRN @AIVEC        ; Aux in vectors
+            EXTRN @LOVEC        ; List out vectors
+            EXTRN @MLTIO        ; Multi IO flag          
+            EXTRN @MXTPA        ; Top of TPA
             ;
             ; BIOS Jump table, address in Axxx range are in main memory
             ; Not generally accessable from users side
             ;
-            jp   B_COLD     ; $A623 0  - Cold Start
-            jp   B_WARM     ; $DEF8 1  - WBOOT - Warm Start
-            jp   B_CONST    ; $DF35 2  - CONST - Console input character read
-            jp   B_CONIN    ; $DF42 3  - CONIN - Read console in
-            jp   B_CONOUT   ; $DF04 4  - CONOUT - Write console
-            jp   B_LIST     ; $DF0E 5  - LIST - Write to list
-            jp   B_AUXOUT   ; $DF09 6  - AUXOUT
-            jp   B_AUXIN    ; $DF47 7  - AUXIN
-            jp   B_HOME     ; $A84C 8  - HOME
-            jp   B_SELDSK   ; $A81B 9  - SELDSK
-            jp   B_SETTRK   ; $A84E 10 - SETTRK
-            jp   B_SETSEC   ; $A86F 11 - SETSEC 
-            jp   B_SETDMA   ; $A874 12 - SETDMA
-            jp   B_READ     ; $A53A 13 - READ
-            jp   B_WRITE    ; $A564 14 - WRITE
-            jp   B_LISTST   ; $DF20 15 - LISTST - List Status
-            jp   B_SECTRAN  ; $A818 16 - SECTRAN
-            jp   B_CONOST   ; $DF16 17 - CONOST - Output status of console
-            jp   B_AUXIST   ; $DF3A 18 - AUXIST - Input status of Aux port
-            jp   B_AUXOST   ; $DF1B 19 - AUXOST - Output status of Aux port
-            jp   B_DEVTBL   ; $DFA4 20 - DEVTBL - Address of char IO Table
-            jp   B_DEVINI   ; $DF4F 21 - DEVINI
-            jp   B_DRVTBL   ; $A801 22 - DRVTBL - Drive table
-            jp   B_MULTIO   ; $A879 23 - MULTIO 
-            jp   B_FLUSH    ; $A812 24 - FLUSH
-            jp   B_MOVE     ; $DF54 25 - MOVE
-            ret             ;       26 - TIME
+            jp   B_COLD         ; $A623 0  - Cold Start
+WARMJP      jp   B_WBOOT        ; $DEF8 1  - WBOOT - Warm Start
+            jp   B_CONIST       ; $DF35 2  - CONST - Console input character read
+            jp   B_CONIN        ; $DF42 3  - CONIN - Read console in
+            jp   B_CONOUT       ; $DF04 4  - CONOUT - Write console
+            jp   B_LIST         ; $DF0E 5  - LIST - Write to list
+            jp   B_AUXOUT       ; $DF09 6  - AUXOUT
+            jp   B_AUXIN        ; $DF47 7  - AUXIN
+            jp   B_HOME         ; $A84C 8  - HOME
+            jp   B_SELDSK       ; $A81B 9  - SELDSK
+            jp   B_SETTRK       ; $A84E 10 - SETTRK
+            jp   B_SETSEC       ; $A86F 11 - SETSEC 
+            jp   B_SETDMA       ; $A874 12 - SETDMA
+            jp   B_READ         ; $A53A 13 - READ
+            jp   B_WRITE        ; $A564 14 - WRITE
+            jp   B_LISTST       ; $DF20 15 - LISTST - List Status
+            jp   B_SECTRAN      ; $A818 16 - SECTRAN
+            jp   B_CONOST       ; $DF16 17 - CONOST - Output status of console
+            jp   B_AUXIST       ; $DF3A 18 - AUXIST - Input status of Aux port
+            jp   B_AUXOST       ; $DF1B 19 - AUXOST - Output status of Aux port
+            jp   B_DEVTBL       ; $DFA4 20 - DEVTBL - Address of char IO Table
+            jp   B_DEVINI       ; $DF4F 21 - DEVINI
+            jp   B_DRVTBL       ; $A801 22 - DRVTBL - Drive table
+            jp   B_MULTIO       ; $A879 23 - MULTIO 
+            jp   B_FLUSH        ; $A812 24 - FLUSH
+            jp   B_MOVE         ; $DF54 25 - MOVE
+            ret                 ;       26 - TIME
             ret
             ret
-            jp   B_SELMEM   ; $DF7A 27 - SELMEM
-            jp   B_SETBNK   ; $A814 28 - SETBNK
-            jp   B_XMOVE    ; $A805 29 - XMOVE
-            jp   B_USERF    ; $DFA8 30 - USERF
-            jp   $0000      ;       31 - RESERV1
-            jp   $0000      ;       32 - RESERV2
-
-
-            DB 07           ;DE63
-CURBANK:    DB 0            ;DE64
-DMABANK:    DB 0            ;DE65
-DMAADDR:    DW 0            ;DE66
-SAVEDE:     DW 0            ;DE68
+            jp   B_SELMEM       ; $DF7A 27 - SELMEM
+            jp   B_SETBNK       ; $A814 28 - SETBNK
+            jp   B_XMOVE        ; $A805 29 - XMOVE
+            jp   B_USERF        ; $DFA8 30 - USERF
+            jp   $0000          ;       31 - RESERV1
+            jp   $0000          ;       32 - RESERV2
+;
+; BIOS data that lives in shared memory
+;
+            DB 07               ; DE63
+CURBANK:    DB 0                ; DE64
+DMABANK:    DB 0                ; DE65
+DMAADDR:    DW 0                ; DE66
+SAVEDE:     DW 0                ; DE68
 DRVTBL:     DW 0,0,0,0,0,0,0,0
             DW 0,0,0,0,0,0,0,0
             ; Not certain what this is yet
-            DS              ;DE88
-DEVTBL:                     ;DEAE
+            DS 30               ; DE88
+DEVTBL:                         ; DEAE
             DB 'CONSOL',03,00
             DB 'NODEV1',00,00
             DB 'NODEV2',00,00
@@ -89,34 +102,71 @@ DEVTBL:                     ;DEAE
             DB 'NODEV5',00,00
             DB 'NODEV6',00,00
             DB 'NODEV7',00,00
-            DB 00           ;End of device table
+            DB 00               ; End of device table
 ; Unknown at DEEF
             ld   (RDMAINRAM),a
             ld   (WRMAINRAM),a
-            jp   $A6C3
-B_WBOOT:    ld   (RDMAINRAM),a    ;Read from BIOS / BDOS memory
+            jp   XXXX
+;==================================================================
+; BIOS Func 1 - WBOOT
+; Warm boot CPM, copies CCP into memory and resets vectors.
+; Entry
+; Nothing
+;==================================================================
+B_WBOOT:    ld   (RDMAINRAM),a  ; Read from BIOS / BDOS memory
             jp   WBOOT
-WBOOT_EXIT: ld   (RDCARDRAM),a    ; Read from aux ram
-            jp   $0100            ; Exit to CCP
-;
-; Console out
-;
-B_CONOUT:   ld   hl,(@COVEC)      ;Get console out vector
-            jr   JPOUT            ;Off to output routine
-; Aux out
-B_AUXOUT:   ld   hl,(@AOVEC)      ;Get aux out vector
+WBOOT_EXIT: ld   (RDCARDRAM),a  ; Read from aux ram
+            jp   CCP          ; Exit to CCP
+;==================================================================
+; BIOS Func 4 - CONOUT
+; Write character to console.   (Screen usually)
+; Entry
+; C = Character to write
+;==================================================================
+B_CONOUT:   ld   hl,(@COVEC)    ; Get console out vector
+            jr   JPOUT          ; Off to output routine
+;==================================================================
+; BIOS Func 5 - AUXOUT
+; Write character in to aux output. (Serial port usually)
+; Entry
+; C = Character to write
+;==================================================================
+B_AUXOUT:   ld   hl,(@AOVEC)    ; Get aux out vector
             jr   JPOUT
-; List out
+;==================================================================
+; BIOS Func 6 - LIST
+; Write character in to list output. (Printer usually)
+; Entry
+; C = Character to write
+;==================================================================
 B_LIST:     ld   hl,(@LOVEC)
 JPOUT:      ld   de,VECOUT        ;A8F1
             jr   JPIOFUNC
-; Console out status
+;==================================================================
+; BIOS Func 17 - CONOST
+; Get console output status (Screen usually)
+; Entry
+; Exit
+; A=0 (not ready) A=FF (ready)
+;==================================================================
 B_CONOST:   ld   hl,(@COVEC)
             jr   JPOST
-; Aux out status
+;==================================================================
+; BIOS Func 19 - AUXOST
+; Get auxiliary output status (Serial port usually)
+; Entry
+; Exit
+; A=0 (not ready) A=FF (ready)
+;==================================================================
 B_AUXOST:   ld   hl,(@AOVEC)
             jr   JPOST
-; List status
+;==================================================================
+; BIOS Func 15 - LISTST
+; Get list status (Printer usually)
+; Entry
+; Exit
+; A=0 (not ready) A=FF (ready)
+;==================================================================
 B_LISTST:   ld   hl,(@LOVEC)
 JPOST:      ld   de,VECOST         ;Output status A910
 JPIOFUNC:   ld   (RDMAINRAM),a
@@ -129,82 +179,143 @@ IOEXIT:     ld   b,a            ; save acc
             ld   a,b            ; restore acc
             ret  z              ; Go home if it's main bank
             jr   B_MEMCARD      ; Set to Aux card memory
-; Console in status
+;==================================================================
+; BIOS Func 2 - CONIST
+; Get console input status (Keyboard usually)
+; Entry
+; Exit
+; A=0 (not ready) A=FF (ready)
+;==================================================================
 B_CONIST:   ld   hl,(@CIVEC)
             jr   JPIST
-; Aux in status
+;==================================================================
+; BIOS Func 18 - AUXIST
+; Get auxiliary input status (Serial port usually)
+; Entry
+; Exit
+; A=0 (not ready) A=FF (ready)
+;==================================================================
 B_AUXIST:   ld   hl,(@AIVEC)
 JPIST:      ld   de,VECIST      ;A969
             jr   JPIOFUNC
-; Console in char
+;==================================================================
+; BIOS Func 3 - CONIN
+; Get console input, wait for character.
+; Entry
+; Exit
+; A=Character from keyboard
+;==================================================================
 B_CONIN:    ld   hl,(@CIVEC)
             jr   JPIN
-; Aux in char
+;==================================================================
+; BIOS Func 7 - AUXIN
+; Get character from auxiliary input (Serial port usually)
+; Entry
+; Exit
+; A=Character from aux input
+;==================================================================
 B_AUXIN:    ld   hl,(@AIVEC)
 JPIN:       ld   de,VECIN      ;A980
             jr   JPIOFUNC
-; Device initialise
-B_DEVINI:      ld   de,$AF12
-               jr   JPIOFUNC
-B_MOVE:
-DF54: 3E 00       ld   a,$00
-DF56: B7          or   a
-DF57: 20 1A       jr   nz,$DF73
-DF59: 3C          inc  a
-DF5A: 32 55 DF    ld   ($DF55),a
-XMOVE_CREG:
-DF5D: 3E 00       ld   a,$00
-DF5F: 32 02 E0    ld   (RDMAINRAM),a
-DF62: B7          or   a
-DF63: 28 03       jr   z,$DF68
-DF65: 32 03 E0    ld   (RDCARDRAM),a
-XMOVE_BREG:
-DF68: 3E 00       ld   a,$00
-DF6A: 32 04 E0    ld   (WRMAINRAM),a
-DF6D: B7          or   a
-DF6E: 28 03       jr   z,$DF73
-DF70: 32 05 E0    ld   (WRCARDRAM),a
-DF73: EB          ex   de,hl
-DF74: ED B0       ldir
-DF76: EB          ex   de,hl
-            ld   a,(CURBANK)      ; Restore back to correct bank
-B_SELMEM:   ld   (CURBANK),a      ; Save away the bank requested
-B_SELMEM2:  or   a                ; set flag for jumps
-            jr   nz,B_MEMCARD     ; Not zero use aux card for the user stuff
-            ld   (RDMAINRAM),a    ; Nope we're in BIOS / BDOS land
+;==================================================================
+; BIOS Func 21 - DEVINI
+; Initialise device in c register. Called after baud rate changes
+; Entry
+; C = device number in DEVTBL
+; Exit
+;==================================================================
+B_DEVINI:   ld   de,DEVINI     ;AF12
+            jr   JPIOFUNC
+;==================================================================
+; BIOS Func 25 - MOVE
+; Copy memory (sadly wrong order for Z80)
+; Also copies across banks if XMOVE has been called.
+; Entry
+; BC = Number of bytes to move
+; DE = Source address
+; HL = Dest addresss
+; Exit
+;==================================================================
+B_MOVE:     ld   a,00H          ; 0 if there is XMOVE settings 
+            or   a              ; If last call wasn't XMOVE
+            jr   nz,MOVEMEM     ; just do the regular mem move
+            inc  a              ; if it's xmove assume normal 
+            ld   (BMOVE+1),a    ; move next time we get called.
+XMOVE_CREG: ld   a,00H          ; XMOVE sets this value to read bank
+            ld   (RDMAINRAM),a  ; Assume main memory BIOS/BDOS
+            or   a              ; for read bank
+            jr   z,XMOVE_BREG   ; Not zero so reading from 
+            ld   (RDCARDRAM),a  ; Aux card ram
+XMOVE_BREG: ld   a,00H          ; XMOVE sets this value for write bank
+            ld   (WRMAINRAM),a  ; Assume main memory BIOS/BDOS 
+            or   a              ; for write bank
+            jr   z,MOVEMEM      ; Not zero so writing to aux ram
+            ld   (WRCARDRAM),a  
+MOVEMEM:    ex   de,hl          ; Swap de,hl for CP/M MOVE
+            ldir                ; Do the copy
+            ex   de,hl          ; swap back and fall thru, to sort out bank.
+            ld   a,(CURBANK)    ; Restore back to correct bank
+;==================================================================
+; BIOS Func 27 - SELMEM
+; Set the current memory bank to bank in A register
+; Entry
+; A=Bank to select
+; Exit
+;==================================================================
+B_SELMEM:   ld   (CURBANK),a    ; Save away the bank requested
+B_SELMEM2:  or   a              ; set flag for jumps
+            jr   nz,B_MEMCARD   ; Not zero use aux card for the user stuff
+            ld   (RDMAINRAM),a  ; Nope we're in BIOS / BDOS land
             ld   (WRMAINRAM),a
             ret
-B_MEMCARD:  ld   (RDCARDRAM),a    ; Time for the Users code
+B_MEMCARD:  ld   (RDCARDRAM),a  ; Time for the Users code
             ld   (WRCARDRAM),a
             ret
-DF8E: 28 03       jr   z,$DF93
-DF90: 32 03 E0    ld   (RDCARDRAM),a
-DF93: 11 00 F8    ld   de,$F800
-DF96: 2A 66 DE    ld   hl,(DMAADDR)
-DF99: 18 03       jr   $DF9E
-DF9B: 32 03 E0    ld   (RDCARDRAM),a
-DF9E: ED B0       ldir
-DFA0: 32 02 E0    ld   (RDMAINRAM),a
-DFA3: C9          ret
-; Device table
+;==================================================================
+; Copy DMA buffer to disk buffer, if zero flag 
+; set then copy from main memory bank, otherwise
+; it's the auxiliary bank.
+;==================================================================
+DMA2BUF:    jr   z,DMANOTAUX    ; DMA is from aux bank
+            ld   (RDCARDRAM),a  ; set it up.
+DMANOTAUX:  ld   de,DISK_BUFF   ; Dest is disk buffer
+            ld   hl,(DMAADDR)   ; Source is DMA address
+            jr   DMANOTAUX
+CPFROMCARD: ld   (RDCARDRAM),a  ; DF9B -
+DMADOCOPY:  ldir                ; Do the copy
+            ld   (RDMAINRAM),a  ; back to main memory
+            ret                 ; Helps with return addresses
+;==================================================================
+; BIOS Func 20 - DEVTBL
+; Get the device table.
+; Entry
+; Exit
+; HL=Address of the table
+;==================================================================
 B_DEVTBL:   ld   hl,DEVTBL
             ret
-; User function            
+;==================================================================
+; BIOS Func 30 - USERF
+; User functions
+; Entry
+; Exit
+;==================================================================
 B_USERF:    ld   (SAVEDE),de
             ld   de,USERF
             jp   JPIOFUNC
-                .dseg
+            .dseg
 ;
 ;
 ;
 BIOSTK DS 080H      ;No idea if right size
-;
+BIOSTOS:
+;==================================================================
+; 
 ; All of the device IO routines end up here
-; Code is loaded at $A4F5
-;
+;==================================================================
 IOFUNC:     ld   (WRMAINRAM),a      ; Write to main memory
             ld   (IORESSTK+1),sp    ; Save stack pointer for restore
-            ld   sp,IOFUNC          ; End of BIOSSTK
+            ld   sp,BIOSTOS         ; End of BIOSSTK
             push af                 ; Save acc
             xor  a                  ; Ask for main card memory
             call B_SELMEM2          ; Get the memory
@@ -213,7 +324,107 @@ IOFUNC:     ld   (WRMAINRAM),a      ; Write to main memory
 IOCALL:     call $0000              ; call de
 IORESSTK:   ld   sp,$0000           ; Bring back the stack
             jp   IOEXIT             ; Exit back
-WBOOT:                       
+;==================================================================
+; WBOOT - Warm boot
+;   Copy memory from main memory at 0100H into
+;   main memory, reset flags and vectors and run CCP
+; Entry
+; Nothing
+; Exit
+; Runs CCP
+;==================================================================
+WBOOT:      ld   (WRCARDRAM),a      ; Write to aux ram
+            ld   hl,CCP             ; Copy CCP into aux ram
+            ld   d,h
+            ld   e,l
+            ld   bc,WARMCOPYLEN     ; Get copy length
+            ldir                    ; Do the copy
+            xor  a                  ; Reset multi io flag?
+            ld   (@MLTIO),a         
+            ld   hl,(@MXTPA)        ;Top of TPA (aka BDOS)
+            ld   (BDOSJP+1),hl      ;set BDOS jump
+            ld   a,0C3H             ; JP OpCode
+            ld   (WBOOTJP),a        ; Set up jump at 0000
+            ld   (BDOSJP),a         ; Set up jump at 0005
+            ld   hl,WARMJP          ; Entry in jump Table
+            ld   (WBOOTJP+1),hl     ; Store that
+            jp   WBOOT_EXIT         ; Jump back out into CCP
+;==================================================================
+; BIOS Func 13 - READ
+; Read in a sector into the DMA address.
+; Entry
+; Exit
+; A = 0 for OK
+;     1 for Unrecoverable error
+;     FF if media changed.
+;==================================================================
+B_READ:     ld   (DISKEXIT+1),sp    ; Save stack pointer
+            ld   sp,BIOSTOS         ; Set to local stack
+            ld   a,$01              ; read operation
+            call DISKOPER           ; Do it
+            push af
+            call GETSECTSIZE
+            ld   a,(DMABANK)        ; Get the DMA bank
+            or   a
+            jr   z,READTOMAIN       ; We're in the right one?
+            ld   (WRCARDRAM),a      ; Copy into aux card instead
+READTOMAIN: ld   de,(DMAADDR)       ; Start the copy into
+            ld   hl,DISK_BUFF       ; DMA address from DISK_BUFF
+            ldir
+            ld   (WRMAINRAM),a      ; Set us back to main ram
+            pop  af                 ; Get back error code
+DISKEXIT:   ld   sp,$0000           ; Restore stack and home
+            ret
+;==================================================================
+; BIOS Func 14 - WRITE
+; Write out a sector.
+; Entry
+; C = 0 - Write can be deferred
+;     1 - Write must be immediate
+;     2 - Write can be deferred, no pre-read is necessary.
+; Exit
+; A = 0 for OK
+;     1 for Unrecoverable error
+;     2 - Read only error
+;     FF if media changed.
+;==================================================================
+B_WRITE:    ld   (DISKEXIT+1),sp    ; Save stack pointer
+            ld   sp,BIOSTOS         ; Stack to BIOS one
+            call GETSECTSIZE        ; How big are our secots
+            ld   a,(DMABANK)        ; Get the bank
+            or   a
+            call DMA2BUF            ; Copy DMA to DISK buffer
+            ld   a,$02              ; write operation
+            call DISKOPER           ; do disk operation
+            jr   DISKEXIT
+;=================================================
+; Gets the sector size for the current drive
+; returns sector size in bc
+;=================================================
+GETSECTSIZE: 
+            ld   bc,$0100
+            ld   a,(DISK_DRV)
+            call $A837
+            ret  z
+            ld   bc,$0200
+            ret
+;=================================================
+; Perform a disk operation
+;=================================================
+DISKOPER: 
+A58A: CD 7F AA    call $AA7F
+A58D: 32 88 F3    ld   ($F388),a
+A590: 21 DC 03    ld   hl,$03DC
+A593: 22 D0 F3    ld   ($F3D0),hl
+A596: 2A DE F3    ld   hl,($F3DE)
+A599: 77          ld   (hl),a
+A59A: 3A 89 F3    ld   a,($F389)
+A59D: B7          or   a
+A59E: C8          ret  z
+A59F: 0E 07       ld   c,$07
+;   Retry code here?
+B_COLD:                             ; A623
+XXXXX:                              ; A6C3
 ;============================================
 ;
 ; B_DRVTBL
@@ -229,7 +440,7 @@ B_DRVTBL:   ld   hl,DRVTBL
 ; B_XMOVE
 ; Memory location A805
 ; Entry: 
-; Exit : a=0
+; Exit : 
 ;
 ;============================================
 B_XMOVE:    ld   a,c
@@ -259,25 +470,30 @@ B_FLUSH:    xor  a
 ;============================================
 B_SETBNK:   ld   (DMABANK),a
             ret
-;============================================
-;
-; B_SECTRAN
-; Memory location A818
-; Entry: hl=sector
-; Exit : bc=translated
-;
-;============================================            
+;==================================================================
+; BIOS Func 16  - SECTRAN
+; Translate sector
+; Entry
+; BC = Logical sector number
+; DE = Address of translation table
+; Exit
+; HL = Physical sector number
+;==================================================================
 B_SECTRAN:  ld   h,b
             ld   l,c
             ret
-;============================================
-;
-; B_SELDSK
-; Memory location A81B
-; Entry: 
-; Exit : 
-;
-;============================================            
+;==================================================================
+; BIOS Func 9 - SELDSK
+; Select the disc drive in register C
+; Entry
+; C = Drive 0=A, 1=B....
+; E = 0 or FFFFH, if Bit 0 is 1 disc has been logged before
+;                 if Bit 0 is 0 disc is logged as if new
+;                 can cause a disc read to figure out DPH from
+;                 boot sector.
+; Exit
+; HL = Disk parameter Header
+;==================================================================
 B_SELDSK:   ld   a,c
             ld   (DISK_XXX+1),a  ; A5CA
             ld   b,0
@@ -287,8 +503,32 @@ B_SELDSK:   ld   a,c
             ld   (DISK_DRV),A
             ld   hl,05E00H
             sla  c
+;============================================
+;
+; B_HOME
+; Memory location A84C
+; Entry: 
+; Exit : 
+;
+;============================================            
 B_HOME:
+;============================================
+;
+; B_SETTRK
+; Memory location A84E
+; Entry: 
+; Exit : 
+;
+;============================================            
 B_SETTRK:
+;============================================
+;
+; B_SETSEC
+; Memory location A86F
+; Entry: 
+; Exit : 
+;
+;============================================            
 B_SETSEC:
 ;============================================
 ;
@@ -300,6 +540,14 @@ B_SETSEC:
 ;============================================
 B_SETDMA:   ld   (DMAADDR),hl
             ret
+;============================================
+;
+; B_MULTIO 
+; Memory location A879
+; Entry: Nothing
+; Exit
+; A=00
+;============================================
 B_MULTIO:   xor  a
             ret
 USERF:               ;A87B            
@@ -307,44 +555,5 @@ VECOUT:              ;A8F1
 VECOST:              ;A910
 VECIST:              ;A969
 VECIN:               ;A980
-
-;                    $A4F5    - IOFUNC
-;                    ;$A512    - WARMBOOT2
-;DE27: C3 3A A5 jp   $A53A 13 - READ
-;DE2A: C3 64 A5 jp   $A564 14 - WRITE
-;DE00: C3 23 A6 jp   $A623 0  - CBOOT
-
-;DE54: C3 14 A8 jp   $A814 28 - SETBNK
-;DE30: C3 18 A8 jp   $A818 16 - SECTRAN
-;DE1B: C3 1B A8 jp   $A81B 9  - SELDSK
-;DE18: C3 4C A8 jp   $A84C 8  - HOME
-;DE1E: C3 4E A8 jp   $A84E 10 - SETTRK
-;DE21: C3 6F A8 jp   $A86F 11 - SETSEC 
-;DE24: C3 74 A8 jp   $A874 12 - SETDMA
-;DE45: C3 79 A8 jp   $A879 23 - MULTIO 
-;                    $A8F1    - VECOUT
-;                    $A910    - VECOST         ;Output status 
-;                    $A969    - VECIST         ;Input status
-;                    $A980    - VECIN      ;      
-;DE4E: C9 C9 C9 ret        26 - TIME
-;DE5D: C3 00 00 jp   $0000 31 - RESERV1
-;DE60: C3 00 00 jp   $0000 32 - RESERV2
-;DE03: C3 F8 DE jp   $DEF8 1  - WBOOT - Warm Start
-;DE0C: C3 04 DF jp   $DF04 4  - CONOUT - Write console
-;DE0F: C3 0E DF jp   $DF0E 5  - LIST - Write to list
-;DE12: C3 09 DF jp   $DF09 6  - AUXOUT
-;DE33: C3 16 DF jp   $DF16 17 - CONOST - Output status of console
-;DE39: C3 1B DF jp   $DF1B 19 - AUXOST - Output status of Aux port
-;DE2D: C3 20 DF jp   $DF20 15 - LISTST - List Status
-;DE06: C3 35 DF jp   $DF35 2  - CONST - Console input character read
-;DE36: C3 3A DF jp   $DF3A 18 - AUXIST - Input status of Aux port
-;DE09: C3 42 DF jp   $DF42 3  - CONIN - Read console in
-;DE15: C3 47 DF jp   $DF47 7  - AUXIN
-;DE3F: C3 4F DF jp   $DF4F 21 - DEVINI
-;DE4B: C3 54 DF jp   $DF54 25 - MOVE
-;DE51: C3 7A DF jp   $DF7A 27 - SELMEM
-;DE3C: C3 A4 DF jp   $DFA4 20 - DEVTBL - Address of char IO Table
-;DE5A: C3 A8 DF jp   $DFA8 30 - USERF
-
-    END
-
+DEVINI:              ;AF12
+            END

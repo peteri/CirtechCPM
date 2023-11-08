@@ -1,0 +1,17 @@
+A512: 32 05 E0    ld   ($E005),a
+A515: 21 00 01    ld   hl,$0100
+A518: 54          ld   d,h
+A519: 5D          ld   e,l
+A51A: 01 FF 5C    ld   bc,$5CFF
+A51D: ED B0       ldir
+A51F: AF          xor  a
+A520: 32 E6 DD    ld   ($DDE6),a
+A523: 2A FE DD    ld   hl,($DDFE)
+A526: 22 06 00    ld   ($0006),hl
+A529: 3E C3       ld   a,$C3
+A52B: 32 00 00    ld   ($0000),a
+A52E: 32 05 00    ld   ($0005),a
+A531: 21 03 DE    ld   hl,$DE03
+A534: 22 01 00    ld   ($0001),hl
+A537: C3 FE DE    jp   $DEFE
+

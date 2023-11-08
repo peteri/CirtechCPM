@@ -140,9 +140,9 @@ boot:          ld   (01C73H),sp
                ld   de,05DBDH           ; or 5DBCH-7400H
                ld   bc,01644H
                ldir
-               ld   hl,5E20H            ;No idea what we're doing here
+               ld   hl,5E20H            ;Drv map from CPM->Apple
                ld   (L1EDF+1),hl
-               ld   hl,05E00H
+               ld   hl,05E00H           
                ld   (L1ED1+1),hl
                ld   hl,DPH
                ld   (L1F4C+1),hl
@@ -704,7 +704,7 @@ JSR6502:       DB   020H,000H,000H     ;JSR 00000
                nop
                nop
 ;==================================================================
-; BIOS Func 5 - CONOUT
+; BIOS Func 4 - CONOUT
 ; Write character in to screen.
 ; Entry
 ; C = Character to write
@@ -716,7 +716,7 @@ call80col:     ld   hl,0C330H           ;Set X=030
                ld   (0F046H),hl         ;Set Y=0C3
                ld   l,a                 ;HL=0C3XX
                jr   call6502
-;============= =====================================================
+;==================================================================
 ; BIOS Func 16  - SECTRAN
 ; Translate sector
 ; Entry
@@ -774,7 +774,7 @@ setdma:        ld   (readdest+1),bc    ;Save address into read func
                ret
 ;==================================================================
 ; BIOS Func 13 - READ
-; Set the address next disc operation will use
+; Read in a sector.
 ; Entry
 ; Exit
 ; A = 0 for OK
