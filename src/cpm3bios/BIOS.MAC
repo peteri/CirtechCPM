@@ -310,8 +310,11 @@ B_USERF:    ld   (SAVEDE),de
 BIOSTK DS 080H      ;No idea if right size
 BIOSTOS:
 ;==================================================================
-; 
-; All of the device IO routines end up here
+; All of the character device IO routines end up here
+; as do the user function calls. Swaps stack to BIOS one
+; Entry 
+; DE = Routine to call
+; HL = Vector for devices for character IO
 ;==================================================================
 IOFUNC:     ld   (WRMAINRAM),a      ; Write to main memory
             ld   (IORESSTK+1),sp    ; Save stack pointer for restore
