@@ -687,14 +687,21 @@ USERFTBL:   DW   USERF_RET      ; User function 00
             DW   USERF_RET      ; User function 0D
             DW   USERF_RET      ; User function 0E
             DW   USERF_RET      ; User function 0F
-USERF_RET:
-USERF_04:            
-USERF_05:            
-USERF_06:            
-USERF_07:            
-USERF_08:            
+USERF_05:   push de
+            ld   de,0FF00H         
+            res  7,c
+            call 0AE80H
+            pop  de
+            set  7,c
+            jp   0AE80H
 USERF_09:            
 USERF_0A:            
+
+USERF_RET:
+USERF_04:            
+USERF_06:            
+USERF_07:            
+USERF_08:
 USERF_0B:            
     ret;
 VECOUT:              ;A8F1
