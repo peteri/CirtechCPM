@@ -14,6 +14,7 @@ LF EQU 0AH
 ;
 ;6502 Zero page stuff seen from Z80
 ;
+Z80OFFS     EQU 0F000H
 ZSLOTX      EQU 0F004H       ; Boot slot 1..7
 ZACC_6502   EQU 0F045H       ; 6502 Acc
 ZFLAG_6502  EQU 0F048H       ; 6502 flag
@@ -32,6 +33,12 @@ DISK_OP     EQU 0F388H          ; Disk operation
 DISK_ERR    EQU 0F389H          ; Disk Result
 DISK_ROUT   EQU 03DCH           ; Disk routine to call
 SLOT_INFO   EQU 0F3B8H          ; Slot info
+LEFTEDGE    EQU 9               ; Left edge of window  
+SCRL8       EQU 0428H + LEFTEDGE + Z80OFFS 
+SCRL9       EQU 04A8H + LEFTEDGE + Z80OFFS
+SCRL10      EQU 0528H + LEFTEDGE + Z80OFFS
+SCRL11      EQU 05A8H + LEFTEDGE + Z80OFFS
+SCRL12      EQU 0628H + LEFTEDGE + Z80OFFS
 DISK_BUFF   EQU 0F800H          ; Disk buffer for BIOS
 ;
 ; Shared stuff between ldr bios and here
@@ -675,38 +682,152 @@ USERFTBL:   DW   USERF_RET      ; User function 00
             DW   USERF_RET      ; User function 01 
             DW   USERF_RET      ; User function 02
             DW   USERF_RET      ; User function 03
-            DW   USERF_04       ; A8A4: 92 AB          
-            DW   USERF_05       ; A8A6: BC A8
-            DW   USERF_06       ; A8A8: 75 AE
-            DW   USERF_07       ; A8AA: 5A AE
-            DW   USERF_08       ; A8AC: C0 AB
-            DW   USERF_09       ; A8AE: CB A8
-            DW   USERF_0A       ; A8B0: DB A8
-            DW   USERF_0B       ; A8B2: 34 AE
+            DW   USERF_04       ; ????? - AB92           
+            DW   USERF_05       ; Save the screen - A8BC
+            DW   USERF_06       ; ????? - AE75 
+            DW   USERF_07       ; Write (hl) to middle of popup on screen - AE5A 
+            DW   USERF_08       ; ????? - ABC0 
+            DW   USERF_09       ; Copy aux to main memory with range check - A8CB
+            DW   USERF_0A       ; Copy main to aux memory with range check - A8DB 
+            DW   USERF_0B       ; ????? -  AE34
             DW   USERF_RET      ; User function 0C 
             DW   USERF_RET      ; User function 0D
             DW   USERF_RET      ; User function 0E
             DW   USERF_RET      ; User function 0F
+;==================================================================
+; User function 5 saves the screen to 0FF00h then 
+; moves lines from de to the screen
+;==================================================================
 USERF_05:   push de
             ld   de,0FF00H         
             res  7,c
-            call 0AE80H
+            call SCRMOVE
             pop  de
             set  7,c
-            jp   0AE80H
-USERF_09:            
-USERF_0A:            
-
-USERF_RET:
-USERF_04:            
-USERF_06:            
-USERF_07:            
-USERF_08:
-USERF_0B:            
-    ret;
+            jp   SCRMOVE
+;==================================================================
+; User function 9 Copies memory from the aux card into main memory
+; performs a range check on the src address
+;==================================================================
+USERF_09:   ld   a,$0D
+            cp   d
+            ret  nc
+            push de
+            ex   de,hl
+            add  hl,bc
+            ld   a,$5D
+            cp   h
+            ex   de,hl
+            pop  de
+            call nc,CPFROMCARD  ; Do the copy from lang card code
+USERF_RET:  ret
+;==================================================================
+; User function A Copies memory from the main memory into aux ram
+; performs a range check on the src address
+;==================================================================
+USERF_0A:   push hl
+            add  hl,bc
+            ld   a,$5D
+            cp   h
+            pop  hl
+            ret  c
+            ld   (WRCARDRAM),a
+            ldir
+            ld   (WRMAINRAM),a
+            ret
+            .6502
+            lda  #$76 	        ; code at $B8EB or 0A8EBH
+            sta  USERF          ; Write HALT in USERF 
+            rts                 ; but the adress should be +$1000
+            .Z80
 VECOUT:              ;A8F1
 VECOST:              ;A910
 VECIST:              ;A969
 VECIN:               ;A980
+USERF_04:            ;AB92
+USERF_08:            ;ABC0
+
+USERF_0B:            ;AE34
+AE34: CD 7F AA call $AA7F
+AE37: 3A 00 E0 ld   a,($E000)
+AE3A: B7       or   a
+AE3B: F2 34 AE jp   p,$AE34
+AE3E: 32 10 E0 ld   ($E010),a
+AE41: CB BF    res  7,a
+AE43: F6 20    or   $20
+AE45: FE 3B    cp   $3B
+AE47: C9       ret
+AE48: D6 61    sub  $61
+AE4A: 4F       ld   c,a
+AE4B: 5F       ld   e,a
+AE4C: 16 00    ld   d,$00
+AE4E: 21 20 5E ld   hl,$5E20
+AE51: 19       add  hl,de
+AE52: 7E       ld   a,(hl)
+AE53: B7       or   a
+AE54: C8       ret  z
+AE55: 37       scf
+AE56: C9       ret
+AE57: 21 28 FE ld   hl,$FE28
+;==================================================================
+; User function 7 - writes 38 characters from (hl) to 
+; the middle of the Cirtech toolkey popup
+;==================================================================
+USERF_07:   ld   b,38
+            ld   de,SCRL10+1
+UF7_NXTCHR: ld   a,b
+            rra
+            ld   ($E055),a
+            jr   c,UF7_ODD
+            ld   ($E054),a
+UF7_ODD:    ld   a,(hl)
+            ld   (de),a
+            inc  hl
+            jr   c,UF7_ODD2
+            inc  de
+UF7_ODD2:   djnz UF7_NXTCHR
+            ld   ($E054),a
+            ret
+USERF_06:            ;AE75
+
+
+; 
+; Screen mover routine, saves or restores screen
+; from lines 8-12 columns 18-60 to or from de.
+; Direction is controlled by hi bit of C register
+; clear is screen to HL, set is screen to DE
+;
+SCRMOVE:    ld   hl,SCRL8 
+            call LINEMOVE
+            ld   hl,SCRL9
+            call LINEMOVE
+            ld   hl,SCRL10
+            call LINEMOVE
+            ld   hl,SCRL11
+            call LINEMOVE
+            ld   hl,SCRL12
+            call LINEMOVE
+            ld   (TXTPAGE1),a
+            xor  a
+            ret
+; Matching line mover
+LINEMOVE:   ld   b,42           ; Copy 42 characters
+LMVLOOP:    ld   a,b            ; get our column
+            rra                 ; Shuffle it in carry
+            ld   (TXTPAGE2),a   ; Use txt page 2
+            jr   c,LMVTSTDIR    ; Even column 
+            ld   (TXTPAGE1),a   ; So use page 1
+LMV_TSTDIR: bit  7,c            ; Check for direction
+            jr   z,LMV_NOSWP    ; Clear so save area to screen
+            ex   de,hl          ; swap so screen to save area
+LMV_NOSWP:  ld   a,(hl)         ; Get our data
+            ld   (de),a         ; Save it
+            jr   z,LMV_NOSWP1   ; Swap registers back again
+            ex   de,hl
+LMV_NOSWP1: inc  de             ; Add one to save area
+            jr   c,LMV_ODD      ; Odd column?
+            inc  hl             ; Yes don't increment this time
+LMV_ODD:    djnz LMVLOOP
+            ret                 ; Go home
 DEVINI:              ;AF12
             END

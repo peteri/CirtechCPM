@@ -16,10 +16,10 @@ A893: ED 43 9A A8 ld   ($A89A),bc
 A897: C1          pop  bc
 A898: E1          pop  hl
 A899: C3 00 00    jp   $0000
-A89C: DW DA A8 
-      DW DA A8  
-      DW DA A8 
-      DW DA A8  
+A89C: DEFW DA A8 
+      DEFW  DA A8  
+      DEFW  DA A8 
+      DEFW  DA A8  
 A8A4: 92 AB          
 A8A6: BC A8
 A8A8: 75 AE
