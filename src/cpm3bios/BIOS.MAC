@@ -33,6 +33,7 @@ DISK_OP     EQU 0F388H          ; Disk operation
 DISK_ERR    EQU 0F389H          ; Disk Result
 DISK_ROUT   EQU 03DCH           ; Disk routine to call
 SLOT_INFO   EQU 0F3B8H          ; Slot info
+; Constants for TOOLKEY popbuf
 LEFTEDGE    EQU 9               ; Left edge of window  
 SCRL8       EQU 0428H + LEFTEDGE + Z80OFFS 
 SCRL9       EQU 04A8H + LEFTEDGE + Z80OFFS
@@ -684,12 +685,12 @@ USERFTBL:   DW   USERF_RET      ; User function 00
             DW   USERF_RET      ; User function 03
             DW   USERF_04       ; ????? - AB92           
             DW   USERF_05       ; Save the screen - A8BC
-            DW   USERF_06       ; ????? - AE75 
+            DW   USERF_06       ; Copy drive + Fall through into Screen save - AE75 
             DW   USERF_07       ; Write (hl) to middle of popup on screen - AE5A 
             DW   USERF_08       ; ????? - ABC0 
             DW   USERF_09       ; Copy aux to main memory with range check - A8CB
             DW   USERF_0A       ; Copy main to aux memory with range check - A8DB 
-            DW   USERF_0B       ; ????? -  AE34
+            DW   USERF_0B       ; Get keyboard lower case and compare against ESC -  AE34
             DW   USERF_RET      ; User function 0C 
             DW   USERF_RET      ; User function 0D
             DW   USERF_RET      ; User function 0E
@@ -744,19 +745,21 @@ VECOUT:              ;A8F1
 VECOST:              ;A910
 VECIST:              ;A969
 VECIN:               ;A980
+LAB73:               ;AB73
 USERF_04:            ;AB92
 USERF_08:            ;ABC0
-
-USERF_0B:            ;AE34
-AE34: CD 7F AA call $AA7F
-AE37: 3A 00 E0 ld   a,($E000)
-AE3A: B7       or   a
-AE3B: F2 34 AE jp   p,$AE34
-AE3E: 32 10 E0 ld   ($E010),a
-AE41: CB BF    res  7,a
-AE43: F6 20    or   $20
-AE45: FE 3B    cp   $3B
-AE47: C9       ret
+;==================================================================
+; User function B - Get keyboard lower case and compare against ESC
+;==================================================================
+USERF_0B:   call 0AA7FH
+            ld   a,($E000)
+            or   a
+            jp   p,USERF_0B
+            ld   ($E010),a
+            res  7,a
+            or   020H       ; Force lower case
+            cp   ESC+020H   ; Was it escape?
+            ret
 AE48: D6 61    sub  $61
 AE4A: 4F       ld   c,a
 AE4B: 5F       ld   e,a
@@ -768,7 +771,7 @@ AE53: B7       or   a
 AE54: C8       ret  z
 AE55: 37       scf
 AE56: C9       ret
-AE57: 21 28 FE ld   hl,$FE28
+LAE57:      ld   hl,$FE28
 ;==================================================================
 ; User function 7 - writes 38 characters from (hl) to 
 ; the middle of the Cirtech toolkey popup
@@ -788,9 +791,11 @@ UF7_ODD:    ld   a,(hl)
 UF7_ODD2:   djnz UF7_NXTCHR
             ld   ($E054),a
             ret
-USERF_06:            ;AE75
-
-
+;==================================================================
+; User function 6 - Very odd falls through into the screen mover?
+;==================================================================
+USERF_06:   ld   a,(LAB73)
+            ld   (DISK_DRV),a
 ; 
 ; Screen mover routine, saves or restores screen
 ; from lines 8-12 columns 18-60 to or from de.
