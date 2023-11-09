@@ -45,6 +45,8 @@ SLOT_INFO      EQU 0F3B8H              ; Slot info
 WRMAINRAM      EQU 0E004H              ; Write to main ram ($200-$BFFF)
 WRCARDRAM      EQU 0E005H              ; Write to 80 col card ram ($200-$BFFF)
 DPH            EQU 6EA8H               ; DPH for Disk 0
+DPHTAB         EQU 5E00H               ; Table of DPH for drives
+DRVMAP         EQU 5E20H               ; Map of CPM drives to apple drives
                cseg
                org 0
 ;==========================================================
@@ -140,9 +142,9 @@ boot:          ld   (01C73H),sp
                ld   de,05DBDH           ; or 5DBCH-7400H
                ld   bc,01644H
                ldir
-               ld   hl,5E20H            ;Drv map from CPM->Apple
+               ld   hl,DRVMAP            ;Drv map from CPM->Apple
                ld   (L1EDF+1),hl
-               ld   hl,05E00H           
+               ld   hl,DPHTAB           
                ld   (L1ED1+1),hl
                ld   hl,DPH
                ld   (L1F4C+1),hl
@@ -546,12 +548,12 @@ L1EAB:         ld   c,(iy+005H)
                call ST_DE_TO_HL
                ld   de,0FFFFH
                call ST_DE_TO_HL
-L1ED1:         ld   hl,05E00H
+L1ED1:         ld   hl,DPHTAB
                ld   de,0
                call ST_DE_TO_HL
                ld   (L1ED1+1),hl
 L1EDD:         ld   a,00H
-L1EDF:         ld   hl,5E20H
+L1EDF:         ld   hl,DRVMAP
                ld   (hl),a
                inc  hl
                ld   (L1EDF+1),hl
@@ -740,7 +742,7 @@ sectran:       ld   h,b                ;Copy BC to HL as we don't translate
 ; Exit
 ; HL = Disk parameter Header
 ;==================================================================
-seldsk:        ld   a,(5E20H)          ;presumably boot drive
+seldsk:        ld   a,(DRVMAP)         ;Get drive A as Apple Drive ID
                ld   (DISK_DRV),a       ;save it for our caller
                ld   hl,DPH             ;return back boot DPH
                ret

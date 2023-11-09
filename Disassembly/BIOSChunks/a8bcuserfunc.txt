@@ -1,0 +1,52 @@
+A8BC: D5       push de
+A8BD: 11 00 FF ld   de,$FF00
+A8C0: CB B9    res  7,c
+A8C2: CD 80 AE call $AE80
+A8C5: D1       pop  de
+A8C6: CB F9    set  7,c
+A8C8: C3 80 AE jp   $AE80
+A8CB: 3E 0D    ld   a,$0D
+A8CD: BA       cp   d
+A8CE: D0       ret  nc
+A8CF: D5       push de
+A8D0: EB       ex   de,hl
+A8D1: 09       add  hl,bc
+A8D2: 3E 5D    ld   a,$5D
+A8D4: BC       cp   h
+A8D5: EB       ex   de,hl
+A8D6: D1       pop  de
+A8D7: D4 9B DF call nc,$DF9B
+A8DA: C9       ret
+A8DB: E5       push hl
+A8DC: 09       add  hl,bc
+A8DD: 3E 5D    ld   a,$5D
+A8DF: BC       cp   h
+A8E0: E1       pop  hl
+A8E1: D8       ret  c
+A8E2: 32 05 E0 ld   ($E005),a
+A8E5: ED B0    ldir
+A8E7: 32 04 E0 ld   ($E004),a
+A8EA: C9       ret
+A8EB: A9       xor  c
+A8EC: 76       halt
+A8ED: 8D       adc  a,l
+A8EE: 7B       ld   a,e
+A8EF: A8       xor  b
+A8F0: 60       ld   h,b
+A8F1: 06 00    ld   b,$00
+A8F3: 29       add  hl,hl
+A8F4: 30 14    jr   nc,$A90A
+A8F6: E5       push hl
+A8F7: C5       push bc
+A8F8: CD 26 A9 call $A926
+A8FB: B7       or   a
+A8FC: C1       pop  bc
+A8FD: 20 05    jr   nz,$A904
+A8FF: CD 7F AA call $AA7F
+A902: 18 F3    jr   $A8F7
+A904: C5       push bc
+A905: CD 4B A9 call $A94B
+A908: C1       pop  bc
+A909: E1       pop  hl
+A90A: 04       inc  b
+A90B: 7C       ld   a,h

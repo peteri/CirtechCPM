@@ -1,0 +1,34 @@
+A87B: ED 5B 68 DE ld   de,($DE68)
+A87F: 32 04 E0    ld   ($E004),a
+A882: FE 10       cp   $10
+A884: D0          ret  nc
+A885: CB 27       sla  a
+A887: E5          push hl
+A888: C5          push bc
+A889: 6F          ld   l,a
+A88A: 26 00       ld   h,$00
+A88C: 01 9C A8    ld   bc,$A89C
+A88F: 09          add  hl,bc
+A890: 4E          ld   c,(hl)
+A891: 23          inc  hl
+A892: 46          ld   b,(hl)
+A893: ED 43 9A A8 ld   ($A89A),bc
+A897: C1          pop  bc
+A898: E1          pop  hl
+A899: C3 00 00    jp   $0000
+A89C: DW DA A8 
+      DW DA A8  
+      DW DA A8 
+      DW DA A8  
+A8A4: 92 AB          
+A8A6: BC A8
+A8A8: 75 AE
+A8AA: 5A AE
+A8AC: C0 AB
+A8AE: CB A8
+A8B0: DB A8
+A8B2: 34 AE
+A8B4: DA A8 
+      DA A8 
+A8B8: DA A8 
+      DA A8 

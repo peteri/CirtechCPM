@@ -1,0 +1,31 @@
+A84C: 0E 00       ld   c,$00
+A84E: ED 73 6C A8 ld   ($A86C),sp
+A852: 31 F5 A4    ld   sp,$A4F5
+A855: 3A 84 F3    ld   a,($F384)
+A858: CD 37 A8    call $A837
+A85B: 79          ld   a,c
+A85C: 20 06       jr   nz,$A864
+A85E: FE 23       cp   $23
+A860: 38 02       jr   c,$A864
+A862: D6 23       sub  $23
+A864: 32 80 F3    ld   ($F380),a
+A867: 78          ld   a,b
+A868: 32 86 F3    ld   ($F386),a
+A86B: 31 00 00    ld   sp,$0000
+A86E: C9          ret
+A86F: 79          ld   a,c
+A870: 32 81 F3    ld   ($F381),a
+A873: C9          ret
+A874: ED 43 66 DE ld   ($DE66),bc
+A878: C9          ret
+A879: AF          xor  a
+A87A: C9          ret
+A87B: ED 5B 68 DE ld   de,($DE68)
+A87F: 32 04 E0    ld   ($E004),a
+A882: FE 10       cp   $10
+A884: D0          ret  nc
+A885: CB 27       sla  a
+A887: E5          push hl
+A888: C5          push bc
+A889: 6F          ld   l,a
+A88A: 26 00       ld   h,$00
