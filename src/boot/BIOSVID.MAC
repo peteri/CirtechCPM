@@ -1,10 +1,10 @@
-;
-; Incomplete disassembly
-; Exported from SourceGen using the cc65 mode then some search and replace.
-; temporary test build
-; Code status
-; D000-D3FF is done
-;
+;*******************************************************************************
+;* Console terminal emulation BIOS for 80 column card.                         *
+;*                                                                             *
+;* Two entry points, one is toggling the cursor state                          *
+;* Other one is put character on top of stack to screen and use terminal       *
+;* emulation codes.                                                            *
+;*******************************************************************************
          cseg 
          .6502
 SCRLINEL        EQU $20        ;Address of current line in $400

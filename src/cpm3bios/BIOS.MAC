@@ -19,6 +19,8 @@ HIBYTE  MACRO MSG
 ;
 ; Apple //e hardware addresses as seen from the Z80
 ;
+KBD         EQU 0E000H
+KBDSTRB     EQU 0E010H
 RDMAINRAM   EQU 0E002H
 RDCARDRAM   EQU 0E003H
 WRMAINRAM   EQU 0E004H
@@ -547,7 +549,7 @@ MSG_WRERR:  HIBYTE "Write"
 ; Exit
 ;==================================================================
 B_COLD:
-A623: 32 10 E0    ld   ($E010),a
+A623: 32 10 E0    ld   (KBDSTRB),a
 A626: 11 6A DE    ld   de,LDE6A
 A629: 21 BC 5D    ld   hl,$5DBC
 A62C: 01 44 00    ld   bc,$0044
@@ -558,25 +560,25 @@ A637: 21 88 6A    ld   hl,$6A88
 A63A: 22 BC 6E    ld   ($6EBC),hl
 A63D: DD 21 00 5E ld   ix,$5E00
 A641: DD 22 02 A8 ld   (B_DRVTBL+1),ix
-A645: DD 6E 00    ld   l,(ix+$00)
+A645: DD 6E 00    ld   l,(ix+00)
 A648: DD 23       inc  ix
-A64A: DD 66 00    ld   h,(ix+$00)
+A64A: DD 66 00    ld   h,(ix+00)
 A64D: 7C          ld   a,h
 A64E: B5          or   l
 A64F: 28 1E       jr   z,$A66F
 A651: DD 23       inc  ix
 A653: E5          push hl
 A654: FD E1       pop  iy
-A656: FD 6E 0C    ld   l,(iy+$0c)
-A659: FD 66 0D    ld   h,(iy+$0d)
+A656: FD 6E 0C    ld   l,(iy+0CH)
+A659: FD 66 0D    ld   h,(iy+0DH)
 A65C: 11 BC 5D    ld   de,$5DBC
 A65F: B7          or   a
 A660: ED 52       sbc  hl,de
 A662: EB          ex   de,hl
-A663: 21 6A DE    ld   hl,$DE6A
+A663: 21 6A DE    ld   hl,LDE6A
 A666: 19          add  hl,de
-A667: FD 75 0C    ld   (iy+$0c),l
-A66A: FD 74 0D    ld   (iy+$0d),h
+A667: FD 75 0C    ld   (iy+0CH),l
+A66A: FD 74 0D    ld   (iy+0DH),h
 A66D: 18 D6       jr   $A645
 A66F: 11 BE DD    ld   de,@CIVEC     ;SCB things? @CIVEC?
 A672: 21 45 AF    ld   hl,$AF45
@@ -908,24 +910,24 @@ B_MULTIO:   xor  a
 ; Exit
 ; Unknown
 ;==================================================================
-USERF:      ld   de,(SAVEDE)
-            ld   (WRMAINRAM),a
-            cp   10
-            ret  nc
-            sla  a
-            push hl
+USERF:      ld   de,(SAVEDE)    ; Pull back de
+            ld   (WRMAINRAM),a  ; swap the memory back to main
+            cp   10             ; off the end of the table
+            ret  nc             ; no, go home
+            sla  a              ; double function to get index
+            push hl             ; save hl & bc
             push bc
-            ld   l,a
+            ld   l,a            ; hl=a*2
             ld   h,0
-            ld   bc,USERFTBL
+            ld   bc,USERFTBL    ; Add hl to user table
             add  hl,bc
-            ld   c,(hl)
+            ld   c,(hl)         ; get address into bc
             inc  hl
             ld   b,(hl)
-            ld   (USERFJP),bc
-            pop  bc
+            ld   (USERFJP),bc   ; Store into jump
+            pop  bc             ; restore bc & hl
             pop  hl
-USERFJP:    jp   0000H
+USERFJP:    jp   0000H          ; Off to user function
 USERFTBL:   DW   USERF_RET      ; User function 00
             DW   USERF_RET      ; User function 01 
             DW   USERF_RET      ; User function 02
@@ -1000,7 +1002,7 @@ VECIN:               ;A980
 ;==================================================================
 C_TO_CONS:  res  7,c            ; Clear the high bit
             ld   b,0            ; Flag we want console
-            jr  CON_BIOS
+            jr   CON_BIOS
 ;==================================================================
 ; Toggle cursor
 ; Lives at 0A9A0H
@@ -1050,10 +1052,10 @@ USERF_08:            ;ABC0
 ; User function B - Get keyboard lower case and compare against ESC
 ;==================================================================
 USERF_0B:   call 0AA7FH
-            ld   a,($E000)
+            ld   a,(KBD)
             or   a
             jp   p,USERF_0B
-            ld   ($E010),a
+            ld   (KBDSTRB),a
             res  7,a
             or   020H       ; Force lower case
             cp   ESC+020H   ; Was it escape?
@@ -1065,16 +1067,16 @@ USERF_0B:   call 0AA7FH
 ;  A = Apple II drive slot,drive number code
 ;  C = CP/M drive 0..25
 ;  Carry flag set if valid drive
-LAE48:      sub  061H       ; Convert a..z to 0..25
-            ld   c,a        ;Presumably save for later 
-            ld   e,a        ; Put into de
+LAE48:      sub  061H           ; Convert a..z to 0..25
+            ld   c,a            ; Presumably save for later 
+            ld   e,a            ; Put into de
             ld   d,0
-            ld   hl,DRVMAP  ; Add it to the drive map address
+            ld   hl,DRVMAP      ; Add it to the drive map address
             add  hl,de
-            ld   a,(hl)     ; Look up drive slot info
-            or   a          ; Zero
-            ret  z          ; Yep go home
-            scf             ; Set carry flag
+            ld   a,(hl)         ; Look up drive slot info
+            or   a              ; Zero
+            ret  z              ; Yep go home
+            scf                 ; Set carry flag
             ret
 LAE57:      ld   hl,MSG_DUPLIC
 ;==================================================================
@@ -1139,5 +1141,12 @@ LMV_NOSWP1: inc  de             ; Add one to save area
             inc  hl             ; Yes don't increment this time
 LMV_ODD:    djnz LMV_LOOP
             ret                 ; Go home
+;==================================================================
+; BIOS Func 21 - DEVINI
+; Device initialise
+; Entry
+; C = Device number to initialise
+; Exit
+;==================================================================
 DEVINI:              ;AF12
             END
