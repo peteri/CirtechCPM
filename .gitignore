@@ -297,7 +297,7 @@ Tools/NibReader/CPM3.SYS
 # Ignore the loader BIOS output from assembly
 src/boot/BOOTSECT.REL
 src/boot/BIOSDISK.REL
-src/boot/BIOSMISC.REL
+src/boot/BIOSCHAR.REL
 src/boot/BIOSVID.REL
 src/boot/LDRBIOS.REL
 src/boot/TOOLKEY.REL
