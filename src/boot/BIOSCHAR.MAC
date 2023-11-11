@@ -38,7 +38,7 @@ CLRROM              EQU $cfff   ;disable slot C8 ROM
 TOG_CURJMP          EQU $D000   ;Address in video BIOS
 PRINT_STACK_CHAR    EQU $D003   ;Address in video BIOS
 ; Entry point
-CHAR_IO_OPER    cld                     ;Clear decimal mode
+CHAR_IO_OPER:   cld                     ;Clear decimal mode
                 pha                     ;Put acc on stack
                 txa                     ;Which slot / what are doing?
                 bne     CHECK_CUR_TOG   ;Output to console?
@@ -181,7 +181,9 @@ INIT6550:       lda     #$03            ;ACIA master reset
                 lda     #$15            ;8 bit data, no parity, 1 stop, clock is 16x
                 sta     STATUS6510,x
                 bne     CARDRETFF
-
+;
+; Super Serial card calls to pascal entry points 
+;
 JSRSSCREAD:     jsr     PAGEINROM       ;Bring in the SSC ROM
                 jsr     SSC_READ        ;Read a character
                 lda     STSBYTE,x       ;Get the character
@@ -195,7 +197,9 @@ JSRSCCWRITE:    pha
 
 JSRSCCINIT:     jsr     PAGEINROM       ;Bring in the SSC ROM
                 jmp     SCC_INIT        ;Call the init routine
-
+;
+; Page in the rom
+;
 PAGEINROM:      stx     SCRNHOLE5       ;Mark us as using rom space
                 txa
                 tay
