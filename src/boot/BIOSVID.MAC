@@ -21,13 +21,13 @@ SETALTCHAR      EQU $c00f      ;W use alternate char set
 SPKR            EQU $c030      ;RW toggle speaker
 TXTPAGE1        EQU $c054      ;RW display page 1
 TXTPAGE2        EQU $c055      ;RW display page 2 (or read/write aux mem)
-
 ;*******************************************************************************
 ;*                                                                             *
 ;* Routines to handle the 80 Column card                                       *
 ;*                                                                             *
 ;*******************************************************************************
-LD000:   jmp     POP_TOGGLE_CURSOR
+TOG_CURJMP:
+         jmp     POP_TOGGLE_CURSOR
 PRINT_STACK_CHAR:
          pla                ;Get our character off the stack
 PRINT_CHAR:

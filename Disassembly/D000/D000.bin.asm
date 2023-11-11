@@ -1,4 +1,8 @@
                    ; 6502bench SourceGen v1.8.5
+                   CHAR_OP_INI     .eq     $0d    {const}    ;Character IO Init (same as pascal offset)
+                   CHAR_OP_RD      .eq     $0e    {const}    ;Character IO Read (same as pascal offset)
+                   CHAR_OP_WR      .eq     $0f    {const}    ;Character IO Write (same as pascal offset)
+                   CHAR_OP_ST      .eq     $10    {const}    ;Character IO Status (same as pascal offset)
                    SCRLINEL        .eq     $20               ;Address of current line in $400
                    SCRLINEH        .eq     $21               ;Screen address high
                    ESCAPE_STATE    .eq     $22               ;State for ESCAPE leadin
@@ -34,6 +38,7 @@
                    SCRNHOLE0       .eq     $0478  {addr/8}   ;text page 1 screen holes
                    SCRNHOLE1       .eq     $04f8  {addr/8}   ;text page 1 screen holes
                    SCRNHOLE2       .eq     $0578  {addr/8}   ;text page 1 screen holes
+                   STSBYTE         .eq     $05b8             ;SSC Char
                    DISKSLOTCX      .eq     $05f8             ;Disk slot $60
                    SCRNHOLE4       .eq     $0678  {addr/8}   ;text page 1 screen holes
                    SCRNHOLE5       .eq     $06f8  {addr/8}   ;text page 1 screen holes
@@ -43,7 +48,7 @@
                    SPKR            .eq     $c030             ;RW toggle speaker
                    TXTPAGE1        .eq     $c054             ;RW display page 1
                    TXTPAGE2        .eq     $c055             ;RW display page 2 (or read/write aux mem)
-                   IWM_PH0_OFF     .eq     $c080             ;IWM phase 0 off
+                   PARA_DATAOUT    .eq     $c080
                    IWM_MOTOR_OFF   .eq     $c088             ;IWM motor off
                    IWM_MOTOR_ON    .eq     $c089             ;IWM motor on
                    IWM_DRIVE_1     .eq     $c08a             ;IWM select drive 1
@@ -51,8 +56,12 @@
                    LCBANK1         .eq     $c08b             ;RWx2 read/write RAM bank 1
                    IWM_Q6_OFF      .eq     $c08c             ;IWM read
                    IWM_Q6_ON       .eq     $c08d             ;IWM WP-sense
-                   IWM_Q7_OFF      .eq     $c08e             ;IWM WP-sense/read
-                   IWM_Q7_ON       .eq     $c08f             ;IWM write
+                   STATUS6510      .eq     $c08e
+                   DATA6510        .eq     $c08f
+                   PARA_ACKIN      .eq     $c0c1
+                   SCC_INIT        .eq     $c800             ;Super serial card init
+                   SSC_READ        .eq     $c84d             ;Super serial card read routine
+                   SSC_WRITE       .eq     $c9aa             ;Super serial card write routine
                    CLRROM          .eq     $cfff             ;disable slot C8 ROM
                    SIX_BIT_DATA    .eq     $de00             ;Six bit data bytes
                    TWO_BIT_DATA    .eq     $df00             ;56 bytes of 2 bit data
@@ -63,7 +72,7 @@
                    *                                                                              *
                    ********************************************************************************
                                    .addrs  $d000
-d000: 4c 1a d1     LD000           jmp     POP_TOGGLE_CURSOR
+d000: 4c 1a d1     TOG_CURJMP      jmp     POP_TOGGLE_CURSOR
 
                    PRINT_STACK_CHAR
 d003: 68                           pla                       ;Get our character off the stack
@@ -561,6 +570,7 @@ d3a6: 1a 1a 1a 1a+                 .fill   90,$1a
                    * Routines to handle Disk drives                                               *
                    *                                                                              *
                    ********************************************************************************
+                                   .addrs  $d400
 d400: ad 84 03                     lda     DISK_DRV          ;Get the drive ($60 for S6,D1)
 d403: 29 7f                        and     #$7f              ;Mask off drive (ProDOS style)
 d405: 8d f8 05                     sta     DISKSLOTCX
@@ -590,7 +600,7 @@ d423: 8c f8 06                     sty     SCRNHOLE5
 d426: a0 04                        ldy     #$04
 d428: 8c f8 04                     sty     SCRNHOLE1
 d42b: ae f8 05                     ldx     DISKSLOTCX
-d42e: bd 8e c0                     lda     IWM_Q7_OFF,x      ;Into read mode
+d42e: bd 8e c0                     lda     STATUS6510,x      ;Into read mode
 d431: bd 8c c0                     lda     IWM_Q6_OFF,x
 d434: a0 08                        ldy     #$08
 d436: bd 8c c0     CHECK_FOR_DATA  lda     IWM_Q6_OFF,x      ;Read some data
@@ -760,12 +770,12 @@ d600: 38                           sec
 d601: 86 27                        stx     D2_CHECK_SUM
 d603: 8e 78 06                     stx     SCRNHOLE4
 d606: bd 8d c0                     lda     IWM_Q6_ON,x
-d609: bd 8e c0                     lda     IWM_Q7_OFF,x
+d609: bd 8e c0                     lda     STATUS6510,x
 d60c: 30 7c                        bmi     LD68A
 d60e: ad 00 df                     lda     TWO_BIT_DATA
 d611: 85 26                        sta     ZP_TEMP1
 d613: a9 ff                        lda     #$ff              ;Write sync bytes
-d615: 9d 8f c0                     sta     IWM_Q7_ON,x
+d615: 9d 8f c0                     sta     DATA6510,x
 d618: 1d 8c c0                     ora     IWM_Q6_OFF,x
 d61b: 48                           pha
 d61c: 68                           pla
@@ -819,7 +829,7 @@ d67d: a9 eb                        lda     #$eb
 d67f: 20 b4 d6                     jsr     WRITE9
 d682: a9 ff                        lda     #$ff
 d684: 20 b4 d6                     jsr     WRITE9
-d687: bd 8e c0                     lda     IWM_Q7_OFF,x
+d687: bd 8e c0                     lda     STATUS6510,x
 d68a: bd 8c c0     LD68A           lda     IWM_Q6_OFF,x
 d68d: 60                           rts
 
@@ -1068,7 +1078,7 @@ d844: 29 03        LD844           and     #$03
 d846: 2a                           rol     A
 d847: 05 2b                        ora     $2b
 d849: aa                           tax
-d84a: bd 80 c0                     lda     IWM_PH0_OFF,x
+d84a: bd 80 c0                     lda     PARA_DATAOUT,x
 d84d: a6 2b                        ldx     $2b
 d84f: 60           LD84F           rts
 
@@ -1078,10 +1088,10 @@ d855: 38                           sec
 d856: 60                           rts
 
 d857: bd 8d c0     LD857           lda     IWM_Q6_ON,x
-d85a: bd 8e c0                     lda     IWM_Q7_OFF,x
+d85a: bd 8e c0                     lda     STATUS6510,x
 d85d: 30 f1                        bmi     LD850
 d85f: a9 ff                        lda     #$ff
-d861: 9d 8f c0                     sta     IWM_Q7_ON,x
+d861: 9d 8f c0                     sta     DATA6510,x
 d864: dd 8c c0                     cmp     IWM_Q6_OFF,x
 d867: 48                           pha
 d868: 68                           pla
@@ -1122,7 +1132,7 @@ d8b4: 20 e3 d8                     jsr     LD8E3
 d8b7: a9 eb                        lda     #$eb
 d8b9: 20 e3 d8                     jsr     LD8E3
 d8bc: 18                           clc
-d8bd: bd 8e c0                     lda     IWM_Q7_OFF,x
+d8bd: bd 8e c0                     lda     STATUS6510,x
 d8c0: bd 8c c0                     lda     IWM_Q6_OFF,x
 d8c3: 60           LD8C3           rts
 
@@ -1379,7 +1389,7 @@ daab: 09 c0                        ora     #$c0
 daad: 8d eb da                     sta     SMARTDRV_CALL+2   ;Save slot rom into call high
 dab0: 8d b5 da                     sta     GET_SMARTDRV_ADDR+2 ;Save slot rom to get entry point
                    GET_SMARTDRV_ADDR
-dab3: ad ff c7                     lda     $c7ff             ;Get the entry point
+dab3: ad ff c7                     lda     SCC_INIT-1        ;Get the entry point
 dab6: 18                           clc
 dab7: 69 03                        adc     #$03              ;Add 3 to get smartdrive point
 dab9: 8d ea da                     sta     SMARTDRV_CALL+1   ;Update the call low byte
@@ -1425,7 +1435,7 @@ dafe: 8a           PRODOS          txa
 daff: 09 c0                        ora     #$c0
 db01: 8d 2c db                     sta     PD_CALL_DRIVER+2  ;Patch up the driver call
 db04: 8d 09 db                     sta     PD_GET_ENTRY+2    ;Patch the call to find the driver entry
-db07: ad ff c7     PD_GET_ENTRY    lda     $c7ff             ;Get the entry point
+db07: ad ff c7     PD_GET_ENTRY    lda     SCC_INIT-1        ;Get the entry point
 db0a: 8d 2b db                     sta     PD_CALL_DRIVER+1  ;Patch the call
 db0d: ad 84 03                     lda     DISK_DRV
 db10: 85 43                        sta     PRODOS_UNITNUM
@@ -1525,169 +1535,196 @@ dbaa: 00                           .dd1    $00
 dbab: 00                           .dd1    $00
 dbac: 00           PD_TRACK_OP_CNT .dd1    $00
 dbad: 00 00 00 00+                 .fill   83,$00
+                                   .adrend ↑ ~$d400
 
                    ********************************************************************************
-                   * Various routines                                                             *
+                   * Character mode device BIOS.                                                  *
                    * These get copied out of $DC00 into $0A00                                     *
                    * They also get copied into the other bank of memory                           *
-                   * So probably have some banking code in there.                                 *
+                   * On entry:                                                                    *
+                   * A  = Character to read / write OR                                            *
+                   *      0 = Output status check                                                 *
+                   *      1 = Input status check                                                  *
+                   * X  = Device slot                                                             *
+                   *  0  = Console                                                                *
+                   *  1..7 Slot number                                                            *
+                   *  $80   Toggle cursor on off                                                  *
+                   * Y  = operation                                                               *
+                   *  $0D = Init                                                                  *
+                   *  $0E = Read character                                                        *
+                   *  $0F = Write character                                                       *
+                   *  $10 = Get status                                                            *
                    ********************************************************************************
                                    .addrs  $0a00
-0a00: d8                           cld
-0a01: 48                           pha
-0a02: 8a                           txa
-0a03: d0 09                        bne     L0A0E
-0a05: 2c 8b c0                     bit     LCBANK1
+0a00: d8                           cld                       ;Clear decimal mode
+0a01: 48                           pha                       ;Put acc on stack
+0a02: 8a                           txa                       ;Which slot / what are doing?
+0a03: d0 09                        bne     CHECK_CUR_TOG     ;Output to console?
+0a05: 2c 8b c0                     bit     LCBANK1           ;Yes, page in video BIOS in language card
 0a08: 2c 8b c0                     bit     LCBANK1
-0a0b: 4c 03 d0                     jmp     PRINT_STACK_CHAR
+0a0b: 4c 03 d0                     jmp     PRINT_STACK_CHAR  ;Put top of stack onto screen
 
-0a0e: 10 09        L0A0E           bpl     L0A19
-0a10: 2c 8b c0                     bit     LCBANK1
+0a0e: 10 09        CHECK_CUR_TOG   bpl     DO_SLOT_IO        ;Slot number positive
+0a10: 2c 8b c0                     bit     LCBANK1           ;Nope, so page in video BIOS
 0a13: 2c 8b c0                     bit     LCBANK1
-0a16: 4c 00 d0                     jmp     LD000
+0a16: 4c 00 d0                     jmp     TOG_CURJMP        ;And toggle the cursor
 
-0a19: 8e 0c 0b     L0A19           stx     L0B0B+1
-0a1c: bd b8 03                     lda     SLOT_INFO,x
-0a1f: 29 0f                        and     #$0f
-0a21: 48                           pha
-0a22: 8a                           txa
+                   ; See what sort of card is in the slot
+0a19: 8e 0c 0b     DO_SLOT_IO      stx     PAGEINROM2+1      ;Setup for paging in rom
+0a1c: bd b8 03                     lda     SLOT_INFO,x       ;Get the card type
+0a1f: 29 0f                        and     #$0f              ;Mask to low nybble
+0a21: 48                           pha                       ;Save it for later
+0a22: 8a                           txa                       ;Multiply slot number by 8
 0a23: 0a                           asl     A
 0a24: 0a                           asl     A
 0a25: 0a                           asl     A
 0a26: 0a                           asl     A
-0a27: aa                           tax
+0a27: aa                           tax                       ;X = Slot number * 8
 0a28: 68                           pla
-0a29: c9 03                        cmp     #$03              ;Possibly serial card
-0a2b: f0 78                        beq     L0AA5
+0a29: c9 03                        cmp     #$03              ;Apple Comms or CCS7710A
+0a2b: f0 78                        beq     COMMS6550
 0a2d: c9 04                        cmp     #$04              ;High speed serial
-0a2f: f0 60                        beq     L0A91
+0a2f: f0 60                        beq     SSC
 0a31: c9 05                        cmp     #$05              ;Parallel printer
-0a33: f0 36                        beq     CARD5
-0a35: c9 06                        cmp     #$06              ;Dunno Softcard manual is silent
-0a37: f0 03                        beq     CARD6
-0a39: 68                           pla
-0a3a: d0 66                        bne     L0AA2
-0a3c: 68           CARD6           pla
-0a3d: c0 0e                        cpy     #$0e
-0a3f: f0 13                        beq     L0A54
-0a41: c0 0f                        cpy     #$0f
-0a43: f0 0f                        beq     L0A54
-0a45: c0 0d                        cpy     #$0d
-0a47: f0 0b                        beq     L0A54
-0a49: c0 10                        cpy     #$10
-0a4b: d0 55                        bne     L0AA2
-0a4d: 20 54 0a                     jsr     L0A54
-0a50: b0 3c                        bcs     L0A8E
-0a52: 90 4e                        bcc     L0AA2
+0a33: f0 36                        beq     APPLEPARA
+0a35: c9 06                        cmp     #$06              ;Pascal based card
+0a37: f0 03                        beq     PASCALCARD
+0a39: 68                           pla                       ;Remove actual character
+0a3a: d0 66                        bne     CHAR_RET_0        ;Go home
+                   ; 
+                   ; Pascal card
+                   ;  
+0a3c: 68           PASCALCARD      pla                       ;Get back the character
+0a3d: c0 0e                        cpy     #CHAR_OP_RD       ;Read operation?
+0a3f: f0 13                        beq     DOPASCAL_OP       ;Go Do it
+0a41: c0 0f                        cpy     #CHAR_OP_WR       ;Write operation
+0a43: f0 0f                        beq     DOPASCAL_OP       ;Go Do it
+0a45: c0 0d                        cpy     #CHAR_OP_INI      ;Init operation?
+0a47: f0 0b                        beq     DOPASCAL_OP       ;Go Do it
+0a49: c0 10                        cpy     #CHAR_OP_ST       ;Status operation?
+0a4b: d0 55                        bne     CHAR_RET_0        ;Lie and return OK
+0a4d: 20 54 0a                     jsr     DOPASCAL_OP       ;Go do our operation
+0a50: b0 3c                        bcs     CARDRETFF         ;Result is No
+0a52: 90 4e                        bcc     CHAR_RET_0        ;Result is Yes
 
-0a54: 8c 62 0a     L0A54           sty     L0A61+1
-0a57: 48                           pha
-0a58: 20 06 0b                     jsr     L0B06
-0a5b: 8e 63 0a                     stx     L0A61+2
-0a5e: 8e 6a 0a                     stx     L0A68+2
-0a61: ad 00 c1     L0A61           lda     $c100
-0a64: 8d 69 0a                     sta     L0A68+1
-0a67: 68                           pla
-0a68: 4c 00 c1     L0A68           jmp     $c100
+0a54: 8c 62 0a     DOPASCAL_OP     sty     GETPASENTRY+1     ;Save offset of pascal entry
+0a57: 48                           pha                       ;Save Acc
+0a58: 20 06 0b                     jsr     PAGEINROM         ;Page in $C800 ROM 
+0a5b: 8e 63 0a                     stx     GETPASENTRY+2     ;Save Cx00 into get offset instruction
+0a5e: 8e 6a 0a                     stx     JMPPASENTRY+2     ;Save Cx00 into call to card
+0a61: ad 00 c1     GETPASENTRY     lda     $c100             ;Get the offset of the operation
+0a64: 8d 69 0a                     sta     JMPPASENTRY+1     ;Save it into jump to pascal operation
+0a67: 68                           pla                       ;Get back character
+0a68: 4c 00 c1     JMPPASENTRY     jmp     $c100             ;Go call card routine
 
-0a6b: 68           CARD5           pla
-0a6c: c0 0d                        cpy     #$0d
-0a6e: f0 1e                        beq     L0A8E
-0a70: c0 10                        cpy     #$10
-0a72: f0 0f                        beq     L0A83
-0a74: c0 0f                        cpy     #$0f
-0a76: d0 2a                        bne     L0AA2
-0a78: 48                           pha
-0a79: 20 83 0a     L0A79           jsr     L0A83
-0a7c: f0 fb                        beq     L0A79
-0a7e: 68                           pla
-0a7f: 99 80 c0                     sta     IWM_PH0_OFF,y
-0a82: 60                           rts
+                   ; 
+                   ; Apple Parallel card code
+                   ;  
+0a6b: 68           APPLEPARA       pla                       ;Get back the character
+0a6c: c0 0d                        cpy     #CHAR_OP_INI      ;No initialise routine
+0a6e: f0 1e                        beq     CARDRETFF         ;So go home
+0a70: c0 10                        cpy     #CHAR_OP_ST       ;Get status
+0a72: f0 0f                        beq     PARA_STATUS       ;Go do it
+0a74: c0 0f                        cpy     #CHAR_OP_WR       ;CHAR_OP_WR
+0a76: d0 2a                        bne     CHAR_RET_0        ;Do the write
+0a78: 48                           pha                       ;Save character
+0a79: 20 83 0a     PARASTLOOP      jsr     PARA_STATUS       ;Check status
+0a7c: f0 fb                        beq     PARASTLOOP        ;Wait until clear
+0a7e: 68                           pla                       ;Get back character
+0a7f: 99 80 c0                     sta     PARA_DATAOUT,y    ;Output the character to card
+0a82: 60                           rts                       ;Go home
 
-0a83: 20 06 0b     L0A83           jsr     L0B06
-0a86: 8e 8b 0a                     stx     L0A89+2
-0a89: ad c1 c0     L0A89           lda     $c0c1
-0a8c: 30 14                        bmi     L0AA2
-0a8e: a9 ff        L0A8E           lda     #$ff
+0a83: 20 06 0b     PARA_STATUS     jsr     PAGEINROM         ;Page in the rom (sets X)
+0a86: 8e 8b 0a                     stx     GETPARASTAT+2
+0a89: ad c1 c0     GETPARASTAT     lda     PARA_ACKIN        ;Get the status
+0a8c: 30 14                        bmi     CHAR_RET_0        ;Busy?
+0a8e: a9 ff        CARDRETFF       lda     #$ff              ;Nope
 0a90: 60                           rts
 
-0a91: 68           L0A91           pla
-0a92: c0 10                        cpy     #$10
-0a94: f0 f8                        beq     L0A8E
-0a96: c0 0d                        cpy     #$0d
-0a98: f0 66                        beq     L0B00
-0a9a: c0 0f                        cpy     #$0f
-0a9c: f0 57                        beq     L0AF5
-0a9e: c0 0e                        cpy     #$0e
-0aa0: f0 49                        beq     L0AEB
-0aa2: a9 00        L0AA2           lda     #$00
+                   ; 
+                   ; Super serial card code, calls pascal entry points directly
+                   ;  
+0a91: 68           SSC             pla                       ;Get back character
+0a92: c0 10                        cpy     #CHAR_OP_ST       ;Status
+0a94: f0 f8                        beq     CARDRETFF         ;Return good always
+0a96: c0 0d                        cpy     #CHAR_OP_INI      ;Init?
+0a98: f0 66                        beq     JSRSCCINIT        ;Go do it
+0a9a: c0 0f                        cpy     #CHAR_OP_WR       ;Write?
+0a9c: f0 57                        beq     JSRSCCWRITE       ;Go do it
+0a9e: c0 0e                        cpy     #CHAR_OP_RD       ;Read a character
+0aa0: f0 49                        beq     JSRSSCREAD        ;Go do it
+0aa2: a9 00        CHAR_RET_0      lda     #$00
 0aa4: 60                           rts
 
-0aa5: 68           L0AA5           pla
-0aa6: c0 10                        cpy     #$10
-0aa8: f0 28                        beq     L0AD2
-0aaa: c0 0f                        cpy     #$0f
-0aac: f0 15                        beq     L0AC3
-0aae: c0 0d                        cpy     #$0d
-0ab0: f0 2d                        beq     L0ADF
-0ab2: c0 0e                        cpy     #$0e
-0ab4: d0 ec                        bne     L0AA2
-0ab6: a9 01        L0AB6           lda     #$01
-0ab8: 20 d2 0a                     jsr     L0AD2
-0abb: f0 f9                        beq     L0AB6
-0abd: bd 8f c0                     lda     IWM_Q7_ON,x
-0ac0: a9 ff                        lda     #$ff
+                   ; 
+                   ; 6650 based serial comms card
+                   ; CCS7710 or Apple Communications
+                   ;  
+0aa5: 68           COMMS6550       pla
+0aa6: c0 10                        cpy     #CHAR_OP_ST       ;Status operation
+0aa8: f0 28                        beq     STATUS6550
+0aaa: c0 0f                        cpy     #CHAR_OP_WR       ;Write operation
+0aac: f0 15                        beq     WRITE6550
+0aae: c0 0d                        cpy     #CHAR_OP_INI      ;Initialise
+0ab0: f0 2d                        beq     INIT6550
+0ab2: c0 0e                        cpy     #CHAR_OP_RD       ;Read operation
+0ab4: d0 ec                        bne     CHAR_RET_0
+0ab6: a9 01        RD6550WAIT      lda     #$01              ;Wait for read data
+0ab8: 20 d2 0a                     jsr     STATUS6550
+0abb: f0 f9                        beq     RD6550WAIT        ;Nothing yet
+0abd: bd 8f c0                     lda     DATA6510,x        ;Get our data
+0ac0: a9 ff                        lda     #$ff              ;And over write it!!!!
 0ac2: 60                           rts
 
-0ac3: 48           L0AC3           pha
-0ac4: a9 00        L0AC4           lda     #$00
-0ac6: 20 d2 0a                     jsr     L0AD2
-0ac9: f0 f9                        beq     L0AC4
-0acb: 68                           pla
-0acc: 9d 8f c0                     sta     IWM_Q7_ON,x
+0ac3: 48           WRITE6550       pha                       ;Save character
+0ac4: a9 00        WR6550WAIT      lda     #$00              ;Check write status
+0ac6: 20 d2 0a                     jsr     STATUS6550
+0ac9: f0 f9                        beq     WR6550WAIT        ;Wait until we can write
+0acb: 68                           pla                       ;Get character back
+0acc: 9d 8f c0                     sta     DATA6510,x        ;Send it
 0acf: a9 ff                        lda     #$ff
 0ad1: 60                           rts
 
-0ad2: a8           L0AD2           tay
-0ad3: bd 8e c0                     lda     IWM_Q7_OFF,x
-0ad6: 4a                           lsr     A
-0ad7: 88                           dey
-0ad8: f0 01                        beq     L0ADB
-0ada: 4a                           lsr     A
-0adb: 90 c5        L0ADB           bcc     L0AA2
-0add: b0 af                        bcs     L0A8E
+0ad2: a8           STATUS6550      tay                       ;Read or write status
+0ad3: bd 8e c0                     lda     STATUS6510,x      ;Get status reg
+0ad6: 4a                           lsr     A                 ;Shift into carry
+0ad7: 88                           dey                       ;Read data?
+0ad8: f0 01                        beq     ST6550FLAG        ;Yep, use bit 0
+0ada: 4a                           lsr     A                 ;Check bit 1 for write
+0adb: 90 c5        ST6550FLAG      bcc     CHAR_RET_0        ;Set flag depending on carry
+0add: b0 af                        bcs     CARDRETFF
 
-0adf: a9 03        L0ADF           lda     #$03
-0ae1: 9d 8e c0                     sta     IWM_Q7_OFF,x
-0ae4: a9 15                        lda     #$15
-0ae6: 9d 8e c0                     sta     IWM_Q7_OFF,x
-0ae9: d0 a3                        bne     L0A8E
+0adf: a9 03        INIT6550        lda     #$03              ;ACIA master reset
+0ae1: 9d 8e c0                     sta     STATUS6510,x
+0ae4: a9 15                        lda     #$15              ;8 bit data, no parity, 1 stop, clock is 16x
+0ae6: 9d 8e c0                     sta     STATUS6510,x
+0ae9: d0 a3                        bne     CARDRETFF
 
-0aeb: 20 06 0b     L0AEB           jsr     L0B06
-0aee: 20 4d c8                     jsr     $c84d
-0af1: bd b8 05                     lda     $05b8,x
+0aeb: 20 06 0b     JSRSSCREAD      jsr     PAGEINROM         ;Bring in the SSC ROM
+0aee: 20 4d c8                     jsr     SSC_READ          ;Read a character
+0af1: bd b8 05                     lda     STSBYTE,x         ;Get the character
 0af4: 60                           rts
 
-0af5: 48           L0AF5           pha
-0af6: 20 06 0b                     jsr     L0B06
+0af5: 48           JSRSCCWRITE     pha
+0af6: 20 06 0b                     jsr     PAGEINROM         ;Bring in the SSC ROM
 0af9: 68                           pla
-0afa: 9d b8 05                     sta     $05b8,x
-0afd: 4c aa c9                     jmp     $c9aa
+0afa: 9d b8 05                     sta     STSBYTE,x         ;Save character to write
+0afd: 4c aa c9                     jmp     SSC_WRITE         ;Call write routine
 
-0b00: 20 06 0b     L0B00           jsr     L0B06
-0b03: 4c 00 c8                     jmp     $c800
+0b00: 20 06 0b     JSRSCCINIT      jsr     PAGEINROM         ;Bring in the SSC ROM
+0b03: 4c 00 c8                     jmp     SCC_INIT          ;Call the init routine
 
-0b06: 8e f8 06     L0B06           stx     SCRNHOLE5
+0b06: 8e f8 06     PAGEINROM       stx     SCRNHOLE5         ;Mark us as using rom space
 0b09: 8a                           txa
 0b0a: a8                           tay
-0b0b: a9 00        L0B0B           lda     #$00
-0b0d: 09 c0                        ora     #$c0
+0b0b: a9 00        PAGEINROM2      lda     #$00              ;Value over written by other code
+0b0d: 09 c0                        ora     #$c0              ;Put into correct IO space
 0b0f: aa                           tax
-0b10: 8e 18 0b                     stx     L0B1A-2
-0b13: 2c ff cf                     bit     CLRROM
-0b16: ad 00 c1                     lda     $c100
+0b10: 8e 18 0b                     stx     READROMSLOT+2     ;Set up for a read from the ROM
+0b13: 2c ff cf                     bit     CLRROM            ;Clear any other ROMS in $C800
+0b16: ad 00 c1     READROMSLOT     lda     $c100             ;Read from our rom to bring in $C800
 0b19: 60                           rts
 
-0b1a: 1a 1a 1a 1a+ L0B1A           .fill   230,$1a
+0b1a: 1a 1a 1a 1a+                 .fill   230,$1a
                                    .adrend ↑ ~$0a00
                                    .adrend ↑ $d000

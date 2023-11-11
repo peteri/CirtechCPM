@@ -1,0 +1,161 @@
+A623: 32 10 E0    ld   ($E010),a
+A626: 11 6A DE    ld   de,$DE6A
+A629: 21 BC 5D    ld   hl,$5DBC
+A62C: 01 44 00    ld   bc,$0044
+A62F: ED B0       ldir
+A631: 21 2C 5E    ld   hl,$5E2C
+A634: 22 BA 6E    ld   ($6EBA),hl
+A637: 21 88 6A    ld   hl,$6A88
+A63A: 22 BC 6E    ld   ($6EBC),hl
+A63D: DD 21 00 5E ld   ix,$5E00
+A641: DD 22 02 A8 ld   ($A802),ix
+A645: DD 6E 00    ld   l,(ix+$00)
+A648: DD 23       inc  ix
+A64A: DD 66 00    ld   h,(ix+$00)
+A64D: 7C          ld   a,h
+A64E: B5          or   l
+A64F: 28 1E       jr   z,$A66F
+A651: DD 23       inc  ix
+A653: E5          push hl
+A654: FD E1       pop  iy
+A656: FD 6E 0C    ld   l,(iy+$0c)
+A659: FD 66 0D    ld   h,(iy+$0d)
+A65C: 11 BC 5D    ld   de,$5DBC
+A65F: B7          or   a
+A660: ED 52       sbc  hl,de
+A662: EB          ex   de,hl
+A663: 21 6A DE    ld   hl,$DE6A
+A666: 19          add  hl,de
+A667: FD 75 0C    ld   (iy+$0c),l
+A66A: FD 74 0D    ld   (iy+$0d),h
+A66D: 18 D6       jr   $A645
+A66F: 11 BE DD    ld   de,@CIVEC     ;SCB things? @CIVEC?
+A672: 21 45 AF    ld   hl,$AF45
+A675: 01 0A 00    ld   bc,$000A
+A678: ED B0       ldir
+;
+; Name cards in slots
+;
+A67A: DD 21 BF F3 ld   ix,SLOT_INFO+7   ;Get the slot info
+A67E: 06 07       ld   b,$07            ; Count down
+DEVCPYLOOP: DD 7E 00    ld   a,(ix+$00)       ; Get card type
+A683: DD 2B       dec  ix
+A685: FE 0F       cp   0F0H             ; Hi nybble clear
+A687: 38 0D       jr   c,OLDCARD       ; Yes it's an old card
+A689: E6 F0       and  0F0H              ; Mask off pascal card type
+A68B: FE A0       cp   0A0H              ; Bigger than we known?
+A68D: 30 05       jr   nc,CARD_UNKNWN
+A68F: 0F          rrca                  ;Pascal card
+A690: C6 50       add  a,50H            ; Add offset in table
+A692: 18 05       jr   CARD_KNOWN
+CARD_UNKNWN: 3E 01       ld   a,1       ;Set for unknown card
+OLDCARD: 07          rlca
+A697: 07          rlca
+A698: 07          rlca
+CARD_KNOWN: 16 00       ld   d,0        ; Get card info
+A69B: 5F          ld   e,a
+A69C: FD 21 61 A7 ld   iy,CARD_TYPES    ; into iy
+A6A0: FD 19       add  iy,de
+A6A2: 78          ld   a,b              ; Slot number
+A6A3: C6 30       add  a,'0'            ; Convert to ASCII
+A6A5: FD 77 05    ld   (iy+5),a         ; Store it so IODEV becomes IODEVx
+A6A8: 78          ld   a,b              ; Get slot number
+A6A9: CB 27       sla  a                ; multiply by 8
+A6AB: CB 27       sla  a
+A6AD: CB 27       sla  a
+A6AF: 5F          ld   e,a              ; Set our destination in the dev table
+A6B0: 16 00       ld   d,0
+A6B2: 21 AE DE    ld   hl,DEVTBL        ; Add the index to devtbl
+A6B5: 19          add  hl,de
+A6B6: EB          ex   de,hl            ; Swap DE and HL
+A6B7: FD E5       push iy               ; set our source address
+A6B9: E1          pop  hl
+A6BA: C5          push bc               ; Save our counter for later
+A6BB: 01 08 00    ld   bc,8             ; Copy over the entry
+A6BE: ED B0       ldir
+A6C0: C1          pop  bc               ; Restore our counter
+A6C1: 10 BD       djnz DEVCPYLOOP            ; Next card please
+; Reset the SCB DEVICE vectors
+RESET_VECTORS:    ld   sp,BIOSTOS
+A6C6: 16 00       ld   d,$00
+A6C8: 06 80       ld   b,$80
+A6CA: 21 B9 F3    ld   hl,SLOT_INFO+1
+A6CD: 14          inc  d
+A6CE: CB 38       srl  b
+A6D0: 38 57       jr   c,$A729
+A6D2: 7E          ld   a,(hl)
+A6D3: 5F          ld   e,a
+A6D4: E6 0F       and  $0F
+A6D6: 23          inc  hl
+A6D7: FE 07       cp   $07
+A6D9: 30 F2       jr   nc,$A6CD
+A6DB: FE 03       cp   $03
+A6DD: 38 EE       jr   c,$A6CD
+A6DF: FE 06       cp   $06
+A6E1: 20 0B       jr   nz,$A6EE
+A6E3: 7B          ld   a,e
+A6E4: E6 F0       and  $F0
+A6E6: FE 10       cp   $10
+A6E8: 28 04       jr   z,$A6EE
+A6EA: FE 30       cp   $30
+A6EC: 20 DF       jr   nz,$A6CD
+A6EE: 7A          ld   a,d
+A6EF: 32 49 A9    ld   ($A949),a
+A6F2: 0E 00       ld   c,$00
+A6F4: ED 43 C6 DD ld   (@LOVEC),bc ; List out vector
+A6F8: 14          inc  d
+A6F9: CB 38       srl  b
+A6FB: 38 2C       jr   c,$A729
+A6FD: 7E          ld   a,(hl)
+A6FE: 5F          ld   e,a
+A6FF: E6 0F       and  $0F
+A701: 23          inc  hl
+A702: FE 03       cp   $03
+A704: 28 17       jr   z,$A71D
+A706: FE 04       cp   $04
+A708: 28 13       jr   z,$A71D
+A70A: FE 06       cp   $06
+A70C: 20 EA       jr   nz,$A6F8
+A70E: 7B          ld   a,e
+A70F: E6 F0       and  $F0
+A711: FE 30       cp   $30
+A713: 28 08       jr   z,$A71D
+A715: FE 40       cp   $40
+A717: 28 04       jr   z,$A71D
+A719: FE 90       cp   $90
+A71B: 20 DB       jr   nz,$A6F8
+A71D: 7A          ld   a,d
+A71E: 32 4A A9    ld   ($A94A),a
+A721: ED 43 C4 DD ld   (@AOVEC),bc   ; Aux out vector
+A725: ED 43 C2 DD ld   (@AIVEC),bc   ; Aux in vector
+A729: 31 F5 A4    ld   sp,BIOSTOS
+; Initialise devices
+A72C: 0E 07       ld   c,$07
+DEVNEXT:          push bc
+A72F: CD 12 AF    call DEVINI
+A732: C1          pop  bc
+A733: 0D          dec  c
+A734: 20 F8       jr   nz,DEVNEXT
+A736: 11 EF DE    ld   de,RESETVECT ;Routine to call when user hits reset
+A739: 7B          ld   a,e
+A73A: 32 06 F3    ld   (0F306H),a
+A73D: 7A          ld   a,d
+A73E: 32 0B F3    ld   (0F30BH),a
+A741: AF          xor  a
+            ld   (WRCARDRAM),a
+            ld   (ESCAPE_STATE),a
+            ld   (WRMAINRAM),a
+            di
+            ld   hl,SIGNONMSG
+            ld   a,(hl)
+SIGNONLOOP: ld   c,a
+            push hl
+            call C_TO_CONS
+            pop  hl
+            inc  hl
+            ld   a,(hl)
+            or   a
+            jr   nz,SIGNONLOOP
+A75B: CD 26 AF    call $AF26
+            jp   B_WBOOT
+

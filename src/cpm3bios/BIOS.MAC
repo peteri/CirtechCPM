@@ -16,26 +16,37 @@ HIBYTE  MACRO MSG
                 ENDIF
             ENDM
         ENDM
-
+;
+; Apple //e hardware addresses as seen from the Z80
+;
 RDMAINRAM   EQU 0E002H
 RDCARDRAM   EQU 0E003H
 WRMAINRAM   EQU 0E004H
 WRCARDRAM   EQU 0E005H
 TXTPAGE1    EQU 0E054H      ;RW display page 1
 TXTPAGE2    EQU 0E055H      ;RW display page 2 (or read/write aux mem)
-
+;
+; Misc constants
+;
 ESC         EQU 1BH
 CR          EQU 0DH 
 LF          EQU 0AH
 DSKOP_RD    EQU 01H
 DSKOP_WR    EQU 02H
+CHAR_OP_INI EQU 0DH             ; Character IO Init (same as pascal offset)
+CHAR_OP_RD  EQU 0EH             ; Character IO Read (same as pascal offset)
+CHAR_OP_WR  EQU 0FH             ; Character IO Write (same as pascal offset)
+CHAR_OP_ST  EQU 10H             ; Character IO Status (same as pascal offset)
 ;
 ;6502 Zero page stuff seen from Z80
 ;
 Z80OFFS     EQU 0F000H
-ZSLOTX      EQU 0F004H       ; Boot slot 1..7
-ZACC_6502   EQU 0F045H       ; 6502 Acc
-ZFLAG_6502  EQU 0F048H       ; 6502 flag
+ZSLOTX      EQU 0F004H          ; Boot slot 1..7
+ZESC_STATE  EQU 0F022H          ; Escape lead in state
+ZACC_6502   EQU 0F045H          ; 6502 Acc
+ZX_6502     EQU 0F046H          ; 6502 X reg
+ZY_6502     EQU 0F047H          ; 6502 Y reg
+ZFLAG_6502  EQU 0F048H          ; 6502 flag
 ;
 ;6502 stuff in 0300 range as seen from Z80
 ;
@@ -69,10 +80,11 @@ WARMCOPYLEN EQU  05CFFH         ; Warm copy length
 DPHTAB      EQU  5E00H          ; Table of DPH for drives
 DRVMAP      EQU  5E20H          ; Map of CPM drives to apple drives
 ;
+; Messages for the toolkey popup (see src\boot\toolkey.mac)
 ;
-;
-ERR_WRPRO   EQU  0FD90H
-MSG_DUPLIC  EQU  0FE28H
+MSG_TOOLKEY EQU  0FC00H         ; Message box for toolkey
+ERR_WRPRO   EQU  0FD90H         ; Write protected error
+MSG_DUPLIC  EQU  0FE28H         ; Duplicating disk
 ;******************************************************************
 ;*                                                                *
 ;*  Set the common memory segment, code from here on in lives     *
@@ -136,7 +148,7 @@ CURBANK:    DB 0                ; DE64
 DMABANK:    DB 0                ; DE65
 DMAADDR:    DW 0                ; DE66
 SAVEDE:     DW 0                ; DE68
-DRVTBL:     DW 0,0,0,0,0,0,0,0
+LDE6A:      DW 0,0,0,0,0,0,0,0
             DW 0,0,0,0,0,0,0,0
             ; Not certain what this is yet
             DS 36               ; DE88
@@ -150,10 +162,14 @@ DEVTBL:                         ; DEAE
             DB 'NODEV6',00,00
             DB 'NODEV7',00,00
             DB 00               ; End of device table
-; Unknown at DEEF
-            ld   (RDMAINRAM),a
-            ld   (WRMAINRAM),a
-            jp   XXXXX
+;==================================================================
+;
+; Reset the world, called from 6502 code at $300
+;
+;==================================================================
+RESETVECT:  ld   (RDMAINRAM),a  ; Setup RAM
+            ld   (WRMAINRAM),a  ; Go reset SCB IO vectors and 
+            jp   FINDIODEVS     ; do last half of cold boot
 ;==================================================================
 ; BIOS Func 1 - WBOOT
 ; Warm boot CPM, copies CCP into memory and resets vectors.
@@ -481,10 +497,10 @@ DISKRETRY:  ld   hl,DISK_ROUT   ; Tell the 6502 code
             ld   a,(DISK_ERR)   ; We're back did we get an error
             or   a              ; Set the flag
             ret  z              ; Return back if there wasn't error
-            ld   c,07H
-            call 0A99AH
+            ld   c,07H          ; Ring the bell
+            call C_TO_CONS      ; Character in C to console
             di
-            call 0ABAAH
+            call DRWTOOLKY      ; Draw toolkey box
             ld   a,(DISK_ERR)   ; Get the error message
             cp   010H           ; Write only?
             jr   nz,NOTWRPRO    ; Nah fix message for read / write
@@ -522,29 +538,201 @@ MSG_ERRDST: HIBYTE "Write Error on "
 MSGERRDRV:  HIBYTE "A: Try again Y/N ?"
 MSG_RDERR:  HIBYTE "Read "
 MSG_WRERR:  HIBYTE "Write"
-B_COLD:                             ; A623
-XXXXX:                              ; A6C3
-            ORG  0A761H
-            DB 'NOCRD ',00,00
-            DB 'UNKWN ',00,00
-            DB 'DSKII ',00,00
-            DB 'COMCD ',0B,00
-            DB 'SERCD ',0B,00
-            DB 'PRINT ',02,00
-            DB '      ',00,00
-            DB 'RAMDR ',00,00
-            DB 'PDISK ',00,00
-            DB 'FDISK ',00,00
-            DB 'UNKWN ',00,00
-            DB 'PRTCD ',02,00
-            DB 'MOUSE ',01,00
-            DB 'IODEV ',0B,00
-            DB 'MODEM ',0B,00
-            DB 'SOUND ',03,00
-            DB 'CLOCK ',02,00
-            DB 'STORE ',03,00
-            DB '80COL ',02,00
-            DB 'ATALK ',0B,00
+;==================================================================
+; BIOS Func 0 - Cold boot
+; Cold boot routines, sets up the drives, IO vectors
+; Copies device tables into place
+; and calls the warm boot
+; Entry
+; Exit
+;==================================================================
+B_COLD:
+A623: 32 10 E0    ld   ($E010),a
+A626: 11 6A DE    ld   de,LDE6A
+A629: 21 BC 5D    ld   hl,$5DBC
+A62C: 01 44 00    ld   bc,$0044
+A62F: ED B0       ldir
+A631: 21 2C 5E    ld   hl,$5E2C
+A634: 22 BA 6E    ld   ($6EBA),hl
+A637: 21 88 6A    ld   hl,$6A88
+A63A: 22 BC 6E    ld   ($6EBC),hl
+A63D: DD 21 00 5E ld   ix,$5E00
+A641: DD 22 02 A8 ld   (B_DRVTBL+1),ix
+A645: DD 6E 00    ld   l,(ix+$00)
+A648: DD 23       inc  ix
+A64A: DD 66 00    ld   h,(ix+$00)
+A64D: 7C          ld   a,h
+A64E: B5          or   l
+A64F: 28 1E       jr   z,$A66F
+A651: DD 23       inc  ix
+A653: E5          push hl
+A654: FD E1       pop  iy
+A656: FD 6E 0C    ld   l,(iy+$0c)
+A659: FD 66 0D    ld   h,(iy+$0d)
+A65C: 11 BC 5D    ld   de,$5DBC
+A65F: B7          or   a
+A660: ED 52       sbc  hl,de
+A662: EB          ex   de,hl
+A663: 21 6A DE    ld   hl,$DE6A
+A666: 19          add  hl,de
+A667: FD 75 0C    ld   (iy+$0c),l
+A66A: FD 74 0D    ld   (iy+$0d),h
+A66D: 18 D6       jr   $A645
+A66F: 11 BE DD    ld   de,@CIVEC     ;SCB things? @CIVEC?
+A672: 21 45 AF    ld   hl,$AF45
+A675: 01 0A 00    ld   bc,$000A
+A678: ED B0       ldir
+;
+; Setup DEVTBL to match cards in slots
+;
+            ld   ix,SLOT_INFO+7 ;Get the slot info
+            ld   b,$07          ; Count down
+DEVCPYLOOP: ld   a,(ix+$00)     ; Get card type
+            dec  ix
+            cp   0F0H           ; Hi nybble clear
+            jr   c,OLDCARD      ; Yes it's an old card or disk
+            and  0F0H           ; Mask off pascal card type
+            cp   0A0H           ; Bigger than we know?
+            jr   nc,CARD_UNNWN
+            rrca                ; Pascal card
+            add  a,50H          ; Add offset in table
+            jr   CARD_KNOWN
+CARD_UNKWN: ld   a,1            ;Set for unknown card
+OLDCARD:    rlca                ;Multiply by 8 
+            rlca
+            rlca
+CARD_KNOWN: ld   d,0            ; Get card info
+            ld   e,a
+            ld   iy,CARD_TYPES  ; into iy
+            add  iy,de
+            ld   a,b            ; Slot number
+            add  a,'0'          ; Convert to ASCII
+            ld   (iy+5),a       ; Store it so IODEV becomes IODEVx
+            ld   a,b            ; Get slot number
+            sla  a              ; multiply by 8
+            sla  a
+            sla  a
+            ld   e,a            ; Set our destination in the dev table
+            ld   d,0
+            ld   hl,DEVTBL      ; Add the index to devtbl
+            add  hl,de
+            ex   de,hl          ; Swap DE and HL
+            push iy             ; set our source address
+            pop  hl
+            push bc             ; Save our counter for later
+            ld   bc,8           ; Copy over the entry
+            ldir
+            pop  bc             ; Restore our counter
+            djnz DEVCPYLOOP     ; Next card please
+;            
+; Reset the SCB DEVICE vectors
+; First find the LST device
+;
+FINDIODEVS: ld   sp,BIOSTOS     ; Reset stack (again)
+            ld   d,0            ; Slot number
+            ld   b,080h         ; walk this bit down
+            ld   hl,SLOT_INFO+1 ; Start at slot 1
+FNDLSTLOOP: inc  d              ; Next slot number
+            srl  b              ; Walk bit mask down
+            jr   c,INITDEVS     ; fell of end? check for aux
+            ld   a,(hl)         ; Get this slot card type
+            ld   e,a            ; Save for later
+            and  0FH            ; Not a pascal card check
+            inc  hl             ; increment our pointer
+            cp   7              ; Disk drive of some sort?
+            jr   nc,FNDLSTLOOP  ; Goto get next slot
+            cp   3              ; Disk II or unknown?
+            jr   c,FNDLSTLOOP   ; Yes go around again
+            cp   6              ; Not a pascal card
+            jr   nz,FOUNDLST    ; Must be type 3/4 so save it
+            ld   a,e            ; Get back card type
+            and  0F0H           ; Mask off pascal type
+            cp   010H           ; Pascal printer
+            jr   z,FOUNDLST     ; Yes please
+            cp   030H           ; Serial or parallel IO
+            jr   nz,FNDLSTLOOP  ; Nope loop again
+FOUNDLST:   ld   a,d            ; Lst slot number
+            ld   (LSTSLOT),a    ; Lst slot number
+            ld   c,0            ; Zero top half
+            ld   (@LOVEC),bc    ; Set List out vector
+;
+; Now we'll try and find the AUX device
+;
+FNDAUXLOOP: inc  d              ; Next slot number
+            srl  b              ; walk this bit down
+            jr   c,INITDEVS     ; fell of end? all done then
+            ld   a,(hl)         ; Get card type
+            ld   e,a            ; Save card type for later
+            and  00FH           ; Mask off card type
+            inc  hl             ; bounce pointer
+            cp   3              ; Communications card?
+            jr   z,FOUNDAUX     ; Yes we're done
+            cp   4              ; Serial card?
+            jr   z,FOUNDAUX     ; Yes we're done
+            cp   6              ; Pascal card?
+            jr   nz,FNDAUXLOOP  ; Nope loop around
+            ld   a,e            ; Get back card type 
+            and  0F0H           ; Mask off pascal type
+            cp   030H           ; Pascal Serial or parallel IO
+            jr   z,FOUNDAUX     ; Yep we're done
+            cp   040H           ; Pascal Modem
+            jr   z,FOUNDAUX     ; Yep we're done
+            cp   090H           ; 80 column card (not //e?)
+            jr   nz,FNDAUXLOOP  ; Nope try next slot
+FOUNDAUX:   ld   a,d            ; Aux slot number
+            ld   (AUXSLOT),a    ; Aux slot number
+            ld   (@AOVEC),bc    ; Aux out vector
+            ld   (@AIVEC),bc    ; Aux in vector
+; Initialise devices
+INITDEVS:   ld   sp,BIOSTOS     ; Reset stack (again)
+            ld   c,7            ; We have seven slots
+DEVININEXT: push bc             ; Save counter
+            call DEVINI         ; Initialise device
+            pop  bc             ; Restore counter
+            dec  c              ; loop until done
+            jr   nz,DEVININEXT
+            ld   de,RESETVECT   ; Routine to call when user hits reset
+            ld   a,e
+            ld   (0F306H),a     ; put the new value into 6502 code
+            ld   a,d            ; 6502 code puts this into the 
+            ld   (0F30BH),a     ; Z80 reset vector
+            xor  a              ; Zero accumulator
+            ld   (WRCARDRAM),a
+            ld   (ZESC_STATE),a ; Reset Console escape state
+            ld   (WRMAINRAM),a
+            di                  ; turn off interrupts
+            ld   hl,SIGNONMSG
+            ld   a,(hl)
+SIGNONLOOP: ld   c,a
+            push hl
+            call C_TO_CONS
+            pop  hl
+            inc  hl
+            ld   a,(hl)
+            or   a
+            jr   nz,SIGNONLOOP
+A75B: CD 26 AF    call $AF26
+            jp   B_WBOOT
+CARD_TYPES: DB 'NOCRD ',00,00       ; 00 Card type 00
+            DB 'UNKWN ',00,00       ; 08 Card type 01
+            DB 'DSKII ',00,00       ; 10 Card type 02
+            DB 'COMCD ',0B,00       ; 18 Card type 03
+            DB 'SERCD ',0B,00       ; 20 Card type 04
+            DB 'PRINT ',02,00       ; 28 Card type 05
+            DB '      ',00,00       ; 30 Card type 06 - pascal
+            DB 'RAMDR ',00,00       ; 38 Card type 07
+            DB 'PDISK ',00,00       ; 40 Card type 08
+            DB 'FDISK ',00,00       ; 48 Card type 09
+            DB 'UNKWN ',00,00       ; 50 Card type 06 - Pascal, Unknown
+            DB 'PRTCD ',02,00       ; 58 Card type 16 - Pascal, Printer 
+            DB 'MOUSE ',01,00       ; 60 Card type 26 - Pascal, X / Y Device
+            DB 'IODEV ',0B,00       ; 68 Card type 36 - Pascal, Serial or parallel IO
+            DB 'MODEM ',0B,00       ; 70 Card type 46 - Pascal, Modem
+            DB 'SOUND ',03,00       ; 78 Card type 56 - Pascal, Sound or speech
+            DB 'CLOCK ',02,00       ; 80 Card type 66 - Pascal, Clock
+            DB 'STORE ',03,00       ; 88 Card type 76 - Pascal, Mass storage
+            DB '80COL ',02,00       ; 90 Card type 86 - Pascal, 80 column
+            DB 'ATALK ',0B,00       ; 98 Card type 96 - Pascal, Network or bus interface
 ;==================================================================
 ; BIOS Func 22 - B_DRVTBL 
 ; Get the drive table, returns the address of the drive table.
@@ -552,7 +740,7 @@ XXXXX:                              ; A6C3
 ; Exit 
 ; HL = DRVTBL
 ;==================================================================
-B_DRVTBL:   ld   hl,DRVTBL
+B_DRVTBL:   ld   hl,LDE6A           ; Cold boot sets this to 5E00
             ret   
 ;==================================================================
 ; BIOS Func 29 - B_XMOVE 
@@ -802,10 +990,61 @@ USERF_0A:   push hl
             .Z80
 VECOUT:              ;A8F1
 VECOST:              ;A910
+LSTSLOT: DB 00 ; A949
+AUXSLOT: DB 00 ; A94A
 VECIST:              ;A969
 VECIN:               ;A980
+;==================================================================
+; Character in C to console
+; Lives at 0A99AH
+;==================================================================
+C_TO_CONS:  res  7,c            ; Clear the high bit
+            ld   b,0            ; Flag we want console
+            jr  CON_BIOS
+;==================================================================
+; Toggle cursor
+; Lives at 0A9A0H
+;==================================================================            
+TOG_CURSOR: ld   b,80H          ; Toggle the cusor
+;=================================================================
+;        
+; Call character IO bios
+; Entry
+;  a = 6502 Y reg 0DH=Init,0EH=read,0FH=Write,10H=status
+;  b = 6502 X reg 0=Console,1..7 slot number,80H=toggle cursor
+;  c = 6502 accumulator, character to output.
+; Exit
+;  a = 6502 accumulator
+;     
+;=================================================================
+CON_BIOS:   ld   hl,0A00H       ; Character device BIOS call
+            ld   (ROUT_6502),hl ; put into 6502 region
+            ld   (ZY_6502),a    ; Y reg = a
+            ld   a,b            ; X reg = b
+            ld   (ZX_6502),a
+            ld   a,c            ; Acc = c
+            ld   (ZACC_6502),a
+            ld   hl,(CARD_Z80)  ; Get the card address
+            ld   (hl),a         ; Goto 6502 land
+            ld   a,(ZACC_6502)  ; Get acc back
+            ret
+            ;A9BB
 LAB73:               ;AB73
 USERF_04:            ;AB92
+;==================================================================
+; Draw the toolkey window
+;==================================================================
+DRWTOOLKEY: ld   a,(DISK_DRV)   ; Save current disk drive before we 
+            ld   (LAB73),a      ; Draw toolkey box
+            ld   de,0FF00H      ; Save screen space to 
+            res  7,c            ; FF00H
+            call SCRMOVE        
+            ld   de,MSG_TOOLKEY ; draw the toolkey box on screen
+            set  7,C            ; set the flag
+            jp   SCRMOVE
+;==================================================================
+; User function 8 - Some sort of scroll
+;==================================================================
 USERF_08:            ;ABC0
 ;==================================================================
 ; User function B - Get keyboard lower case and compare against ESC
@@ -858,15 +1097,15 @@ UF7_ODD2:   djnz UF7_NXTCHR
             ld   (TXTPAGE1),a
             ret
 ;==================================================================
-; User function 6 - Very odd falls through into the screen mover?
+; User function 6 - Restore screen after drawing toolkey
 ;==================================================================
-USERF_06:   ld   a,(LAB73)
-            ld   (DISK_DRV),a
+USERF_06:   ld   a,(LAB73)      ; restore saved disk drive 
+            ld   (DISK_DRV),a   ; put it into regular bios
 ; 
 ; Screen mover routine, saves or restores screen
 ; from lines 8-12 columns 18-60 to or from de.
 ; Direction is controlled by hi bit of C register
-; clear is screen to HL, set is screen to DE
+; clear is screen to DE, set is DE to screen
 ;
 SCRMOVE:    ld   hl,SCRL8 
             call LINEMOVE
@@ -883,10 +1122,10 @@ SCRMOVE:    ld   hl,SCRL8
             ret
 ; Matching line mover
 LINEMOVE:   ld   b,42           ; Copy 42 characters
-LMV_LOOP:    ld   a,b            ; get our column
+LMV_LOOP:   ld   a,b            ; get our column
             rra                 ; Shuffle it in carry
             ld   (TXTPAGE2),a   ; Use txt page 2
-            jr   c,LMV_TSTDIR    ; Even column 
+            jr   c,LMV_TSTDIR   ; Even column 
             ld   (TXTPAGE1),a   ; So use page 1
 LMV_TSTDIR: bit  7,c            ; Check for direction
             jr   z,LMV_NOSWP    ; Clear so save area to screen
