@@ -79,8 +79,12 @@ WBOOTJP     EQU  00000H
 BDOSJP      EQU  00005H
 CCP         EQU  00100H         ; CCP entry
 WARMCOPYLEN EQU  05CFFH         ; Warm copy length
-DPHTAB      EQU  5E00H          ; Table of DPH for drives
+DRVTBL      EQU  5E00H          ; Table of DPH entries for drives
 DRVMAP      EQU  5E20H          ; Map of CPM drives to apple drives
+DPBL        EQU  0CH            ; DPH low offset of drive param block
+DPBH        EQU  0DH            ; DPH high offset of drive param block
+DPBLEN      EQU  11H            ; Length of a drive param block
+LDRDPBTBL   EQU  5DBCH          ; DPB table created by LDRBIOS
 ;
 ; Messages for the toolkey popup (see src\boot\toolkey.mac)
 ;
@@ -150,10 +154,10 @@ CURBANK:    DB 0                ; DE64
 DMABANK:    DB 0                ; DE65
 DMAADDR:    DW 0                ; DE66
 SAVEDE:     DW 0                ; DE68
-LDE6A:      DW 0,0,0,0,0,0,0,0
-            DW 0,0,0,0,0,0,0,0
-            ; Not certain what this is yet
-            DS 36               ; DE88
+DPBTBL:     DS DPBLEN           ; DE6A
+            DS DPBLEN
+            DS DPBLEN
+            DS DPBLEN
 DEVTBL:                         ; DEAE
             DB 'CONSOL',03,00
             DB 'NODEV1',00,00
@@ -490,7 +494,7 @@ GETSECTSZ:  ld   bc,0100H           ; Assume it's a Disk ][
 ;=================================================
 ; Perform a disk operation
 ;=================================================
-DISKOPER:   call 0AA7FH
+DISKOPER:   call PSUEDOISR
             ld   (DISK_OP),a    ; Set the disk operation
 DISKRETRY:  ld   hl,DISK_ROUT   ; Tell the 6502 code 
             ld   (ROUT_6502),hl ; to call the disk BIOS
@@ -502,7 +506,7 @@ DISKRETRY:  ld   hl,DISK_ROUT   ; Tell the 6502 code
             ld   c,07H          ; Ring the bell
             call C_TO_CONS      ; Character in C to console
             di
-            call DRWTOOLKY      ; Draw toolkey box
+            call DRWTOOLKEY      ; Draw toolkey box
             ld   a,(DISK_ERR)   ; Get the error message
             cp   010H           ; Write only?
             jr   nz,NOTWRPRO    ; Nah fix message for read / write
@@ -548,54 +552,53 @@ MSG_WRERR:  HIBYTE "Write"
 ; Entry
 ; Exit
 ;==================================================================
-B_COLD:
-A623: 32 10 E0    ld   (KBDSTRB),a
-A626: 11 6A DE    ld   de,LDE6A
-A629: 21 BC 5D    ld   hl,$5DBC
-A62C: 01 44 00    ld   bc,$0044
-A62F: ED B0       ldir
-A631: 21 2C 5E    ld   hl,$5E2C
-A634: 22 BA 6E    ld   ($6EBA),hl
-A637: 21 88 6A    ld   hl,$6A88
-A63A: 22 BC 6E    ld   ($6EBC),hl
-A63D: DD 21 00 5E ld   ix,$5E00
-A641: DD 22 02 A8 ld   (B_DRVTBL+1),ix
-A645: DD 6E 00    ld   l,(ix+00)
-A648: DD 23       inc  ix
-A64A: DD 66 00    ld   h,(ix+00)
-A64D: 7C          ld   a,h
-A64E: B5          or   l
-A64F: 28 1E       jr   z,$A66F
-A651: DD 23       inc  ix
-A653: E5          push hl
-A654: FD E1       pop  iy
-A656: FD 6E 0C    ld   l,(iy+0CH)
-A659: FD 66 0D    ld   h,(iy+0DH)
-A65C: 11 BC 5D    ld   de,$5DBC
-A65F: B7          or   a
-A660: ED 52       sbc  hl,de
-A662: EB          ex   de,hl
-A663: 21 6A DE    ld   hl,LDE6A
-A666: 19          add  hl,de
-A667: FD 75 0C    ld   (iy+0CH),l
-A66A: FD 74 0D    ld   (iy+0DH),h
-A66D: 18 D6       jr   $A645
-A66F: 11 BE DD    ld   de,@CIVEC     ;SCB things? @CIVEC?
-A672: 21 45 AF    ld   hl,$AF45
-A675: 01 0A 00    ld   bc,$000A
-A678: ED B0       ldir
+B_COLD:     ld   (KBDSTRB),a    ; Clear keyboard
+            ld   de,DPBTBL      ; Copy DPB table from Loader
+            ld   hl,LDRDPBTBL   ; Into our shared address space (resident/banked)
+            ld   bc,DPBLEN * 4  ; Only four entries.
+            ldir                ; Do the copy
+            ld   hl,05E2CH      ; Not certain here.... Copying something over
+            ld   (06EBAH),hl
+            ld   hl,06A88H
+            ld   (06EBCH),hl
+            ld   ix,DRVTBL      ; Drive table setup by loader
+            ld   (B_DRVTBL+1),ix ;BIOS returns this
+NXTDRV:     ld   l,(ix+00)      ; Get an entry from drive tables
+            inc  ix             ; into hl
+            ld   h,(ix+00)
+            ld   a,h            ; Last drive has an entry of 0
+            or   l              ; We're all done
+            jr   z,COPY_IOVEC   ; Go setup devices and IO vectors
+            inc  ix             ; bounce pointer to next
+            push hl             ; iy=hl
+            pop  iy
+            ld   l,(iy+DPBL)    ; hl= Drive Parameter Block
+            ld   h,(iy+DPBH)
+            ld   de,LDRDPBTBL   ; Subtract ldr bios offset 
+            or   a
+            sbc  hl,de          
+            ex   de,hl          ; Add shared memory offset
+            ld   hl,DPBTBL      ; So DPB are in shared memory
+            add  hl,de
+            ld   (iy+DPBL),l    ; put hl into DPB for this drive
+            ld   (iy+DPBH),h
+            jr   NXTDRV
+COPY_IOVEC: ld   de,@CIVEC      ; Copy in default IO vectors
+            ld   hl,DEFIOVEC
+            ld   bc,5*2         ; 5 vectors
+            ldir
 ;
 ; Setup DEVTBL to match cards in slots
 ;
             ld   ix,SLOT_INFO+7 ;Get the slot info
-            ld   b,$07          ; Count down
-DEVCPYLOOP: ld   a,(ix+$00)     ; Get card type
+            ld   b,07          ; Count down
+DEVCPYLOOP: ld   a,(ix+00)     ; Get card type
             dec  ix
             cp   0F0H           ; Hi nybble clear
             jr   c,OLDCARD      ; Yes it's an old card or disk
             and  0F0H           ; Mask off pascal card type
             cp   0A0H           ; Bigger than we know?
-            jr   nc,CARD_UNNWN
+            jr   nc,CARD_UNKWN
             rrca                ; Pascal card
             add  a,50H          ; Add offset in table
             jr   CARD_KNOWN
@@ -713,7 +716,7 @@ SIGNONLOOP: ld   c,a
             ld   a,(hl)
             or   a
             jr   nz,SIGNONLOOP
-A75B: CD 26 AF    call $AF26
+            call CARDCHECK
             jp   B_WBOOT
 CARD_TYPES: DB 'NOCRD ',00,00       ; 00 Card type 00
             DB 'UNKWN ',00,00       ; 08 Card type 01
@@ -742,7 +745,7 @@ CARD_TYPES: DB 'NOCRD ',00,00       ; 00 Card type 00
 ; Exit 
 ; HL = DRVTBL
 ;==================================================================
-B_DRVTBL:   ld   hl,LDE6A           ; Cold boot sets this to 5E00
+B_DRVTBL:   ld   hl,DPBTBL           ; Cold boot sets this to DRVTBL at 5E00H
             ret   
 ;==================================================================
 ; BIOS Func 29 - B_XMOVE 
@@ -809,7 +812,7 @@ B_SELDSK:   ld   a,c
             add  hl,bc
             ld   a,(hl)
             ld   (DISK_DRV),A
-            ld   hl,DPHTAB      ; Get DPH for drive
+            ld   hl,DRVTBL      ; Get DPH for drive
             sla  c              ; Mult by two
             ld   e,c
             ld   d,0
@@ -838,10 +841,13 @@ DRVISDISK2: and  07FH           ; Mask off the unit
             ld   a,(hl)         ; get the drive type
             cp   02H            ; Set zero flag for Disk II drives
             ret
-; Unknown at this point
-LA848:      adc a,0
-            xor b
-            ld  h,b
+; Code supposed to be called by card check routine lives at 0A8B8H $B8B8
+; unclear if this is actually run, suspect it is with an address 
+; mapper still running and the dec $a800 is really dec $8800
+            .6502
+CC6502:     dec  $a800
+            rts
+            .z80
 ;==================================================================
 ; BIOS Func 8 - HOME
 ; Move the current to track 0
@@ -990,12 +996,155 @@ USERF_0A:   push hl
             sta  USERF          ; Write HALT in USERF 
             rts                 ; but the adress should be +$1000
             .Z80
-VECOUT:              ;A8F1
-VECOST:              ;A910
-LSTSLOT: DB 00 ; A949
-AUXSLOT: DB 00 ; A94A
-VECIST:              ;A969
-VECIN:               ;A980
+;==================================================================
+; Vector output 
+; Entry
+; C = character to output
+; HL = vector of devices to output to
+;==================================================================        
+VECOUT:     ld   b,0            ; Set slot to zero
+VECOUTNXT:  add  hl,hl          ; Multiply vector
+            jr   nc,VECOUTSKIP
+            push hl             ; Save the vector
+VECOUTWAIT: push bc             ; Save counter and character
+            call SLOTOUTST      ; Check slot status
+            or   a              ; Set flags
+            pop  bc             ; get back counter and character
+            jr   nz,VECOUTCH    ; output device is ready, go output it
+            call PSUEDOISR      ; Busy so call pseudo ISR
+            jr   VECOUTWAIT     ; and wait for device to be ready
+VECOUTCH:   push bc             ; Save counter and character
+            call SLOTOUTCH      ; Output character to a slot
+            pop  bc             ; Get back character and counter
+            pop  hl             ; Get back the vector
+VECOUTSKIP: inc  b              ; Add one to the slot
+            ld   a,h            ; Vector empty?
+            or   l
+            jr   nz,VECOUTNXT   ; Nope loop around for the next one
+            ret
+;==================================================================
+; Vector output status
+; Entry
+; C = character to output
+; HL = vector of devices to output to
+; Exit
+; Returns 0 if anything in the vector is not ready
+; Returns 0FFH if ready.
+;==================================================================    
+VECOST:     ld   b,0            ; Start at slot 0 (console)
+VECOSTNXT:  add  hl,hl          ; Shift the vector
+            push hl             ; save vector
+            push bc             ; Save slot
+            ld   a,0FFH         ; possibly return ready 
+            call c,SLOTOUTST    ; Check this slot
+            pop  bc             ; get slot back
+            pop  hl             ; get vector back
+            or   a              ; This slot is busy
+            ret  z              ; Go home early
+            inc  b              ; add one to the slot
+            ld   a,h            ; Vector is empty?
+            or   l
+            jr   nz,VECOSTNXT   ; Nope loop for more
+            or   0FFH           ; return ready
+            ret
+;==================================================================   
+; Get slot output status
+; b = slot number
+; HL = vector of devices to output to
+; Exit
+; Returns 0 if slot is not ready
+; Returns 0FFH if slot ready.
+;==================================================================   
+SLOTOUTST:  ld   a,$FF          ; Assume ready
+            inc  b              ; Check if device is console
+            dec  b
+            ret  z              ; Go home saying we're ready
+            ld   a,(LSTSLOT)    ; List device?
+            cp   b              
+            jp   z,$AA08        ; Check if space in ISR buffers
+            ld   a,(AUXSLOT)    ; Aux device?
+            cp   b
+            jp   z,$AA1E        ; Check if space in ISR buffer for AUX
+            ld   c,0            ; We want output status call
+            jr   SLOTBIOSST     ; Go get it from BIOS
+SLOTINST:   xor  a              ; Check input status
+            cp   b              ; Keyboard status?
+            jp   z,$A9BB        ; Yes check keyboard status
+            ld   c,1            ; Input status check
+SLOTBIOSST: ld   a,CHAR_OP_ST   ; Set us to do a status check
+            jp   CON_BIOS       ; Go ask character IO BIOS
+LSTSLOT:    DB 0                ; Slot for the printer
+AUXSLOT:    DB 0                ; Slot for the AUX device
+;==================================================================  
+;
+;==================================================================  
+SLOTOUTCH:  ld   a,(LSTSLOT)    ; Output device is LST?
+            cp   b              
+            jp   z,$AA5D        ; Yes it's LST add to buffer 
+            ld   a,(AUXSLOT)    ; Output device is AUX?
+            cp   b              
+            jp   z,$AA2F        ; Yes it's AUX add to buffer
+            ld   a,CHAR_OP_WR   ; Nope call regular 
+            jp   CON_BIOS       ; character BIOS
+;==================================================================  
+;
+;==================================================================  
+SLOTINCH:   pop  hl             ; Get rid of vector saved on stack
+            ld   a,b            ; Check if it was slot 0
+            or   a              
+            jp   z,$A9FF        ; Get from keyboard
+            ld   a,CHAR_OP_RD   ; Otherwise off to regular
+            jp   CON_BIOS       ; Character BIOS
+;==================================================================
+; Vector input status
+; Entry
+; HL = vector of devices to check for ready
+; Exit
+; Returns 0 if no devices in the vector are ready
+; Returns 0FFH if a device in the vector are ready
+;==================================================================    
+VECIST:     ld   b,0            ; Set our slot counter
+VECISTNXT:  call PSUEDOISR      ; let every have some I/O
+            xor  a              ; Assume nothing is ready
+            add  hl,hl          ; Shift it left
+            push hl             ; Save vector
+            push bc             ; Save counter
+            call c,SLOTINST     ; Check slot status
+            pop  bc             ; Restore slot counter
+            pop  hl             ; Restore vector
+            or   a              ; Anyone ready?
+            ret  nz             ; Yes go home
+            inc  b              ; Add one to the slot counter
+            ld   a,h            ; Anything left in vector?
+            or   l
+            jr   nz,VECISTNXT   ; Yes loop around again
+            xor  a              ; No-one was ready
+            ret
+;==================================================================
+; Vector input character
+; Entry
+; HL = vector of devices to read from
+; Exit
+; Returns character read from vector
+;==================================================================
+VECIN:      call PSUEDOISR      ; let every have some I/O
+            push hl             ; Save hl for later
+            ld   b,0            ; Set our slot counter
+VECINNXT:   xor  a              ; Assume not ready
+            add  hl,hl          ; Shift it left
+            push bc             ; Save counter
+            push hl             ; Save vector
+            call c,SLOTINST     ; Any input ready?
+            pop  hl             ; restore vector
+            pop  bc             ; restore counter
+            or   a              ; something was ready?
+            jr   nz,SLOTINCH    ; Yes go get it and go home
+            inc  b              ; Add one to the slot
+            ld   a,h            ; Anything left in vector?
+            or   l
+            jr   nz,VECINNXT    ; Nope go do next device
+            pop  hl             ; Get back our starting vector
+            jr   VECIN          ; And do it all again until we get some input
 ;==================================================================
 ; Character in C to console
 ; Lives at 0A99AH
@@ -1011,10 +1160,14 @@ TOG_CURSOR: ld   b,80H          ; Toggle the cusor
 ;=================================================================
 ;        
 ; Call character IO bios
+; Lives at 0A9A2H
 ; Entry
 ;  a = 6502 Y reg 0DH=Init,0EH=read,0FH=Write,10H=status
 ;  b = 6502 X reg 0=Console,1..7 slot number,80H=toggle cursor
 ;  c = 6502 accumulator, character to output.
+;           if status call then 
+;             0 = Output status check                                                
+;             1 = Input status check 
 ; Exit
 ;  a = 6502 accumulator
 ;     
@@ -1031,6 +1184,13 @@ CON_BIOS:   ld   hl,0A00H       ; Character device BIOS call
             ld   a,(ZACC_6502)  ; Get acc back
             ret
             ;A9BB
+;==================================================================
+; Psuedo ISR routine
+; Lives at AA7F
+;==================================================================
+PSUEDOISR:  ret
+
+
 LAB73:               ;AB73
 USERF_04:            ;AB92
 ;==================================================================
@@ -1051,7 +1211,7 @@ USERF_08:            ;ABC0
 ;==================================================================
 ; User function B - Get keyboard lower case and compare against ESC
 ;==================================================================
-USERF_0B:   call 0AA7FH
+USERF_0B:   call PSUEDOISR
             ld   a,(KBD)
             or   a
             jp   p,USERF_0B
@@ -1148,5 +1308,44 @@ LMV_ODD:    djnz LMV_LOOP
 ; C = Device number to initialise
 ; Exit
 ;==================================================================
-DEVINI:              ;AF12
+DEVINI:     xor  a
+            cp   c              ; Console?
+            jp   nz,ININOTCONS  ; Nope go do a BIOS call 
+            ld   c,ESC          ; Send ESC
+            call C_TO_CONS
+            ld   c,'*'          ; Followed by * to clear screen
+            jp   C_TO_CONS
+ININOTCONS: ld   b,c            ; Copy device to b
+            ld   a,CHAR_OP_INI  ; Do the initialise operations
+            jp   CON_BIOS       ; Exit via BIOS code
+;
+; Odd check the card code
+; May or may not call the code at A8B8 (6502 code b8b8)
+; This looks more like:
+;
+; CC6502:    dec  $a800         ; 9800 from Z80 side
+;            rts
+; Seems likely if we patch CPM3.SYS at the right offset to be
+; dec $8800, code will on a softcard.
+;
+CARDCHECK:  ld   hl,07800H      ; two pages into the BDOS (contains 00)
+            ld   b,(hl)         ; save value into b
+            ld   c,0          
+            ld   (hl),c         ; put a zero back into location
+            ld   de,CC6502+01000H ; Tell the 6502 to jump to code that decrements A800
+            ld   (ROUT_6502),de
+            ld   de,(CARD_Z80)  ; Get card address (0E401H)
+            inc  de             ; Add one to it 0E402H
+            ld   (de),a         ; On a softcard, jump to 6502, not sure for Cirtech
+                                ; Strong suspicion it changes the mapping from
+                                ; 6502->Z80
+            ld   c,(hl)         ; 6502 decremented this value? c=FF
+            ld   (hl),b         ; put back saved value
+            inc  c              ; if right value decremented c=0 after increment
+            ret  z              ; Go home
+            ld   (ROUT_6502),hl ; Trash 6502 routine
+            ldir                ; DE=E402,HL=7800,BC=0000
+            ldir
+; Default IO vectors at AF45            
+DEFIOVEC:   DW 08000H,08000H,0000H,0000H,0000H
             END

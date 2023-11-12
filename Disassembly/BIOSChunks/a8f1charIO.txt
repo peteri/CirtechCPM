@@ -1,0 +1,111 @@
+VECOUT: 06 00    ld   b,$00
+VECOUTNXT: 29       add  hl,hl
+A8F4: 30 14    jr   nc,$A90A
+A8F6: E5       push hl
+A8F7: C5       push bc
+A8F8: CD 26 A9 call $A926
+A8FB: B7       or   a
+A8FC: C1       pop  bc
+A8FD: 20 05    jr   nz,$A904
+A8FF: CD 7F AA call $AA7F
+A902: 18 F3    jr   $A8F7
+A904: C5       push bc
+A905: CD 4B A9 call $A94B
+A908: C1       pop  bc
+A909: E1       pop  hl
+A90A: 04       inc  b
+A90B: 7C       ld   a,h
+A90C: B5       or   l
+A90D: 20 E4    jr   nz,VECOUTNXT
+A90F: C9       ret
+
+VECOST: 06 00    ld   b,$00
+VECOSTNXT: 29       add  hl,hl
+A913: E5       push hl
+A914: C5       push bc
+A915: 3E FF    ld   a,$FF
+A917: DC 26 A9 call c,$A926
+A91A: C1       pop  bc
+A91B: E1       pop  hl
+A91C: B7       or   a
+A91D: C8       ret  z
+A91E: 04       inc  b
+A91F: 7C       ld   a,h
+A920: B5       or   l
+A921: 20 EF    jr   nz,VECOSTNXT
+A923: F6 FF    or   $FF
+A925: C9       ret
+
+A926: 3E FF    ld   a,$FF
+A928: 04       inc  b
+A929: 05       dec  b
+A92A: C8       ret  z
+A92B: 3A 49 A9 ld   a,(LSTSLOT)
+A92E: B8       cp   b
+A92F: CA 08 AA jp   z,$AA08
+A932: 3A 4A A9 ld   a,(AUXSLOT)
+A935: B8       cp   b
+A936: CA 1E AA jp   z,$AA1E
+A939: 0E 00    ld   c,$00
+A93B: 18 07    jr   $A944
+A93D: AF       xor  a
+A93E: B8       cp   b
+A93F: CA BB A9 jp   z,$A9BB
+A942: 0E 01    ld   c,$01
+A944: 3E 10    ld   a,CHAR_OP_ST
+A946: C3 A2 A9 jp   CON_BIOS
+
+LSTSLOT: DB 0        ; LSTSLOT
+AUXSLOT: DB 0        ; AUXSLOT
+
+A94B: 3A 49 A9 ld   a,(LSTSLOT)
+A94E: B8       cp   b
+A94F: CA 5D AA jp   z,$AA5D
+A952: 3A 4A A9 ld   a,(AUXSLOT)
+A955: B8       cp   b
+A956: CA 2F AA jp   z,$AA2F
+A959: 3E 0F    ld   a,CHAR_OP_WR
+A95B: C3 A2 A9 jp   CON_BIOS
+A95E: E1       pop  hl
+A95F: 78       ld   a,b
+A960: B7       or   a
+A961: CA FF A9 jp   z,$A9FF
+A964: 3E 0E    ld   a,CHAR_OP_RD
+A966: C3 A2 A9 jp   CON_BIOS
+
+VECIST: 06 00    ld   b,$00
+VECISTNXT: CD 7F AA call $AA7F
+A96E: AF       xor  a
+A96F: 29       add  hl,hl
+A970: E5       push hl
+A971: C5       push bc
+A972: DC 3D A9 call c,$A93D
+A975: C1       pop  bc
+A976: E1       pop  hl
+A977: B7       or   a
+A978: C0       ret  nz
+A979: 04       inc  b
+A97A: 7C       ld   a,h
+A97B: B5       or   l
+A97C: 20 ED    jr   nz,VECISTNXT
+A97E: AF       xor  a
+A97F: C9       ret
+
+VECIN: CD 7F AA call $AA7F
+A983: E5       push hl
+A984: 06 00    ld   b,$00
+VECINNXT: AF       xor  a
+A987: 29       add  hl,hl
+A988: C5       push bc
+A989: E5       push hl
+A98A: DC 3D A9 call c,$A93D
+A98D: E1       pop  hl
+A98E: C1       pop  bc
+A98F: B7       or   a
+A990: 20 CC    jr   nz,$A95E
+A992: 04       inc  b
+A993: 7C       ld   a,h
+A994: B5       or   l
+A995: 20 EF    jr   nz,VECINNXT
+A997: E1       pop  hl
+A998: 18 E6    jr   VECIN
