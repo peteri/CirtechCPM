@@ -1,0 +1,60 @@
+Cirtech CPM memory map 
+
+6502  Z80                          Main memory               Aux memory
+                              +------------------------+------------------------+
+F000  0000                    |  JP to CPMLDR          |  JP to Warmboot        |
+F005  0005                    |                        |  JP to BDOS            |
+F100  0100                    |  Copy of CCP           |  CP/M TPA              |
+FE00  0E00                    |  Toolkey messages      |                        |
+F100  1100                    |  CPMLDR                |                        |
+1000  2000                    |  CPMLDR                |                        |
+1100  2100                    |  CPMLDR                |                        |
+2000  3000                    |                        |                        |
+3000  4000                    |                        |                        |
+4000  5000                    |                        |                        |
+4DBC  5DBC                    |  DPB x 4 (044H)        |                        |
+                              |  (DPB copied to DE6CH) |                        |
+4E00  5E00                    |  DRVTBL                |                        |
+4E20  5E20                    | Map from CPM letters to|                        |
+                              | Apple Drives Slot,Drv  |                        |
+5000  6000                    |                        |                        |
+6000  7000                    |   CP/M Disk buffers    |                        |
+6400  7400                    |                        |                        |
+6600  7600                    |  Banked BDOS           |                        |
+7000  8000                    |  Banked BDOS           |                        |
+8000  9000                    |  Banked BDOS           |                        |
+9000  A000                    |  Banked BDOS           |                        |
+9400  A400                    |  Banked BIOS           |                        |
+            +---LC Bank 1-----+----LC Bank 2-----------+-----LC Bank 2----------+---LC Bank 1-----+ 
+D000  B000  | Video BIOS(6502)|  CP/M TPA              |   Printer buffer       |   AUX buffer    |
+D400  B400  | Disk BIOS(6502) |                        |                        |                 | 
+DA00  BA00  |                 |  		               |                        |                 |
+DE00  BE00  | Disk 6 bit data |  		               |                        |                 |  
+DF00  BF00  | Disk 2 bit data |  		               |                        |                 |
+            +-----------------+----LC 8 K Shared-------+-----LC 8 K Shared------+-----------------+
+E000  C000                    |  CP/M TPA              |   Printer Buffer       |
+F000  D000                    |                        |                        | 
+F800  D800                    |  Resident BDOS         |                        | 
+FE00  DE00                    |  Resident BIOS         |                        | 
+                              +------------------------+------------------------+ 
+C000  E000                    |  Apple //e onboard IO  |  Apple //e onboard IO  |
+C080  E080                    |  Card slot IO          |   Card slot IO         |
+C100  E100                    |  Per slot ROM          |   Per slot ROM         |
+C800  E800                    |  2K card slot ROM      |   2K card slot ROM     | 
+                              +------------------------+------------------------+
+0000  F000                    | 6502 Zero page used    |                        |
+                              | by BIOS drivers        |   Not used             |
+0100  F100                    | 6502 Stack             |                        |
+                              +------------------------+------------------------+
+0200  F200                    | 6502 line input buffer |                        |
+0300  F300                    | Misc shared Routines   | Misc shared Routines   |
+                              | To From Z80 Code       | To From Z80 Code       |
+                              | Softcard compatibility | Softcard compatibility |
+                              +------------------------+------------------------+
+0400  F400                    | Apple 80 Column Screen | Apple 80 Column Screen |
+                              +------------------------+------------------------+
+0800  F800                    | Disk buffer            |                        |
+0A00  FA00                    | Character IO BIOS      |                        | 
+0C00  FC00                    | Toolkey messages       |                        |
+0F00  FF00                    | Toolkey screen save    |                        |  
+                              +------------------------+------------------------+

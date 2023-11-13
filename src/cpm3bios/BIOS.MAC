@@ -25,8 +25,16 @@ RDMAINRAM   EQU 0E002H
 RDCARDRAM   EQU 0E003H
 WRMAINRAM   EQU 0E004H
 WRCARDRAM   EQU 0E005H
+SETSTDZP    EQU 0E008H      ;Set standard zero page
+SETALTZP    EQU 0E009H      ;Set alternate zero page
 TXTPAGE1    EQU 0E054H      ;RW display page 1
 TXTPAGE2    EQU 0E055H      ;RW display page 2 (or read/write aux mem)
+BUTN1       EQU 0E062H      ;Joystick Button 1 aka Closed Apple
+LCBANK2     EQU 0E083H      ;Language card bank 2
+LCBANK1     EQU 0E08BH      ;Language card bank 1
+ISRBUFFST   EQU 0B000H      ; Both ISR buffers start at same address
+LSTBUFEND   EQU 0E000H      ; LST buffer is 12K
+AUXBUFEND   EQU 0C000H      ; Aux buffer is 4K
 ;
 ; Misc constants
 ;
@@ -64,6 +72,7 @@ DISK_OP     EQU 0F388H          ; Disk operation
 DISK_ERR    EQU 0F389H          ; Disk Result
 DISK_ROUT   EQU 03DCH           ; Disk routine to call
 SLOT_INFO   EQU 0F3B8H          ; Slot info
+IO_STATUS   EQU 0F3BEH          ; Io status, bit 2=key press ready
 ; Constants for TOOLKEY popbuf
 LEFTEDGE    EQU 9               ; Left edge of window  
 SCRL8       EQU 0428H + LEFTEDGE + Z80OFFS 
@@ -81,10 +90,10 @@ CCP         EQU  00100H         ; CCP entry
 WARMCOPYLEN EQU  05CFFH         ; Warm copy length
 DRVTBL      EQU  5E00H          ; Table of DPH entries for drives
 DRVMAP      EQU  5E20H          ; Map of CPM drives to apple drives
-DPBL        EQU  0CH            ; DPH low offset of drive param block
-DPBH        EQU  0DH            ; DPH high offset of drive param block
-DPBLEN      EQU  11H            ; Length of a drive param block
-LDRDPBTBL   EQU  5DBCH          ; DPB table created by LDRBIOS
+DPBL        EQU  0CH            ; DPH low offset of drive parameter block
+DPBH        EQU  0DH            ; DPH high offset of drive parameter block
+DPBLEN      EQU  11H            ; Length of a drive parameter block
+LDRDPBTBL   EQU  5DBCH          ; four created by LDRBIOS
 ;
 ; Messages for the toolkey popup (see src\boot\toolkey.mac)
 ;
@@ -149,7 +158,7 @@ WARMJP:     jp   B_WBOOT        ; $DEF8 1  - WBOOT - Warm Start
 ;
 ; BIOS data that lives in shared memory
 ;
-            DB 07               ; DE63
+CFLASHRATE: DB 07               ; DE63 - Cursor flash rate 0= no flash
 CURBANK:    DB 0                ; DE64
 DMABANK:    DB 0                ; DE65
 DMAADDR:    DW 0                ; DE66
@@ -553,7 +562,7 @@ MSG_WRERR:  HIBYTE "Write"
 ; Exit
 ;==================================================================
 B_COLD:     ld   (KBDSTRB),a    ; Clear keyboard
-            ld   de,DPBTBL      ; Copy DPB table from Loader
+            ld   de,DPBTBL      ; Copy DPH table from Loader
             ld   hl,LDRDPBTBL   ; Into our shared address space (resident/banked)
             ld   bc,DPBLEN * 4  ; Only four entries.
             ldir                ; Do the copy
@@ -561,6 +570,9 @@ B_COLD:     ld   (KBDSTRB),a    ; Clear keyboard
             ld   (06EBAH),hl
             ld   hl,06A88H
             ld   (06EBCH),hl
+; Copy the drive parameter blocks in shared memory (we allow 4)
+; Adjust the drive parameter headers in the DRVTBL (5E00H)
+; So they point to our in memory ones.
             ld   ix,DRVTBL      ; Drive table setup by loader
             ld   (B_DRVTBL+1),ix ;BIOS returns this
 NXTDRV:     ld   l,(ix+00)      ; Get an entry from drive tables
@@ -572,16 +584,16 @@ NXTDRV:     ld   l,(ix+00)      ; Get an entry from drive tables
             inc  ix             ; bounce pointer to next
             push hl             ; iy=hl
             pop  iy
-            ld   l,(iy+DPBL)    ; hl= Drive Parameter Block
-            ld   h,(iy+DPBH)
+            ld   l,(iy+DPHL)    ; hl= Drive Parameter Block
+            ld   h,(iy+DPHH)
             ld   de,LDRDPBTBL   ; Subtract ldr bios offset 
             or   a
             sbc  hl,de          
             ex   de,hl          ; Add shared memory offset
             ld   hl,DPBTBL      ; So DPB are in shared memory
             add  hl,de
-            ld   (iy+DPBL),l    ; put hl into DPB for this drive
-            ld   (iy+DPBH),h
+            ld   (iy+DPHL),l    ; put hl into DPB for this drive
+            ld   (iy+DPHH),h
             jr   NXTDRV
 COPY_IOVEC: ld   de,@CIVEC      ; Copy in default IO vectors
             ld   hl,DEFIOVEC

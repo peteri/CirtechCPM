@@ -45,7 +45,7 @@ SLOT_INFO      EQU 0F3B8H              ; Slot info
 WRMAINRAM      EQU 0E004H              ; Write to main ram ($200-$BFFF)
 WRCARDRAM      EQU 0E005H              ; Write to 80 col card ram ($200-$BFFF)
 DPH            EQU 6EA8H               ; DPH for Disk 0
-DPHTAB         EQU 5E00H               ; Table of DPH for drives
+DRVTBL         EQU 5E00H               ; Table of DPH for drives
 DRVMAP         EQU 5E20H               ; Map of CPM drives to apple drives
                cseg
                org 0
@@ -144,7 +144,7 @@ boot:          ld   (01C73H),sp
                ldir
                ld   hl,DRVMAP            ;Drv map from CPM->Apple
                ld   (L1EDF+1),hl
-               ld   hl,DPHTAB           
+               ld   hl,DRVTBL           
                ld   (L1ED1+1),hl
                ld   hl,DPH
                ld   (L1F4C+1),hl
@@ -280,7 +280,7 @@ L1CB8:         pop  hl
                jr   CARDUNK
 L1CBB:         push iy
                pop  de
-               ld   hl,DISKIIDPH
+               ld   hl,DISKIIDPB
                ld   bc,00011H
                ldir
 L1CC6:         call L1E75
@@ -548,7 +548,7 @@ L1EAB:         ld   c,(iy+005H)
                call ST_DE_TO_HL
                ld   de,0FFFFH
                call ST_DE_TO_HL
-L1ED1:         ld   hl,DPHTAB
+L1ED1:         ld   hl,DRVTBL
                ld   de,0
                call ST_DE_TO_HL
                ld   (L1ED1+1),hl
@@ -559,7 +559,7 @@ L1EDF:         ld   hl,DRVMAP
                ld   (L1EDF+1),hl
                or   a
                ret
-DISKIIDPH:     DW 0020H                ; SPT number of 128 records per track
+DISKIIDPB:     DW 0020H                ; SPT number of 128 records per track
                DB 03                   ; BLS Block shift factor (1K blocks)
                DB 07                   ; BLM Block mask (1K blocks)
                DB 0                    ; EXM extant mask
