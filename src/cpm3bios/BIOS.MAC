@@ -584,16 +584,16 @@ NXTDRV:     ld   l,(ix+00)      ; Get an entry from drive tables
             inc  ix             ; bounce pointer to next
             push hl             ; iy=hl
             pop  iy
-            ld   l,(iy+DPHL)    ; hl= Drive Parameter Block
-            ld   h,(iy+DPHH)
+            ld   l,(iy+DPBL)    ; hl= Drive Parameter Block
+            ld   h,(iy+DPBH)
             ld   de,LDRDPBTBL   ; Subtract ldr bios offset 
             or   a
             sbc  hl,de          
             ex   de,hl          ; Add shared memory offset
             ld   hl,DPBTBL      ; So DPB are in shared memory
             add  hl,de
-            ld   (iy+DPHL),l    ; put hl into DPB for this drive
-            ld   (iy+DPHH),h
+            ld   (iy+DPBL),l    ; put hl into DPB for this drive
+            ld   (iy+DPBH),h
             jr   NXTDRV
 COPY_IOVEC: ld   de,@CIVEC      ; Copy in default IO vectors
             ld   hl,DEFIOVEC
@@ -1073,15 +1073,15 @@ SLOTOUTST:  ld   a,0FFH         ; Assume ready
             ret  z              ; Go home saying we're ready
             ld   a,(LSTSLOT)    ; List device?
             cp   b              
-            jp   z,$AA08        ; Check if space in ISR buffers
+            jp   z,GET_LST_ST   ; Check if space in ISR buffer for LST
             ld   a,(AUXSLOT)    ; Aux device?
             cp   b
-            jp   z,$AA1E        ; Check if space in ISR buffer for AUX
-            ld   c,0            ; We want output status call
+            jp   z,GET_AUX_ST   ; Check if space in ISR buffer for AUX
+SLOUTST2:   ld   c,0            ; We want output status call
             jr   SLOTBIOSST     ; Go get it from BIOS
 SLOTINST:   xor  a              ; Check input status
             cp   b              ; Keyboard status?
-            jp   z,$A9BB        ; Yes check keyboard status
+            jp   z,GET_KBD_ST   ; Yes check keyboard status
             ld   c,1            ; Input status check
 SLOTBIOSST: ld   a,CHAR_OP_ST   ; Set us to do a status check
             jp   CON_BIOS       ; Go ask character IO BIOS
@@ -1092,11 +1092,11 @@ AUXSLOT:    DB 0                ; Slot for the AUX device
 ;==================================================================  
 SLOTOUTCH:  ld   a,(LSTSLOT)    ; Output device is LST?
             cp   b              
-            jp   z,$AA5D        ; Yes it's LST add to buffer 
+            jp   z,PUT_LST_BF   ; Yes it's LST add to buffer 
             ld   a,(AUXSLOT)    ; Output device is AUX?
             cp   b              
-            jp   z,$AA2F        ; Yes it's AUX add to buffer
-            ld   a,CHAR_OP_WR   ; Nope call regular 
+            jp   z,PUT_AUX_BF   ; Yes it's AUX add to buffer
+SLOTOUTCH2: ld   a,CHAR_OP_WR   ; Nope call regular 
             jp   CON_BIOS       ; character BIOS
 ;==================================================================  
 ;
@@ -1104,7 +1104,7 @@ SLOTOUTCH:  ld   a,(LSTSLOT)    ; Output device is LST?
 SLOTINCH:   pop  hl             ; Get rid of vector saved on stack
             ld   a,b            ; Check if it was slot 0
             or   a              
-            jp   z,$A9FF        ; Get from keyboard
+            jp   z,GET_KBD_CH   ; Get from keyboard
             ld   a,CHAR_OP_RD   ; Otherwise off to regular
             jp   CON_BIOS       ; Character BIOS
 ;==================================================================
@@ -1195,12 +1195,219 @@ CON_BIOS:   ld   hl,0A00H       ; Character device BIOS call
             ld   (hl),a         ; Goto 6502 land
             ld   a,(ZACC_6502)  ; Get acc back
             ret
-            ;A9BB
 ;==================================================================
-; Psuedo ISR routine
-; Lives at AA7F
+;
+;  Get keyboard status and flash cursor while we wait.
+;  Read a key if available and save for later.
+;
 ;==================================================================
-PSUEDOISR:  ret
+GET_KBD_ST: ld   hl,IO_STATUS   ; Check if we have a key press already
+            bit  2,(hl)
+            jr   nz,KBDREADY    ; We do tell the world
+            ld   a,(KBD)        ; Check the keyboard
+            bit  7,a            ; Set the zero flag 
+            res  7,a            ; Clear the high bit
+            jr   z,FLSHCURSOR   ; Flash the cursor while we wait
+            ld   (KBDSTRB),a    ; Clear our key press
+            ld   hl,BUTN1       ; Check if closed apple down
+            bit  7,(hl)         
+            call nz,$AB33       ; Go check for toolkey keys
+            or   a              ; set the zero flags
+            ret  z              ; go home if it's zero
+            ld   hl,IO_STATUS   ; flag our status
+            ld   (LASTKEY),a    ; Save last key
+            set  2,(hl)         ; set our bit flag
+KBDREADY:   ld   a,0FFH         ; Say we're ready
+            ret
+FLSHCURSOR: ld   a,(CFLASHRATE) ; Get the cursor flash rate
+            or   a              ; Zero ? 
+            jr   z,NOFLASH      ; Don't flash cursor
+            ld   hl,(CURFLSHCT) ; Get the current flash counter
+            inc  hl             ; add one to it
+            ld   (CURFLSHCT),hl ; Save it
+            cp   h              ; time to flash the cursor
+            jr   nc,NOFLASH     ; Not yet...
+            call TOG_CURSOR     ; Well yes it's time
+            xor  a              ; Reset counter to zero
+            ld   (CURFLSHCT+1),a
+NOFLASH:    xor  a              ; Return back not ready
+            ret
+CURFLSHCT:  DW 0                ; Cursor flash counter
+LASTKEY:    DB 0                ; Last key read from keyboard
+;==================================================================
+;
+; Get a keyboard character from the buffer and reset status
+;  
+;==================================================================
+GET_KBD_CH: ld   hl,IO_STATUS   ; Clear the flag
+            res  2,(hl)
+            ld   a,(LASTKEY)    ; return the key
+            ret
+;==================================================================
+;
+; Get LST status for buffer, if buffer is full return not ready.
+;
+;==================================================================
+GET_LST_ST: ld   hl,(LSTBUFIN)  ; next location we will store to
+            ld   de,(LSTBFOUT)  
+            inc  hl             ; Add one to the counter
+            ld   a,HIGH LSTBUFEND ; Off end of list
+            cp   h
+            jr   nz,LSTNOWRAP
+            ld   h,HIGH ISRBUFFST ; Reset back to start
+BUFNOWRAP:  xor  a              ; Maybe Mark as not ready
+            sbc  hl,de          ; In equals out
+            ret  z              ; Yep return back not ready
+            ld   a,0FFH         ; Return back ready instead.
+            ret
+;==================================================================
+;
+; Get AUX status for buffer, if buffer is full return not ready.
+;
+;==================================================================
+GET_AUX_ST: ld   hl,(AUXBUFIN)
+            ld   de,(AUXBFOUT)
+            inc  hl             ; Add one
+            ld   a,HIGH AUXBUFEND ; Off the end of the list?
+            cp   h
+            jr   nz,BUFNOWRAP   ; Not yet, loop back and check for hl=de
+            ld   h,HIGH ISRBUFFST ; Reset to start of buffer
+            jr   BUFNOWRAP      ; Loop back and check for hl=de
+;==================================================================
+;
+; Add character to the AUX buffer
+;
+;==================================================================
+PUT_AUX_BF: ld   a,(AUXSLOT)    ; 
+            cp   0FFH
+            ret  z
+            ld   hl,(AUXBUFIN)
+            ld   (SETALTZP),a
+            ld   a,(LCBANK1)
+            ld   a,(LCBANK1)
+            ld   (hl),c
+            ld   a,(LCBANK2)
+            ld   a,(LCBANK2)
+            ld   (SETSTDZP),a
+            inc  hl
+            ld   a,HIGH AUXBUFEND
+            cp   h
+            jr   nz,AUXNOWRAP
+            ld   hl,ISRBUFFST
+AUXNOWRAP:  ld   (AUXBUFIN),hl
+            ld   hl,ISRWORK+1
+            set  0,(hl)
+            ret
+;==================================================================
+;
+; Add character to the LST buffer
+;
+;==================================================================
+PUT_LST_BF: ld   a,(LSTSLOT)
+            cp   0FFH
+            ret  z
+            ld   hl,(LSTBUFIN)
+            ld   (SETALTZP),a
+            ld   (hl),c
+            ld   (SETSTDZP),a
+            inc  hl
+            ld   a,HIGH LSTBUFEND
+            cp   h
+            jr   nz,LSTNOWRAP
+            ld   hl,ISRBUFFST
+LSTNOWRAP:  ld   (LSTBUFIN),hl
+            ld   hl,ISRWORK+1
+            set  7,(hl)
+            ret
+;==================================================================
+;
+; Pseudo Interrupt routine, called on most I/O operations
+; Look to see what we can send to the AUX or LST.
+;
+;==================================================================
+PSUEDOISR:  ex   af,af      ; Get ourselves some fresh registers...
+            exx             
+ISRWORK:    ld   a,0        ; Bit 7 set means check lst, Bit 0 check AUX
+            rla
+            jr   c,ISRCHKLST
+ISRCOUNTER: ld   a,0
+            or   a
+            jr   z,ISRCHKAUX
+            dec  a
+            ld   (ISRCOUNTER+1),a
+            call $AB8B
+            ld   hl,ISRBUFFST
+            ld   (LSTBFOUT),hl
+            ld   hl,ISRWORK+1
+            set  7,(hl)
+ISRCHKLST:  ld   hl,(LSTBFOUT)  ; Get output pointer
+            ld   de,(LSTBUFIN)  ; Get input pointer
+            or   a
+            sbc  hl,de          ; in = out
+            jr   nz,ISRLSTMORE  ; More in the LST buffer?
+            ld   hl,ISRWORK+1   ; Nope clear the flag
+            res  7,(hl)         
+            jr   ISRCHKAUX      ; Done, check the AUX
+ISRLSTMORE: ld   a,(LSTSLOT)    ; Get the list slot
+            ld   b,a
+            call SLOUTST2       ; Check the status
+            or   a
+            jr   z,ISRCHKAUX    ; Busy go check aux
+            call ODDCODE
+            ld   hl,(LSTBFOUT)  ; Get our output byte
+            ld   (SETALTZP),a   ; Swap to AUX language card
+            ld   c,(hl)         ; Get character
+            ld   (SETSTDZP),a   ; Back to MAIN for language card
+            inc  hl             ; Increment our pointer
+            ld   a,HIGH LSTBUFEND
+            cp   h              ; Off the end?
+            jr   nz,LSTONOWR    ; No need to reset point
+            ld   h,HIGH ISRBUFFST ; Reset buffer back to start
+LSTONOWR:   ld   (LSTBFOUT),hl  ; Save away pointer
+            ld   a,(LSTSLOT)    ; Get the list slot
+            ld   b,a            ; Output the character
+            call SLOTOUTCH2     ; to the LST
+ISRCHKAUX:  ld   a,(ISRWORK+1)  ; Check if the AUX flag is set
+            rra                 
+            jr   nc,PISR_EXIT   ; No more work head home
+            ld   hl,(AUXBFOUT)  ; Get buffer pointers
+            ld   de,(AUXBUFIN)
+            or   a 
+            sbc  hl,de          ; hl=de ?
+            jr   nz,AUXHASDATA  ; we have some data
+            ld   hl,ISRWORK+1   ; Reset the ISRWORK flag
+            res  0,(hl)         ; For the AUX device
+PISR_EXIT:  exx
+            ex   af,af
+            ret
+AUXHASDATA: ld   a,(AUXSLOT)    ; Get the slot for aux
+            ld   b,a
+            call SLOUTST2       ; Check AUX status
+            or   a
+            jr   z,PISR_EXIT
+            call ODDCODE
+            ld   hl,(AUXBFOUT)
+            ld   (SETALTZP),a   ; Language card to AUX banks
+            ld   a,(LCBANK1)    ; Swap to other bank
+            ld   a,(LCBANK1)
+            ld   c,(hl)         ; Get our character
+            ld   a,(LCBANK2)    ; Language card back to normal
+            ld   a,(LCBANK2)
+            ld   (SETSTDZP),a   ; Language card back to main
+            inc  hl
+            ld   a,HIGH AUXBUFEND
+            cp   h
+            jr   nz,AUXALTWRP
+            ld   h,HIGH ISRBUFFST
+AUXALTWRP:  ld   (AUXBFOUT),hl
+            ld   a,(AUXSLOT)
+            ld   b,a
+            call SLOTOUTCH2
+            jp   PISR_EXIT
+LSTBFOUT:   DW   ISRBUFFST      ; LST Next adress to get character out
+LSTBUFIN:   DW   ISRBUFFST      ; LST Next free address to put character in
+AUXBFOUT:   DW   ISRBUFFST      ; AUX Next adress to get character out
+AUXBUFIN:   DW   ISRBUFFST      ; AUX Next free address to put character in
 
 
 LAB73:               ;AB73
