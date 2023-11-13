@@ -1055,7 +1055,7 @@ VECOSTNXT:  add  hl,hl          ; Shift the vector
 ; Returns 0 if slot is not ready
 ; Returns 0FFH if slot ready.
 ;==================================================================   
-SLOTOUTST:  ld   a,$FF          ; Assume ready
+SLOTOUTST:  ld   a,0FFH         ; Assume ready
             inc  b              ; Check if device is console
             dec  b
             ret  z              ; Go home saying we're ready

@@ -1,0 +1,185 @@
+GET_KBD_ST:
+A9BB: 21 EB F3    ld   hl,$F3EB
+A9BE: CB 56       bit  2,(hl)
+A9C0: 20 1E       jr   nz,$A9E0
+A9C2: 3A 00 E0    ld   a,($E000)
+A9C5: CB 7F       bit  7,a
+A9C7: CB BF       res  7,a
+A9C9: 28 18       jr   z,$A9E3
+A9CB: 32 10 E0    ld   ($E010),a
+A9CE: 21 62 E0    ld   hl,$E062
+A9D1: CB 7E       bit  7,(hl)
+A9D3: C4 33 AB    call nz,$AB33
+A9D6: B7          or   a
+A9D7: C8          ret  z
+A9D8: 21 EB F3    ld   hl,$F3EB
+A9DB: 32 FE A9    ld   ($A9FE),a
+A9DE: CB D6       set  2,(hl)
+A9E0: 3E FF       ld   a,$FF
+A9E2: C9          ret
+A9E3: 3A 63 DE    ld   a,($DE63)
+A9E6: B7          or   a
+A9E7: 28 11       jr   z,$A9FA
+A9E9: 2A FC A9    ld   hl,($A9FC)
+A9EC: 23          inc  hl
+A9ED: 22 FC A9    ld   ($A9FC),hl
+A9F0: BC          cp   h
+A9F1: 30 07       jr   nc,$A9FA
+A9F3: CD A0 A9    call $A9A0
+A9F6: AF          xor  a
+A9F7: 32 FD A9    ld   ($A9FD),a
+A9FA: AF          xor  a
+A9FB: C9          ret
+A9FC: 00          nop
+A9FD: 00          nop
+A9FE: 00          nop
+GET_KBD_CH:
+A9FF: 21 EB F3    ld   hl,$F3EB
+AA02: CB 96       res  2,(hl)
+AA04: 3A FE A9    ld   a,($A9FE)
+AA07: C9          ret
+GET_LST_ST:
+AA08: 2A 2D AB    ld   hl,($AB2D)
+AA0B: ED 5B 2B AB ld   de,($AB2B)
+AA0F: 23          inc  hl
+AA10: 3E E0       ld   a,$E0
+AA12: BC          cp   h
+AA13: 20 02       jr   nz,$AA17
+AA15: 26 B0       ld   h,$B0
+AA17: AF          xor  a
+AA18: ED 52       sbc  hl,de
+AA1A: C8          ret  z
+AA1B: 3E FF       ld   a,$FF
+AA1D: C9          ret
+GET_AUX_ST:
+AA1E: 2A 31 AB    ld   hl,($AB31)
+AA21: ED 5B 2F AB ld   de,($AB2F)
+AA25: 23          inc  hl
+AA26: 3E C0       ld   a,$C0
+AA28: BC          cp   h
+AA29: 20 EC       jr   nz,$AA17
+AA2B: 26 B0       ld   h,$B0
+AA2D: 18 E8       jr   $AA17
+PUT_AUX_BF:
+AA2F: 3A 4A A9    ld   a,($A94A)
+AA32: FE FF       cp   $FF
+AA34: C8          ret  z
+AA35: 2A 31 AB    ld   hl,($AB31)
+AA38: 32 09 E0    ld   ($E009),a
+AA3B: 3A 8B E0    ld   a,($E08B)
+AA3E: 3A 8B E0    ld   a,($E08B)
+AA41: 71          ld   (hl),c
+AA42: 3A 83 E0    ld   a,($E083)
+AA45: 3A 83 E0    ld   a,($E083)
+AA48: 32 08 E0    ld   ($E008),a
+AA4B: 23          inc  hl
+AA4C: 3E C0       ld   a,$C0
+AA4E: BC          cp   h
+AA4F: 20 03       jr   nz,$AA54
+AA51: 21 00 B0    ld   hl,$B000
+AA54: 22 31 AB    ld   ($AB31),hl
+AA57: 21 82 AA    ld   hl,$AA82
+AA5A: CB C6       set  0,(hl)
+AA5C: C9          ret
+PUT_LST_BF:
+AA5D: 3A 49 A9    ld   a,($A949)
+AA60: FE FF       cp   $FF
+AA62: C8          ret  z
+AA63: 2A 2D AB    ld   hl,($AB2D)
+AA66: 32 09 E0    ld   ($E009),a
+AA69: 71          ld   (hl),c
+AA6A: 32 08 E0    ld   ($E008),a
+AA6D: 23          inc  hl
+AA6E: 3E E0       ld   a,$E0
+AA70: BC          cp   h
+AA71: 20 03       jr   nz,$AA76
+AA73: 21 00 B0    ld   hl,$B000
+AA76: 22 2D AB    ld   ($AB2D),hl
+AA79: 21 82 AA    ld   hl,$AA82
+AA7C: CB FE       set  7,(hl)
+AA7E: C9          ret
+PSUEDOISR:
+AA7F: 08          ex   af,af'
+AA80: D9          exx
+AA81: 3E 00       ld   a,$00
+AA83: 17          rla
+AA84: 38 17       jr   c,$AA9D
+AA86: 3E 00       ld   a,$00
+AA88: B7          or   a
+AA89: 28 4E       jr   z,$AAD9
+AA8B: 3D          dec  a
+AA8C: 32 87 AA    ld   ($AA87),a
+AA8F: CD 8B AB    call $AB8B
+AA92: 21 00 B0    ld   hl,$B000
+AA95: 22 2B AB    ld   ($AB2B),hl
+AA98: 21 82 AA    ld   hl,$AA82
+AA9B: CB FE       set  7,(hl)
+AA9D: 2A 2B AB    ld   hl,($AB2B)
+AAA0: ED 5B 2D AB ld   de,($AB2D)
+AAA4: B7          or   a
+AAA5: ED 52       sbc  hl,de
+AAA7: 20 07       jr   nz,$AAB0
+AAA9: 21 82 AA    ld   hl,$AA82
+AAAC: CB BE       res  7,(hl)
+AAAE: 18 29       jr   $AAD9
+AAB0: 3A 49 A9    ld   a,($A949)
+AAB3: 47          ld   b,a
+AAB4: CD 39 A9    call $A939
+AAB7: B7          or   a
+AAB8: 28 1F       jr   z,$AAD9
+AABA: CD 7D A4    call $A47D
+AABD: 2A 2B AB    ld   hl,($AB2B)
+AAC0: 32 09 E0    ld   ($E009),a
+AAC3: 4E          ld   c,(hl)
+AAC4: 32 08 E0    ld   ($E008),a
+AAC7: 23          inc  hl
+AAC8: 3E E0       ld   a,$E0
+AACA: BC          cp   h
+AACB: 20 02       jr   nz,$AACF
+AACD: 26 B0       ld   h,$B0
+AACF: 22 2B AB    ld   ($AB2B),hl
+AAD2: 3A 49 A9    ld   a,($A949)
+AAD5: 47          ld   b,a
+AAD6: CD 59 A9    call $A959
+AAD9: 3A 82 AA    ld   a,($AA82)
+AADC: 1F          rra
+AADD: 30 11       jr   nc,$AAF0
+AADF: 2A 2F AB    ld   hl,($AB2F)
+AAE2: ED 5B 31 AB ld   de,($AB31)
+AAE6: B7          or   a
+AAE7: ED 52       sbc  hl,de
+AAE9: 20 08       jr   nz,$AAF3
+AAEB: 21 82 AA    ld   hl,$AA82
+AAEE: CB 86       res  0,(hl)
+AAF0: D9          exx
+AAF1: 08          ex   af,af'
+AAF2: C9          ret
+AAF3: 3A 4A A9    ld   a,($A94A)
+AAF6: 47          ld   b,a
+AAF7: CD 39 A9    call $A939
+AAFA: B7          or   a
+AAFB: 28 F3       jr   z,$AAF0
+AAFD: CD 7D A4    call $A47D
+AB00: 2A 2F AB    ld   hl,($AB2F)
+AB03: 32 09 E0    ld   ($E009),a
+AB06: 3A 8B E0    ld   a,($E08B)
+AB09: 3A 8B E0    ld   a,($E08B)
+AB0C: 4E          ld   c,(hl)
+AB0D: 3A 83 E0    ld   a,($E083)
+AB10: 3A 83 E0    ld   a,($E083)
+AB13: 32 08 E0    ld   ($E008),a
+AB16: 23          inc  hl
+AB17: 3E C0       ld   a,$C0
+AB19: BC          cp   h
+AB1A: 20 02       jr   nz,$AB1E
+AB1C: 26 B0       ld   h,$B0
+AB1E: 22 2F AB    ld   ($AB2F),hl
+AB21: 3A 4A A9    ld   a,($A94A)
+AB24: 47          ld   b,a
+AB25: CD 59 A9    call $A959
+AB28: C3 F0 AA    jp   $AAF0
+AB2B: DW 0B000H
+AB2D: DW 0B000H
+AB2F: DW 0B000H
+AB31: DW 0B000H
+
