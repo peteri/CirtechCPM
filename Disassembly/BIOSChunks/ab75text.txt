@@ -10,6 +10,7 @@ AB8B: 0E 07       ld   c,$07
 AB8D: CD 9C A9    call $A99C
 AB90: AF          xor  a
 AB91: C9          ret
+; Toggle cursor
 AB92: 06 07       ld   b,$07
 AB94: 3A 63 DE    ld   a,($DE63)
 AB97: B7          or   a
@@ -22,6 +23,7 @@ ABA4: 78          ld   a,b
 ABA5: 32 63 DE    ld   ($DE63),a
 ABA8: AF          xor  a
 ABA9: C9          ret
+; Draw toolkey
 ABAA: 3A 84 F3    ld   a,($F384)
 ABAD: 32 73 AB    ld   ($AB73),a
 ABB0: 11 00 FF    ld   de,$FF00
@@ -30,6 +32,7 @@ ABB5: CD 80 AE    call $AE80
 ABB8: 11 00 FC    ld   de,$FC00
 ABBB: CB F9       set  7,c
 ABBD: C3 80 AE    jp   $AE80
+; Print screen...
 ABC0: 3E 0D       ld   a,$0D
 ABC2: CD FA AE    call $AEFA
 ABC5: 3E 0A       ld   a,$0A
@@ -59,7 +62,10 @@ ABF1: CD FA AE    call $AEFA
 ABF4: E1          pop  hl
 ABF5: 23          inc  hl
 ABF6: 18 D5       jr   $ABCD
-ABF8: CD AA AB    call $ABAA
+;
+; draw tool key and prompt user
+;
+TOOLKEYQ: CD AA AB    call $ABAA
 ABFB: CD 34 AE    call $AE34
 ABFE: CA 75 AE    jp   z,$AE75
 AC01: FE 63       cp   $63
@@ -76,10 +82,12 @@ AC1A: FE 70       cp   $70
 AC1C: 20 06       jr   nz,$AC24
 AC1E: CD 75 AE    call $AE75
 AC21: C3 C0 AB    jp   $ABC0
+;
 AC24: 11 00 FC    ld   de,$FC00
 AC27: CB F9       set  7,c
 AC29: CD 80 AE    call $AE80
 AC2C: 18 CD       jr   $ABFB
+; FORMAT
 AC2E: 21 D2 FC    ld   hl,$FCD2
 AC31: CD 5A AE    call $AE5A
 AC34: 21 00 F8    ld   hl,$F800
@@ -128,6 +136,7 @@ AC98: FE 79       cp   $79
 AC9A: 28 CE       jr   z,$AC6A
 AC9C: AF          xor  a
 AC9D: C9          ret
+; Duplicate disk
 AC9E: 3A 00 DE    ld   a,($DE00)
 ACA1: B7          or   a
 ACA2: 20 30       jr   nz,$ACD4

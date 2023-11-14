@@ -53,6 +53,7 @@ CHAR_OP_ST  EQU 10H             ; Character IO Status (same as pascal offset)
 Z80OFFS     EQU 0F000H
 ZSLOTX      EQU 0F004H          ; Boot slot 1..7
 ZESC_STATE  EQU 0F022H          ; Escape lead in state
+ZCUR_STATE  EQU 0F023H          ;Bit 7 high if cursor on screen
 ZACC_6502   EQU 0F045H          ; 6502 Acc
 ZX_6502     EQU 0F046H          ; 6502 X reg
 ZY_6502     EQU 0F047H          ; 6502 Y reg
@@ -61,6 +62,7 @@ ZFLAG_6502  EQU 0F048H          ; 6502 flag
 ;6502 stuff in 0300 range as seen from Z80
 ;
 PAGE300Z80  EQU 0F300H          ; Page 300
+SCRLINES    EQU 0F312H          ; Screen lines table going up
 ROUT_6502   EQU 0F3D0H          ; 6502 routine to call
 CARD_Z80    EQU 0F3DEH          ; Card address from Z80 0E401H
 DISK_TRKL   EQU 0F380H          ; Disk track low
@@ -550,14 +552,14 @@ DSKERR_DRV: ld   a,00H          ; Drive error letter
             add  a,'A'+80H      ; Put it into 'A'-'Z'
             ld   (MSGERRDRV),a  ; Put the drive letter in message
             ld   hl,MSG_DSKERR  ; Write message into screen
-DISPDSKERR: call USERF_07       ; Put message in popup
+DISPDSKERR: call TK_WRLINE       ; Put message in popup
             call USERF_0B       ; Read lower case character from keyboard
             jr   nz,ER_NOT_ESC  ; User hit escape?
-            call USERF_06       ; Yeah, lets abort the world screen
+            call TK_RESTSCR     ; Yeah, lets abort the world screen
             jp   B_WBOOT        ; back to normal and do a warm boot.
 ER_NOT_ESC: cp   'y'            ; User wanted a retry
             push af             ; Save the flag
-            call USERF_06       ; Put back the screen
+            call TK_RESTSCR     ; Put back the screen
             pop  af             ; Get back the flag to see if user
             jr   z,DISKRETRY    ; wanted us to retry, loop back again.
             ld   a,(DISK_ERR)   ; Get disk error code
@@ -967,11 +969,11 @@ USERFTBL:   DW   USERF_RET      ; User function 00
             DW   USERF_RET      ; User function 01 
             DW   USERF_RET      ; User function 02
             DW   USERF_RET      ; User function 03
-            DW   USERF_04       ; ????? - AB92           
-            DW   USERF_05       ; Save the screen - A8BC
-            DW   USERF_06       ; Copy drive + Fall through into Screen save - AE75 
-            DW   USERF_07       ; Write (hl) to middle of popup on screen - AE5A 
-            DW   USERF_08       ; ????? - ABC0 
+            DW   TK_CURSOR      ; Toggle cursor - AB92           
+            DW   TK_SAVESCR     ; Save the screen - A8BC
+            DW   TK_RESTSCR     ; Copy drive + Fall through into Screen save - AE75 
+            DW   TK_WRLINE      ; Write (hl) to middle of popup on screen - AE5A 
+            DW   TK_PRTSCR      ; Print screen - ABC0 
             DW   USERF_09       ; Copy aux to main memory with range check - A8CB
             DW   USERF_0A       ; Copy main to aux memory with range check - A8DB 
             DW   USERF_0B       ; Get keyboard lower case and compare against ESC -  AE34
@@ -983,7 +985,7 @@ USERFTBL:   DW   USERF_RET      ; User function 00
 ; User function 5 saves the screen to 0FF00h then 
 ; moves lines from de to the screen
 ;==================================================================
-USERF_05:   push de
+TK_SAVESCR: push de
             ld   de,0FF00H         
             res  7,c
             call SCRMOVE
@@ -1187,7 +1189,7 @@ VECINNXT:   xor  a              ; Assume not ready
 ; Lives at 0A99AH
 ;==================================================================
 C_TO_CONS:  res  7,c            ; Clear the high bit
-            ld   b,0            ; Flag we want console
+C_TO_CONS2: ld   b,0            ; Flag we want console
             jr   CON_BIOS
 ;==================================================================
 ; Toggle cursor
@@ -1236,7 +1238,7 @@ GET_KBD_ST: ld   hl,IO_STATUS   ; Check if we have a key press already
             ld   (KBDSTRB),a    ; Clear our key press
             ld   hl,BUTN1       ; Check if closed apple down
             bit  7,(hl)         
-            call nz,$AB33       ; Go check for toolkey keys
+            call nz,TOOLKEY     ; Go check for toolkey keys
             or   a              ; set the zero flags
             ret  z              ; go home if it's zero
             ld   hl,IO_STATUS   ; flag our status
@@ -1433,46 +1435,75 @@ LSTBFOUT:   DW   ISRBUFFST      ; LST Next adress to get character out
 LSTBUFIN:   DW   ISRBUFFST      ; LST Next free address to put character in
 AUXBFOUT:   DW   ISRBUFFST      ; AUX Next adress to get character out
 AUXBUFIN:   DW   ISRBUFFST      ; AUX Next free address to put character in
-AB33: 47       ld   b,a
-AB34: FE 2F    cp   '/'         ; Help popup / and ? are same key
-AB36: CA F8 AB jp   z,$ABF8
-AB39: FE 3F    cp   '?'         ; Help popup  / and ? are same key
-AB3B: CA F8 AB jp   z,$ABF8
-AB3E: F6 20    or   $20         ; Turn to lower case
-AB40: FE 63    cp   'c'         ; Change cursor mode (Flash or solid)
-AB42: 28 4E    jr   z,$AB92
-AB44: FE 66    cp   'f'         ; Format
-AB46: 28 19    jr   z,$AB61
-AB48: FE 64    cp   'd'         ; Duplicate
-AB4A: 28 1E    jr   z,$AB6A
-AB4C: FE 65    cp   'e'         ; Empty buffers?
-AB4E: 28 25    jr   z,$AB75
-AB50: FE 70    cp   'p'         ; Print screen
-AB52: CA C0 AB jp   z,$ABC0
-AB55: FE 78    cp   'x'         ; Xtra
-AB57: 28 02    jr   z,$AB5B
-AB59: 78       ld   a,b
-AB5A: C9       ret
-AB5B: 21 87 AA ld   hl,$AA87
-AB5E: 34       inc  (hl)
-AB5F: 18 2A    jr   $AB8B
-AB61: CD AA AB call $ABAA
-AB64: CD 2E AC call $AC2E
-AB67: C3 75 AE jp   $AE75
-AB6A: CD AA AB call $ABAA
-AB6D: CD 9E AC call $AC9E
-AB70: C3 75 AE jp   $AE75
-
-LAB73:               ;AB73
+TOOLKEY:    ld   b,a
+            cp   '/'         ; Help popup / and ? are same key
+            jp   z,TOOLKEYQ
+            cp   '?'         ; Help popup  / and ? are same key
+            jp   z,TOOLKEYQ
+            or   20H         ; Turn to lower case
+            cp   'c'         ; Change cursor mode (Flash or solid)
+            jr   z,TK_CURSOR
+            cp   'f'         ; Format
+            jr   z,TK_FORMAT
+            cp   'd'         ; Duplicate
+            jr   z,TK_DUPLIC
+            cp   'e'         ; Empty buffers?
+            jr   z,TK_EMPTBUF
+            cp   'p'         ; Print screen
+            jp   z,TK_PRTSCR
+            cp   'x'         ; Xtra
+            jr   z,TK_EXTRA
+            ld   a,b
+            ret
+;==================================================================
+; Tool kit extra
+;==================================================================
+TK_EXTRA:   ld   hl,ISRCOUNTER+1 ; Set counter
+            inc  (hl)
+            jr   RINGBELL       ; Tell the user
+TK_FORMAT:  call DRWTOOLKEY
+            call $AC2E
+            jp   TK_RESTSCR
+TK_DUPLIC:  call DRWTOOLKEY
+            call $AC9E
+            jp   TK_RESTSCR
+TK_SAVEDRV: DB   1              ; Save the CP/M drive across toolkey
+LAB74:      DB   0              ; Dunno what yet
+;==================================================================
+; Tool kit empty buffers
+;==================================================================
+TK_EMPTBUF: ld   hl,ISRBUFFST
+            ld   (LSTBFOUT),hl  ; Empty LST
+            ld   (LSTBUFIN),hl
+            ld   hl,(AUXBFOUT)  ; Empty AUX
+            ld   (AUXBUFIN),hl
+            xor  a            ; Reset the Pseudo ISR flags
+            ld   (ISRWORK+1),a
+            ld   (ISRCOUNTER+1),a
+            ld   c,7          ; Ring the bell
+RINGBELL:   call C_TO_CONS2
+            xor  a
+            ret
 ;==================================================================
 ; User function 4 - Show hide / set cursor flash?
 ;==================================================================
-USERF_04:            ;AB92
+TK_CURSOR:  ld   b,7            ; Prep for flash mode
+            ld   a,(CFLASHRATE) ; Get current
+            or   a
+            jr   z,SETCURSOR    ; Solid, so set to 7 for flash
+            ld   a,(ZCUR_STATE) ; Peek at cursor state
+            bit  7,a            ; It's off so set 
+            call z,TOG_CURSOR   ; it to on
+            ld   b,0            ; And stash a zero
+SETCURSOR:  ld   a,b            
+            ld (CFLASHRATE),a   ; Into the cursor flash rate.
+            xor  a
+            ret
 ;==================================================================
 ; Draw the toolkey window
 ;==================================================================
 DRWTOOLKEY: ld   a,(DISK_DRV)   ; Save current disk drive before we 
-            ld   (LAB73),a      ; Draw toolkey box
+            ld   (TK_SAVEDRV),a      ; Draw toolkey box
             ld   de,0FF00H      ; Save screen space to 
             res  7,c            ; FF00H
             call SCRMOVE        
@@ -1480,9 +1511,62 @@ DRWTOOLKEY: ld   a,(DISK_DRV)   ; Save current disk drive before we
             set  7,C            ; set the flag
             jp   SCRMOVE
 ;==================================================================
-; User function 8 - Some sort of scroll
+; User function 8 - Print screen
 ;==================================================================
-USERF_08:            ;ABC0
+TK_PRTSCR:  ld   a,CR
+            call PRINTCHAR
+            ld   a,LF
+            call PRINTCHAR
+            ld   hl,SCRLINES
+PRNXTLINE:  ld   e,(hl)
+            inc  hl
+            ld   d,(hl)
+            bit  7,d
+            jr   nz,PRLINE
+            xor  a
+            ret
+PRLINE:     push hl
+            ld   b,40
+PRNXTCHAR:  ld   (TXTPAGE2),a
+            ld   a,(de)
+            ld   (TXTPAGE1),a
+            call SCRTOPRINT
+            ld   a,(de)
+            call SCRTOPRINT
+            inc  de
+            djnz PRNXTCHAR
+            ld   a,CR
+            call PRINTCHAR
+            ld   a,LF
+            call PRINTCHAR
+            pop  hl
+            inc  hl
+            jr   PRNXTLINE
+;==================================================================
+; draw tool key and prompt user
+;==================================================================
+TOOLKEYQ:   call DRWTOOLKEY
+            call USERF_0B
+            jp   z,TK_RESTSCR
+            cp   'c'
+            call z,TK_CURSOR
+            cp   'f'
+            call z,$AC2E
+            cp   'd'
+            call z,$AC9E
+            cp   'e'
+            call z,TK_EMPTBUF
+            cp   'x'
+            call z,TK_EXTRA
+            cp   'p'
+            jr   nz,REDRAWTK
+            call TK_RESTSCR
+            jp   TK_PRTSCR
+REDRAWTK:   ld   de,MSG_TOOLKEY
+            set  7,c
+            call SCRMOVE
+            jr   TOOLKEYQ
+            ORG 0AE34H                        
 ;==================================================================
 ; User function B - Get keyboard lower case and compare against ESC
 ;==================================================================
@@ -1518,7 +1602,7 @@ LAE57:      ld   hl,MSG_DUPLIC
 ; User function 7 - writes 38 characters from (hl) to 
 ; the middle of the Cirtech toolkey popup
 ;==================================================================
-USERF_07:   ld   b,38
+TK_WRLINE:  ld   b,38
             ld   de,SCRL10+1
 UF7_NXTCHR: ld   a,b
             rra
@@ -1536,7 +1620,7 @@ UF7_ODD2:   djnz UF7_NXTCHR
 ;==================================================================
 ; User function 6 - Restore screen after drawing toolkey
 ;==================================================================
-USERF_06:   ld   a,(LAB73)      ; restore saved disk drive 
+TK_RESTSCR: ld   a,(TK_SAVEDRV) ; restore saved disk drive 
             ld   (DISK_DRV),a   ; put it into regular bios
 ; 
 ; Screen mover routine, saves or restores screen
@@ -1576,6 +1660,27 @@ LMV_NOSWP1: inc  de             ; Add one to save area
             inc  hl             ; Yes don't increment this time
 LMV_ODD:    djnz LMV_LOOP
             ret                 ; Go home
+LAEC0:      DB   0,0,0,0,0,0,0,0,0
+            ORG 0AEF2H            
+SCRTOPRINT: res  7,a
+            cp   ' '
+            jr   nc,PRINTCHAR
+            or   040H
+PRINTCHAR:  push bc
+            push de
+            push af
+PRINTCHW:   call PSUEDOISR
+            call GET_LST_ST
+            or   a
+            jr   z,PRINTCHW
+            pop  af
+            ld   c,a
+            ld   a,(LSTSLOT)
+            ld   b,a
+            call PUT_LST_BF
+            pop  de
+            pop  bc
+            ret
 ;==================================================================
 ; BIOS Func 21 - DEVINI
 ; Device initialise

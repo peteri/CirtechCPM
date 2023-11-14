@@ -1,0 +1,28 @@
+SCRTOPRINT: CB BF    res  7,a
+AEF4: FE 20    cp   $20
+AEF6: 30 02    jr   nc,$AEFA
+AEF8: F6 40    or   $40
+PRINTCHAR: C5       push bc
+AEFB: D5       push de
+AEFC: F5       push af
+AEFD: CD 7F AA call $AA7F
+AF00: CD 08 AA call $AA08
+AF03: B7       or   a
+AF04: 28 F7    jr   z,$AEFD
+AF06: F1       pop  af
+AF07: 4F       ld   c,a
+AF08: 3A 49 A9 ld   a,($A949)
+AF0B: 47       ld   b,a
+AF0C: CD 5D AA call $AA5D
+AF0F: D1       pop  de
+AF10: C1       pop  bc
+AF11: C9       ret
+AF12: AF       xor  a
+AF13: B9       cp   c
+AF14: 20 0A    jr   nz,$AF20
+AF16: 0E 1B    ld   c,$1B
+AF18: CD 9A A9 call $A99A
+AF1B: 0E 2A    ld   c,$2A
+AF1D: C3 9A A9 jp   $A99A
+AF20: 41       ld   b,c
+AF21: 3E 0D    ld   a,$0D
