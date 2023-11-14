@@ -552,8 +552,8 @@ DSKERR_DRV: ld   a,00H          ; Drive error letter
             add  a,'A'+80H      ; Put it into 'A'-'Z'
             ld   (MSGERRDRV),a  ; Put the drive letter in message
             ld   hl,MSG_DSKERR  ; Write message into screen
-DISPDSKERR: call TK_WRLINE       ; Put message in popup
-            call USERF_0B       ; Read lower case character from keyboard
+DISPDSKERR: call TK_WRLINE      ; Put message in popup
+            call GETUSERKEY     ; Read lower case character from keyboard
             jr   nz,ER_NOT_ESC  ; User hit escape?
             call TK_RESTSCR     ; Yeah, lets abort the world screen
             jp   B_WBOOT        ; back to normal and do a warm boot.
@@ -846,7 +846,7 @@ B_SELDSK:   ld   a,c
             ld   hl,DRVTBL      ; Get DPH for drive
             sla  c              ; Mult by two
             ld   e,c
-            ld   d,0
+GETHLPLUSE: ld   d,0            ; Entry point for toolkey
             add  hl,de          ; HL points to DPH for drive
             ld   e,(hl)         ; Get DPH in de
             inc hl
@@ -976,7 +976,7 @@ USERFTBL:   DW   USERF_RET      ; User function 00
             DW   TK_PRTSCR      ; Print screen - ABC0 
             DW   USERF_09       ; Copy aux to main memory with range check - A8CB
             DW   USERF_0A       ; Copy main to aux memory with range check - A8DB 
-            DW   USERF_0B       ; Get keyboard lower case and compare against ESC -  AE34
+            DW   GETUSERKEY     ; Get keyboard lower case and compare against ESC -  AE34
             DW   USERF_RET      ; User function 0C 
             DW   USERF_RET      ; User function 0D
             DW   USERF_RET      ; User function 0E
@@ -1352,20 +1352,20 @@ LSTNOWRAP:  ld   (LSTBUFIN),hl
 ; Look to see what we can send to the AUX or LST.
 ;
 ;==================================================================
-PSUEDOISR:  ex   af,af      ; Get ourselves some fresh registers...
+PSUEDOISR:  ex   af,af          ; Get ourselves some fresh registers...
             exx             
-ISRWORK:    ld   a,0        ; Bit 7 set means check lst, Bit 0 check AUX
+ISRWORK:    ld   a,0            ; Bit 7 set means check lst, Bit 0 check AUX
             rla
             jr   c,ISRCHKLST
-ISRCOUNTER: ld   a,0
+ISRCOUNTER: ld   a,0            ; Set to non zero by Xtra copy toolkey func
             or   a
-            jr   z,ISRCHKAUX
+            jr   z,ISRCHKAUX    ; No extra copy set
             dec  a
-            ld   (ISRCOUNTER+1),a
-            call $AB8B
-            ld   hl,ISRBUFFST
-            ld   (LSTBFOUT),hl
-            ld   hl,ISRWORK+1
+            ld   (ISRCOUNTER+1),a ;Clear flag byte
+            call RINGBELL
+            ld   hl,ISRBUFFST   ; Reset out point to start, probably
+            ld   (LSTBFOUT),hl  ; only works if you've emptied buffer
+            ld   hl,ISRWORK+1   ; before printing...
             set  7,(hl)
 ISRCHKLST:  ld   hl,(LSTBFOUT)  ; Get output pointer
             ld   de,(LSTBUFIN)  ; Get input pointer
@@ -1424,10 +1424,10 @@ AUXHASDATA: ld   a,(AUXSLOT)    ; Get the slot for aux
             inc  hl
             ld   a,HIGH AUXBUFEND
             cp   h
-            jr   nz,AUXALTWRP
+            jr   nz,AUXALTWRP   ; Not off end yet
             ld   h,HIGH ISRBUFFST
-AUXALTWRP:  ld   (AUXBFOUT),hl
-            ld   a,(AUXSLOT)
+AUXALTWRP:  ld   (AUXBFOUT),hl  ; Store pointer
+            ld   a,(AUXSLOT)    ; And send to AUX
             ld   b,a
             call SLOTOUTCH2
             jp   PISR_EXIT
@@ -1477,11 +1477,11 @@ TK_EMPTBUF: ld   hl,ISRBUFFST
             ld   (LSTBUFIN),hl
             ld   hl,(AUXBFOUT)  ; Empty AUX
             ld   (AUXBUFIN),hl
-            xor  a            ; Reset the Pseudo ISR flags
+            xor  a              ; Reset the Pseudo ISR flags
             ld   (ISRWORK+1),a
             ld   (ISRCOUNTER+1),a
-            ld   c,7          ; Ring the bell
-RINGBELL:   call C_TO_CONS2
+RINGBELL:   ld   c,7            ; Ring the bell
+            call C_TO_CONS2
             xor  a
             ret
 ;==================================================================
@@ -1545,8 +1545,8 @@ PRNXTCHAR:  ld   (TXTPAGE2),a
 ;==================================================================
 ; draw tool key and prompt user
 ;==================================================================
-TOOLKEYQ:   call DRWTOOLKEY
-            call USERF_0B
+TOOLKEYQ:   call DRWTOOLKEY     ; Draw the main toolkey message
+            call GETUSERKEY
             jp   z,TK_RESTSCR
             cp   'c'
             call z,TK_CURSOR
@@ -1566,19 +1566,30 @@ REDRAWTK:   ld   de,MSG_TOOLKEY
             set  7,c
             call SCRMOVE
             jr   TOOLKEYQ
-            ORG 0AE34H                        
+            ORG 0AE2DH
+;==================================================================
+; Get a drive letter from the user, if they hit escape
+; pop the return address off the stack and go back to
+; parent caller.
+;==================================================================
+GETDRVLETR: call GETUSERKEY
+            ret  nz
+            pop  hl
+            xor  a
+            ret                        
 ;==================================================================
 ; User function B - Get keyboard lower case and compare against ESC
 ;==================================================================
-USERF_0B:   call PSUEDOISR
+GETUSERKEY: call PSUEDOISR
             ld   a,(KBD)
             or   a
-            jp   p,USERF_0B
+            jp   p,GETUSERKEY
             ld   (KBDSTRB),a
             res  7,a
             or   020H       ; Force lower case
             cp   ESC+020H   ; Was it escape?
             ret
+;==================================================================
 ; Lower case drive letter checker
 ; Entry
 ;  A = lower case drive letter
@@ -1586,7 +1597,8 @@ USERF_0B:   call PSUEDOISR
 ;  A = Apple II drive slot,drive number code
 ;  C = CP/M drive 0..25
 ;  Carry flag set if valid drive
-LAE48:      sub  061H           ; Convert a..z to 0..25
+;==================================================================
+TK_CHKDRVL: sub  061H           ; Convert a..z to 0..25
             ld   c,a            ; Presumably save for later 
             ld   e,a            ; Put into de
             ld   d,0
@@ -1661,24 +1673,58 @@ LMV_NOSWP1: inc  de             ; Add one to save area
 LMV_ODD:    djnz LMV_LOOP
             ret                 ; Go home
 LAEC0:      DB   0,0,0,0,0,0,0,0,0
-            ORG 0AEF2H            
-SCRTOPRINT: res  7,a
-            cp   ' '
-            jr   nc,PRINTCHAR
-            or   040H
-PRINTCHAR:  push bc
+            ORG 0AEF2H
+;======================================
+; Dunno yet
+;======================================            
+LAEC9:      ld   hl,LAEC0+1
+            bit  0,(hl)
+            ret
+;==================================================================
+; c = drive letter 0=A,1=B,2=C ....
+; iy= DPB drive parameter block
+;==================================================================
+AECF: CB 21    sla  c           ; Multiply by 2
+AED1: 59       ld   e,c
+AED2: 21 00 5E ld   hl,DRVTBL   ; Drive table
+AED5: CD 2F A8 call GETHLPLUSE  ; HL=(HL + E) aka DPH
+AED8: 1E 0C    ld   e,DPBL
+AEDA: CD 2F A8 call GETHLPLUSE  ; hl=(DPH + DPBL)
+AEDD: E5       push hl          ; hl=DPB for this drive
+AEDE: FD E1    pop  iy
+AEE0: FD 7E 02 ld   a,(iy+$02)  ; BLS Block shift factor
+AEE3: FD 6E 05 ld   l,(iy+$05)  ; DSM Blocks on drive
+AEE6: FD 66 06 ld   h,(iy+$06)
+AEE9: D6 05    sub  5
+AEEB: B7       or   a
+AEEC: C8       ret  z
+AEED: 29       add  hl,hl
+AEEE: 3D       dec  a
+AEEF: 18 FA    jr   $AEEB
+AEF1: C9       ret
+;==================================================================
+;  Converts a character from the Apple //e screen (even if inverse)
+;==================================================================
+SCRTOPRINT: res  7,a            ; Strip off high bit
+            cp   ' '            ; Inverse upper case?
+            jr   nc,PRINTCHAR   ; Nope go print
+            or   040H           ; Convert into uppercase
+;==================================================================
+;  Print character in accumulator
+;==================================================================
+PRINTCHAR:  push bc             ; Save registers
             push de
-            push af
-PRINTCHW:   call PSUEDOISR
-            call GET_LST_ST
+            push af             ; Save output
+PRINTCHW:   call PSUEDOISR      ; Do any IO we can
+            call GET_LST_ST     ; Is LST ready
             or   a
-            jr   z,PRINTCHW
-            pop  af
+            jr   z,PRINTCHW     ; Nope loop around
+            pop  af             ; Get our character back
             ld   c,a
-            ld   a,(LSTSLOT)
+            ld   a,(LSTSLOT)    ; Send it to the printer
             ld   b,a
-            call PUT_LST_BF
-            pop  de
+            call PUT_LST_BF     ; Add it to the buffer
+            pop  de             ; restore registers
             pop  bc
             ret
 ;==================================================================

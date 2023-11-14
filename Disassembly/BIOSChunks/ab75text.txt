@@ -66,12 +66,12 @@ ABF6: 18 D5       jr   $ABCD
 ; draw tool key and prompt user
 ;
 TOOLKEYQ: CD AA AB    call $ABAA
-ABFB: CD 34 AE    call $AE34
+ABFB: CD 34 AE    call GETUSERKEY
 ABFE: CA 75 AE    jp   z,$AE75
 AC01: FE 63       cp   $63
 AC03: CC 92 AB    call z,$AB92
 AC06: FE 66       cp   $66
-AC08: CC 2E AC    call z,$AC2E
+AC08: CC 2E AC    call z,$FORMAT
 AC0B: FE 64       cp   $64
 AC0D: CC 9E AC    call z,$AC9E
 AC10: FE 65       cp   $65
@@ -88,8 +88,8 @@ AC27: CB F9       set  7,c
 AC29: CD 80 AE    call $AE80
 AC2C: 18 CD       jr   $ABFB
 ; FORMAT
-AC2E: 21 D2 FC    ld   hl,$FCD2
-AC31: CD 5A AE    call $AE5A
+FORMAT: 21 D2 FC    ld   hl,$FCD2
+AC31: CD 5A AE    call TK_WRLINE
 AC34: 21 00 F8    ld   hl,$F800
 AC37: 36 E5       ld   (hl),$E5
 AC39: 54          ld   d,h
@@ -97,9 +97,9 @@ AC3A: 5D          ld   e,l
 AC3B: 13          inc  de
 AC3C: 01 FF 01    ld   bc,$01FF
 AC3F: ED B0       ldir
-AC41: CD 2D AE    call $AE2D
-AC44: CD 48 AE    call $AE48
-AC47: 30 E5       jr   nc,$AC2E
+AC41: CD 2D AE    call GETDRVLETR
+AC44: CD 48 AE    call TK_CHKDRVL
+AC47: 30 E5       jr   nc,$FORMAT
 AC49: 32 84 F3    ld   ($F384),a
 AC4C: CD CF AE    call $AECF
 AC4F: FD 7E 02    ld   a,(iy+$02)
@@ -116,10 +116,10 @@ AC65: 29          add  hl,hl
 AC66: 7D          ld   a,l
 AC67: 32 80 F3    ld   ($F380),a
 AC6A: 21 F8 FC    ld   hl,$FCF8
-AC6D: CD 5A AE    call $AE5A
-AC70: CD 2D AE    call $AE2D
+AC6D: CD 5A AE    call TK_WRLINE
+AC70: CD 2D AE    call GETDRVLETR
 AC73: 21 1E FD    ld   hl,$FD1E
-AC76: CD 5A AE    call $AE5A
+AC76: CD 5A AE    call TK_WRLINE
 AC79: 3E 03       ld   a,$03
 AC7B: 32 88 F3    ld   ($F388),a
 AC7E: CD 1C AE    call $AE1C
@@ -130,8 +130,8 @@ AC88: 20 05       jr   nz,$AC8F
 AC8A: 21 90 FD    ld   hl,$FD90
 AC8D: 18 03       jr   $AC92
 AC8F: 21 6A FD    ld   hl,$FD6A
-AC92: CD 5A AE    call $AE5A
-AC95: CD 2D AE    call $AE2D
+AC92: CD 5A AE    call TK_WRLINE
+AC95: CD 2D AE    call GETDRVLETR
 AC98: FE 79       cp   $79
 AC9A: 28 CE       jr   z,$AC6A
 AC9C: AF          xor  a
@@ -141,8 +141,8 @@ AC9E: 3A 00 DE    ld   a,($DE00)
 ACA1: B7          or   a
 ACA2: 20 30       jr   nz,$ACD4
 ACA4: 21 AE AC    ld   hl,$ACAE
-ACA7: CD 5A AE    call $AE5A
-ACAA: CD 2D AE    call $AE2D
+ACA7: CD 5A AE    call TK_WRLINE
+ACAA: CD 2D AE    call GETDRVLETR
 ACAD: C9          ret
 ACAE: 20 53       jr   nz,$AD03
 ACB0: 6F          ld   l,a
@@ -178,9 +178,9 @@ ACD2: 65          ld   h,l
 ACD3: 20 21       jr   nz,$ACF6
 ACD5: B6          or   (hl)
 ACD6: FD          db   $fd
-ACD7: CD 5A AE    call $AE5A
-ACDA: CD 2D AE    call $AE2D
-ACDD: CD 48 AE    call $AE48
+ACD7: CD 5A AE    call TK_WRLINE
+ACDA: CD 2D AE    call GETDRVLETR
+ACDD: CD 48 AE    call TK_CHKDRVL
 ACE0: 30 F8       jr   nc,$ACDA
 ACE2: 32 C0 AE    ld   ($AEC0),a
 ACE5: 21 C7 AE    ld   hl,$AEC7
@@ -188,9 +188,9 @@ ACE8: 71          ld   (hl),c
 ACE9: CD 37 A8    call $A837
 ACEC: 32 C6 AE    ld   ($AEC6),a
 ACEF: 21 DC FD    ld   hl,$FDDC
-ACF2: CD 5A AE    call $AE5A
-ACF5: CD 2D AE    call $AE2D
-ACF8: CD 48 AE    call $AE48
+ACF2: CD 5A AE    call TK_WRLINE
+ACF5: CD 2D AE    call GETDRVLETR
+ACF8: CD 48 AE    call TK_CHKDRVL
 ACFB: 30 F2       jr   nc,$ACEF
 ACFD: 32 C1 AE    ld   ($AEC1),a
 AD00: CD 37 A8    call $A837
@@ -198,8 +198,8 @@ AD03: 21 C6 AE    ld   hl,$AEC6
 AD06: BE          cp   (hl)
 AD07: 28 0E       jr   z,$AD17
 AD09: 21 C0 FE    ld   hl,$FEC0
-AD0C: CD 5A AE    call $AE5A
-AD0F: CD 2D AE    call $AE2D
+AD0C: CD 5A AE    call TK_WRLINE
+AD0F: CD 2D AE    call GETDRVLETR
 AD12: FE 79       cp   $79
 AD14: C0          ret  nz
 AD15: 18 87       jr   $AC9E
@@ -229,13 +229,13 @@ AD4F: CB C6       set  0,(hl)
 AD51: CD C9 AE    call $AEC9
 AD54: 28 0D       jr   z,$AD63
 AD56: 21 02 FE    ld   hl,$FE02
-AD59: CD 5A AE    call $AE5A
+AD59: CD 5A AE    call TK_WRLINE
 AD5C: 18 0B       jr   $AD69
 AD5E: CD C9 AE    call $AEC9
 AD61: 20 09       jr   nz,$AD6C
 AD63: 21 74 FE    ld   hl,$FE74
-AD66: CD 5A AE    call $AE5A
-AD69: CD 2D AE    call $AE2D
+AD66: CD 5A AE    call TK_WRLINE
+AD69: CD 2D AE    call GETDRVLETR
 AD6C: CD 57 AE    call $AE57
 AD6F: 3A C0 AE    ld   a,($AEC0)
 AD72: 21 C2 AE    ld   hl,$AEC2
