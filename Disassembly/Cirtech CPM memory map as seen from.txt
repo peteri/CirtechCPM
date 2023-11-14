@@ -29,8 +29,8 @@ B400  A400                    |  Banked BIOS           |                        
 D000  B000  | Video BIOS(6502)|  CP/M TPA              |   Printer buffer       |   AUX buffer    |
 D400  B400  | Disk BIOS(6502) |                        |                        |                 | 
 DA00  BA00  |                 |                        |                        |                 |
-DE00  BE00  | Disk 6 bit data |  		                   |                        |                 |  
-DF00  BF00  | Disk 2 bit data |  		                   |                        |                 |
+DE00  BE00  | Disk 6 bit data |                        |                        |                 |  
+DF00  BF00  | Disk 2 bit data |                        |                        |                 |
             +-----------------+----LC 8 K Shared-------+-----LC 8 K Shared------+-----------------+
 E000  C000                    |  CP/M TPA              |   Printer Buffer       |
 F000  D000                    |                        |                        | 
