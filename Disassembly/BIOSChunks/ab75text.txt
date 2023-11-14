@@ -1,0 +1,232 @@
+AB75: 21 00 B0    ld   hl,$B000
+AB78: 22 2B AB    ld   ($AB2B),hl
+AB7B: 22 2D AB    ld   ($AB2D),hl
+AB7E: 2A 31 AB    ld   hl,($AB31)
+AB81: 22 2F AB    ld   ($AB2F),hl
+AB84: AF          xor  a
+AB85: 32 82 AA    ld   ($AA82),a
+AB88: 32 87 AA    ld   ($AA87),a
+AB8B: 0E 07       ld   c,$07
+AB8D: CD 9C A9    call $A99C
+AB90: AF          xor  a
+AB91: C9          ret
+AB92: 06 07       ld   b,$07
+AB94: 3A 63 DE    ld   a,($DE63)
+AB97: B7          or   a
+AB98: 28 0A       jr   z,$ABA4
+AB9A: 3A 23 F0    ld   a,($F023)
+AB9D: CB 7F       bit  7,a
+AB9F: CC A0 A9    call z,$A9A0
+ABA2: 06 00       ld   b,$00
+ABA4: 78          ld   a,b
+ABA5: 32 63 DE    ld   ($DE63),a
+ABA8: AF          xor  a
+ABA9: C9          ret
+ABAA: 3A 84 F3    ld   a,($F384)
+ABAD: 32 73 AB    ld   ($AB73),a
+ABB0: 11 00 FF    ld   de,$FF00
+ABB3: CB B9       res  7,c
+ABB5: CD 80 AE    call $AE80
+ABB8: 11 00 FC    ld   de,$FC00
+ABBB: CB F9       set  7,c
+ABBD: C3 80 AE    jp   $AE80
+ABC0: 3E 0D       ld   a,$0D
+ABC2: CD FA AE    call $AEFA
+ABC5: 3E 0A       ld   a,$0A
+ABC7: CD FA AE    call $AEFA
+ABCA: 21 12 F3    ld   hl,$F312
+ABCD: 5E          ld   e,(hl)
+ABCE: 23          inc  hl
+ABCF: 56          ld   d,(hl)
+ABD0: CB 7A       bit  7,d
+ABD2: 20 02       jr   nz,$ABD6
+ABD4: AF          xor  a
+ABD5: C9          ret
+ABD6: E5          push hl
+ABD7: 06 28       ld   b,$28
+ABD9: 32 55 E0    ld   ($E055),a
+ABDC: 1A          ld   a,(de)
+ABDD: 32 54 E0    ld   ($E054),a
+ABE0: CD F2 AE    call $AEF2
+ABE3: 1A          ld   a,(de)
+ABE4: CD F2 AE    call $AEF2
+ABE7: 13          inc  de
+ABE8: 10 EF       djnz $ABD9
+ABEA: 3E 0D       ld   a,$0D
+ABEC: CD FA AE    call $AEFA
+ABEF: 3E 0A       ld   a,$0A
+ABF1: CD FA AE    call $AEFA
+ABF4: E1          pop  hl
+ABF5: 23          inc  hl
+ABF6: 18 D5       jr   $ABCD
+ABF8: CD AA AB    call $ABAA
+ABFB: CD 34 AE    call $AE34
+ABFE: CA 75 AE    jp   z,$AE75
+AC01: FE 63       cp   $63
+AC03: CC 92 AB    call z,$AB92
+AC06: FE 66       cp   $66
+AC08: CC 2E AC    call z,$AC2E
+AC0B: FE 64       cp   $64
+AC0D: CC 9E AC    call z,$AC9E
+AC10: FE 65       cp   $65
+AC12: CC 75 AB    call z,$AB75
+AC15: FE 78       cp   $78
+AC17: CC 5B AB    call z,$AB5B
+AC1A: FE 70       cp   $70
+AC1C: 20 06       jr   nz,$AC24
+AC1E: CD 75 AE    call $AE75
+AC21: C3 C0 AB    jp   $ABC0
+AC24: 11 00 FC    ld   de,$FC00
+AC27: CB F9       set  7,c
+AC29: CD 80 AE    call $AE80
+AC2C: 18 CD       jr   $ABFB
+AC2E: 21 D2 FC    ld   hl,$FCD2
+AC31: CD 5A AE    call $AE5A
+AC34: 21 00 F8    ld   hl,$F800
+AC37: 36 E5       ld   (hl),$E5
+AC39: 54          ld   d,h
+AC3A: 5D          ld   e,l
+AC3B: 13          inc  de
+AC3C: 01 FF 01    ld   bc,$01FF
+AC3F: ED B0       ldir
+AC41: CD 2D AE    call $AE2D
+AC44: CD 48 AE    call $AE48
+AC47: 30 E5       jr   nc,$AC2E
+AC49: 32 84 F3    ld   ($F384),a
+AC4C: CD CF AE    call $AECF
+AC4F: FD 7E 02    ld   a,(iy+$02)
+AC52: 21 08 00    ld   hl,$0008
+AC55: D6 05       sub  $05
+AC57: 38 11       jr   c,$AC6A
+AC59: 28 04       jr   z,$AC5F
+AC5B: 29          add  hl,hl
+AC5C: 3D          dec  a
+AC5D: 20 FC       jr   nz,$AC5B
+AC5F: FD CB 09 76 bit  6,(iy+$09)
+AC63: 28 01       jr   z,$AC66
+AC65: 29          add  hl,hl
+AC66: 7D          ld   a,l
+AC67: 32 80 F3    ld   ($F380),a
+AC6A: 21 F8 FC    ld   hl,$FCF8
+AC6D: CD 5A AE    call $AE5A
+AC70: CD 2D AE    call $AE2D
+AC73: 21 1E FD    ld   hl,$FD1E
+AC76: CD 5A AE    call $AE5A
+AC79: 3E 03       ld   a,$03
+AC7B: 32 88 F3    ld   ($F388),a
+AC7E: CD 1C AE    call $AE1C
+AC81: 21 44 FD    ld   hl,$FD44
+AC84: 28 0C       jr   z,$AC92
+AC86: FE 10       cp   $10
+AC88: 20 05       jr   nz,$AC8F
+AC8A: 21 90 FD    ld   hl,$FD90
+AC8D: 18 03       jr   $AC92
+AC8F: 21 6A FD    ld   hl,$FD6A
+AC92: CD 5A AE    call $AE5A
+AC95: CD 2D AE    call $AE2D
+AC98: FE 79       cp   $79
+AC9A: 28 CE       jr   z,$AC6A
+AC9C: AF          xor  a
+AC9D: C9          ret
+AC9E: 3A 00 DE    ld   a,($DE00)
+ACA1: B7          or   a
+ACA2: 20 30       jr   nz,$ACD4
+ACA4: 21 AE AC    ld   hl,$ACAE
+ACA7: CD 5A AE    call $AE5A
+ACAA: CD 2D AE    call $AE2D
+ACAD: C9          ret
+ACAE: 20 53       jr   nz,$AD03
+ACB0: 6F          ld   l,a
+ACB1: 72          ld   (hl),d
+ACB2: 72          ld   (hl),d
+ACB3: 79          ld   a,c
+ACB4: 2C          inc  l
+ACB5: 20 20       jr   nz,$ACD7
+ACB7: 6D          ld   l,l
+ACB8: 65          ld   h,l
+ACB9: 6D          ld   l,l
+ACBA: 6F          ld   l,a
+ACBB: 72          ld   (hl),d
+ACBC: 79          ld   a,c
+ACBD: 20 73       jr   nz,$AD32
+ACBF: 70          ld   (hl),b
+ACC0: 61          ld   h,c
+ACC1: 63          ld   h,e
+ACC2: 65          ld   h,l
+ACC3: 20 72       jr   nz,$AD37
+ACC5: 65          ld   h,l
+ACC6: 71          ld   (hl),c
+ACC7: 75          ld   (hl),l
+ACC8: 69          ld   l,c
+ACC9: 72          ld   (hl),d
+ACCA: 65          ld   h,l
+ACCB: 64          ld   h,h
+ACCC: 20 69       jr   nz,$AD37
+ACCE: 6E          ld   l,(hl)
+ACCF: 20 75       jr   nz,$AD46
+ACD1: 73          ld   (hl),e
+ACD2: 65          ld   h,l
+ACD3: 20 21       jr   nz,$ACF6
+ACD5: B6          or   (hl)
+ACD6: FD          db   $fd
+ACD7: CD 5A AE    call $AE5A
+ACDA: CD 2D AE    call $AE2D
+ACDD: CD 48 AE    call $AE48
+ACE0: 30 F8       jr   nc,$ACDA
+ACE2: 32 C0 AE    ld   ($AEC0),a
+ACE5: 21 C7 AE    ld   hl,$AEC7
+ACE8: 71          ld   (hl),c
+ACE9: CD 37 A8    call $A837
+ACEC: 32 C6 AE    ld   ($AEC6),a
+ACEF: 21 DC FD    ld   hl,$FDDC
+ACF2: CD 5A AE    call $AE5A
+ACF5: CD 2D AE    call $AE2D
+ACF8: CD 48 AE    call $AE48
+ACFB: 30 F2       jr   nc,$ACEF
+ACFD: 32 C1 AE    ld   ($AEC1),a
+AD00: CD 37 A8    call $A837
+AD03: 21 C6 AE    ld   hl,$AEC6
+AD06: BE          cp   (hl)
+AD07: 28 0E       jr   z,$AD17
+AD09: 21 C0 FE    ld   hl,$FEC0
+AD0C: CD 5A AE    call $AE5A
+AD0F: CD 2D AE    call $AE2D
+AD12: FE 79       cp   $79
+AD14: C0          ret  nz
+AD15: 18 87       jr   $AC9E
+AD17: 21 23 00    ld   hl,$0023
+AD1A: 22 C4 AE    ld   ($AEC4),hl
+AD1D: 22 C2 AE    ld   ($AEC2),hl
+AD20: 22 B4 AD    ld   ($ADB4),hl
+AD23: 3A C6 AE    ld   a,($AEC6)
+AD26: FE 02       cp   $02
+AD28: 28 1C       jr   z,$AD46
+AD2A: CD CF AE    call $AECF
+AD2D: 22 C4 AE    ld   ($AEC4),hl
+AD30: 22 C2 AE    ld   ($AEC2),hl
+AD33: 22 B4 AD    ld   ($ADB4),hl
+AD36: 3A C7 AE    ld   a,($AEC7)
+AD39: 4F          ld   c,a
+AD3A: CD CF AE    call $AECF
+AD3D: ED 5B C4 AE ld   de,($AEC4)
+AD41: B7          or   a
+AD42: ED 52       sbc  hl,de
+AD44: 20 C3       jr   nz,$AD09
+AD46: 21 C1 AE    ld   hl,$AEC1
+AD49: 3A C0 AE    ld   a,($AEC0)
+AD4C: BE          cp   (hl)
+AD4D: 28 0F       jr   z,$AD5E
+AD4F: CB C6       set  0,(hl)
+AD51: CD C9 AE    call $AEC9
+AD54: 28 0D       jr   z,$AD63
+AD56: 21 02 FE    ld   hl,$FE02
+AD59: CD 5A AE    call $AE5A
+AD5C: 18 0B       jr   $AD69
+AD5E: CD C9 AE    call $AEC9
+AD61: 20 09       jr   nz,$AD6C
+AD63: 21 74 FE    ld   hl,$FE74
+AD66: CD 5A AE    call $AE5A
+AD69: CD 2D AE    call $AE2D
+AD6C: CD 57 AE    call $AE57
+AD6F: 3A C0 AE    ld   a,($AEC0)
+AD72: 21 C2 AE    ld   hl,$AEC2

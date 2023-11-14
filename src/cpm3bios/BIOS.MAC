@@ -393,11 +393,28 @@ SIGNONMSG:  DB ESC,'*',CR,LF
             DB '         ',ESC,'(','  CP/M Plus Version 3.0  for the Apple //e  ',CR,LF,ESC,')'
             DB '         ',ESC,'(','    (C)  CIRTECH 1985       Release 1.07    ',CR,LF,ESC,')'
             DB CR,LF,0
-ODDCODE:    DS 20H                  ;A47D - Could be a table here!            
 ;
-;
-;
-BIOSTK:     DS 058H      ;No idea if right size
+; Secondary check for Cirtech card, called
+; when we output to either LST or AUX
+;            
+CARDCHECK2: ld   hl,0787BH      ; Code at A47D check if we're on a Cirtech card
+            ld   c,(hl)         ; Save byte for later 
+            ld   de,CC6502_2+1000H ; 6502 routine 
+            ld   (ROUT_6502),de
+            ld   de,(CARD_Z80)     ; de=E401
+            inc  de
+            inc  de             ; de=E403
+            ld   (de),a         ; Off to 6502 land with odd address mapping
+            ld   a,(hl)         ; Get back overwritten byte
+            ld   (hl),c         ; Put back original byte
+            cp   076H           ; Go home if our byte was overwritten
+            ret  z
+            ld   (ROUT_6502),hl ; Byte not overwritten
+            lddr                ; Trash the world
+            lddr
+BIOSTK:     DS 05AH             ; Slightly odd size for the stack
+                                ; Not sure if it's computed or I've missed
+                                ; some data addresses....
 BIOSTOS:
 ;==================================================================
 ; All of the character device IO routines end up here
@@ -1003,8 +1020,16 @@ USERF_0A:   push hl
             ldir
             ld   (WRMAINRAM),a
             ret
-            .6502
-            lda  #$76 	        ; code at $B8EB or 0A8EBH
+;            
+; Called from A47D
+;
+; Another bit of check if we're running on a Cirtech
+; card, we are should be writing $76 to $7b78, this 
+; gets called on every psuedo ISR call to get a character
+; from the buffers.
+;            
+            .6502            
+CC6502_2:   lda  #$76 	        ; code at $B8EB or 0A8EBH
             sta  USERF          ; Write HALT in USERF 
             rts                 ; but the adress should be +$1000
             .Z80
@@ -1353,7 +1378,7 @@ ISRLSTMORE: ld   a,(LSTSLOT)    ; Get the list slot
             call SLOUTST2       ; Check the status
             or   a
             jr   z,ISRCHKAUX    ; Busy go check aux
-            call ODDCODE
+            call CARDCHECK2
             ld   hl,(LSTBFOUT)  ; Get our output byte
             ld   (SETALTZP),a   ; Swap to AUX language card
             ld   c,(hl)         ; Get character
@@ -1385,7 +1410,7 @@ AUXHASDATA: ld   a,(AUXSLOT)    ; Get the slot for aux
             call SLOUTST2       ; Check AUX status
             or   a
             jr   z,PISR_EXIT
-            call ODDCODE
+            call CARDCHECK2
             ld   hl,(AUXBFOUT)
             ld   (SETALTZP),a   ; Language card to AUX banks
             ld   a,(LCBANK1)    ; Swap to other bank
@@ -1408,9 +1433,40 @@ LSTBFOUT:   DW   ISRBUFFST      ; LST Next adress to get character out
 LSTBUFIN:   DW   ISRBUFFST      ; LST Next free address to put character in
 AUXBFOUT:   DW   ISRBUFFST      ; AUX Next adress to get character out
 AUXBUFIN:   DW   ISRBUFFST      ; AUX Next free address to put character in
-
+AB33: 47       ld   b,a
+AB34: FE 2F    cp   '/'         ; Help popup / and ? are same key
+AB36: CA F8 AB jp   z,$ABF8
+AB39: FE 3F    cp   '?'         ; Help popup  / and ? are same key
+AB3B: CA F8 AB jp   z,$ABF8
+AB3E: F6 20    or   $20         ; Turn to lower case
+AB40: FE 63    cp   'c'         ; Change cursor mode (Flash or solid)
+AB42: 28 4E    jr   z,$AB92
+AB44: FE 66    cp   'f'         ; Format
+AB46: 28 19    jr   z,$AB61
+AB48: FE 64    cp   'd'         ; Duplicate
+AB4A: 28 1E    jr   z,$AB6A
+AB4C: FE 65    cp   'e'         ; Empty buffers?
+AB4E: 28 25    jr   z,$AB75
+AB50: FE 70    cp   'p'         ; Print screen
+AB52: CA C0 AB jp   z,$ABC0
+AB55: FE 78    cp   'x'         ; Xtra
+AB57: 28 02    jr   z,$AB5B
+AB59: 78       ld   a,b
+AB5A: C9       ret
+AB5B: 21 87 AA ld   hl,$AA87
+AB5E: 34       inc  (hl)
+AB5F: 18 2A    jr   $AB8B
+AB61: CD AA AB call $ABAA
+AB64: CD 2E AC call $AC2E
+AB67: C3 75 AE jp   $AE75
+AB6A: CD AA AB call $ABAA
+AB6D: CD 9E AC call $AC9E
+AB70: C3 75 AE jp   $AE75
 
 LAB73:               ;AB73
+;==================================================================
+; User function 4 - Show hide / set cursor flash?
+;==================================================================
 USERF_04:            ;AB92
 ;==================================================================
 ; Draw the toolkey window
