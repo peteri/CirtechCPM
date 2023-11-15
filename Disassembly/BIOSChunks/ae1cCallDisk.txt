@@ -1,0 +1,8 @@
+AE1C: 11 DC 03    ld   de,$03DC
+AE1F: ED 53 D0 F3 ld   ($F3D0),de
+AE23: ED 5B DE F3 ld   de,($F3DE)
+AE27: 12          ld   (de),a
+AE28: 3A 89 F3    ld   a,($F389)
+AE2B: B7          or   a
+AE2C: C9	  ret
+

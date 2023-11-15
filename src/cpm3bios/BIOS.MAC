@@ -1707,6 +1707,8 @@ UF7_ODD2:   djnz UF7_NXTCHR
 ;==================================================================
 TK_RESTSCR: ld   a,(TK_SAVEDRV) ; restore saved disk drive 
             ld   (DISK_DRV),a   ; put it into regular bios
+            ld   de,0FF00H
+            set   7,c
 ; 
 ; Screen mover routine, saves or restores screen
 ; from lines 8-12 columns 18-60 to or from de.
@@ -1746,7 +1748,6 @@ LMV_NOSWP1: inc  de             ; Add one to save area
 LMV_ODD:    djnz LMV_LOOP
             ret                 ; Go home
 LAEC0:      DB   0,0,0,0,0,0,0,0,0
-            ORG 0AEF2H
 ;======================================
 ; Dunno yet
 ;======================================            
