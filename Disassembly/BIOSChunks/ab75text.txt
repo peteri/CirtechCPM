@@ -88,7 +88,7 @@ AC27: CB F9       set  7,c
 AC29: CD 80 AE    call $AE80
 AC2C: 18 CD       jr   $ABFB
 ; FORMAT
-FORMAT: 21 D2 FC    ld   hl,$FCD2
+FORMAT: 21 D2 FC    ld   hl,MSG_FORMAT
 AC31: CD 5A AE    call TK_WRLINE
 AC34: 21 00 F8    ld   hl,$F800
 AC37: 36 E5       ld   (hl),$E5
@@ -99,10 +99,10 @@ AC3C: 01 FF 01    ld   bc,$01FF
 AC3F: ED B0       ldir
 AC41: CD 2D AE    call GETDRVLETR
 AC44: CD 48 AE    call TK_CHKDRVL
-AC47: 30 E5       jr   nc,$FORMAT
+AC47: 30 E5       jr   nc,FORMAT
 AC49: 32 84 F3    ld   ($F384),a
-AC4C: CD CF AE    call $AECF
-AC4F: FD 7E 02    ld   a,(iy+$02)
+AC4C: CD CF AE    call GETDPB
+AC4F: FD 7E 02    ld   a,(iy+DPB_BLS)
 AC52: 21 08 00    ld   hl,$0008
 AC55: D6 05       sub  $05
 AC57: 38 11       jr   c,$AC6A
@@ -110,26 +110,26 @@ AC59: 28 04       jr   z,$AC5F
 AC5B: 29          add  hl,hl
 AC5C: 3D          dec  a
 AC5D: 20 FC       jr   nz,$AC5B
-AC5F: FD CB 09 76 bit  6,(iy+$09)
+AC5F: FD CB 09 76 bit  6,(iy+DPB_AL0)   ;Reserved blocks for directory
 AC63: 28 01       jr   z,$AC66
 AC65: 29          add  hl,hl
 AC66: 7D          ld   a,l
 AC67: 32 80 F3    ld   ($F380),a
-AC6A: 21 F8 FC    ld   hl,$FCF8
+AC6A: 21 F8 FC    ld   hl,MSG_INSDISK
 AC6D: CD 5A AE    call TK_WRLINE
 AC70: CD 2D AE    call GETDRVLETR
-AC73: 21 1E FD    ld   hl,$FD1E
+AC73: 21 1E FD    ld   hl,MSG_FMTING
 AC76: CD 5A AE    call TK_WRLINE
-AC79: 3E 03       ld   a,$03
+AC79: 3E 03       ld   a,DSKOP_FMT
 AC7B: 32 88 F3    ld   ($F388),a
 AC7E: CD 1C AE    call $AE1C
-AC81: 21 44 FD    ld   hl,$FD44
+AC81: 21 44 FD    ld   hl,MSG_FORMOK
 AC84: 28 0C       jr   z,$AC92
 AC86: FE 10       cp   $10
 AC88: 20 05       jr   nz,$AC8F
-AC8A: 21 90 FD    ld   hl,$FD90
+AC8A: 21 90 FD    ld   hl,ERR_WRPRO
 AC8D: 18 03       jr   $AC92
-AC8F: 21 6A FD    ld   hl,$FD6A
+AC8F: 21 6A FD    ld   hl,ERR_DSKERR
 AC92: CD 5A AE    call TK_WRLINE
 AC95: CD 2D AE    call GETDRVLETR
 AC98: FE 79       cp   $79
@@ -210,13 +210,13 @@ AD20: 22 B4 AD    ld   ($ADB4),hl
 AD23: 3A C6 AE    ld   a,($AEC6)
 AD26: FE 02       cp   $02
 AD28: 28 1C       jr   z,$AD46
-AD2A: CD CF AE    call $AECF
+AD2A: CD CF AE    call GETDPB
 AD2D: 22 C4 AE    ld   ($AEC4),hl
 AD30: 22 C2 AE    ld   ($AEC2),hl
 AD33: 22 B4 AD    ld   ($ADB4),hl
 AD36: 3A C7 AE    ld   a,($AEC7)
 AD39: 4F          ld   c,a
-AD3A: CD CF AE    call $AECF
+AD3A: CD CF AE    call GETDPB
 AD3D: ED 5B C4 AE ld   de,($AEC4)
 AD41: B7          or   a
 AD42: ED 52       sbc  hl,de

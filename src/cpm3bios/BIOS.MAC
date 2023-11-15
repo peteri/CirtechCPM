@@ -41,8 +41,9 @@ AUXBUFEND   EQU 0C000H      ; Aux buffer is 4K
 ESC         EQU 1BH
 CR          EQU 0DH 
 LF          EQU 0AH
-DSKOP_RD    EQU 01H
-DSKOP_WR    EQU 02H
+DSKOP_RD    EQU 01H             ; Disk operation Read
+DSKOP_WR    EQU 02H             ; Disk operation Write
+DSKOP_FMT   EQU 03H             ; Disk operation Format
 CHAR_OP_INI EQU 0DH             ; Character IO Init (same as pascal offset)
 CHAR_OP_RD  EQU 0EH             ; Character IO Read (same as pascal offset)
 CHAR_OP_WR  EQU 0FH             ; Character IO Write (same as pascal offset)
@@ -95,11 +96,28 @@ DRVMAP      EQU  5E20H          ; Map of CPM drives to apple drives
 DPBL        EQU  0CH            ; DPH low offset of drive parameter block
 DPBH        EQU  0DH            ; DPH high offset of drive parameter block
 DPBLEN      EQU  11H            ; Length of a drive parameter block
-LDRDPBTBL   EQU  5DBCH          ; four created by LDRBIOS
+LDRDPBTBL   EQU  5DBCH          ; four DPB created by LDRBIOS
+DPB_SPT     EQU  00H            ; SPT number of 128 records per track
+DPB_BLS     EQU  02H            ; BLS Block shift factor 
+DPB_BLM     EQU  03H            ; BLM Block mask 
+DPB_EXM     EQU  04H            ; EXM extant mask
+DPB_DSM     EQU  05H            ; DSM Blocks on drive
+DPB_DRM     EQU  07H            ; DRM Number of directory entries
+DPB_AL0     EQU  09H            ; AL0 reserved blocks for directory
+DPB_AL1     EQU  0AH            ; AL1
+DPB_CKS     EQU  0BH            ; CKS size of directory check vector
+DPB_OFF     EQU  0DH            ; OFF 3 reserved tracks
+DPB_PSH     EQU  0FH            ; PSH Physical Shift 
+DPB_PHM     EQU  10H            ; PHM Physical Mask  
 ;
 ; Messages for the toolkey popup (see src\boot\toolkey.mac)
 ;
 MSG_TOOLKEY EQU  0FC00H         ; Message box for toolkey
+MSG_FORMAT  EQU  0FCD2H         ; Format disk in which drive
+MSG_INSDISK EQU  0FCF8H         ; Insert disk in drive and press rtn
+MSG_FMTING  EQU  0FD1EH         ; Formatting 
+MSG_FORMOK  EQU  0FD44H         ; Format successful, do again 
+ERR_DSKERR  EQU  0FD6AH         ; Disk error
 ERR_WRPRO   EQU  0FD90H         ; Write protected error
 MSG_DUPLIC  EQU  0FE28H         ; Duplicating disk
 ;******************************************************************
@@ -1435,6 +1453,9 @@ LSTBFOUT:   DW   ISRBUFFST      ; LST Next adress to get character out
 LSTBUFIN:   DW   ISRBUFFST      ; LST Next free address to put character in
 AUXBFOUT:   DW   ISRBUFFST      ; AUX Next adress to get character out
 AUXBUFIN:   DW   ISRBUFFST      ; AUX Next free address to put character in
+;==================================================================
+; Check for toolkey without popping up screen with user choices
+;==================================================================
 TOOLKEY:    ld   b,a
             cp   '/'         ; Help popup / and ? are same key
             jp   z,TOOLKEYQ
@@ -1462,7 +1483,7 @@ TK_EXTRA:   ld   hl,ISRCOUNTER+1 ; Set counter
             inc  (hl)
             jr   RINGBELL       ; Tell the user
 TK_FORMAT:  call DRWTOOLKEY
-            call $AC2E
+            call FORMAT
             jp   TK_RESTSCR
 TK_DUPLIC:  call DRWTOOLKEY
             call $AC9E
@@ -1551,7 +1572,7 @@ TOOLKEYQ:   call DRWTOOLKEY     ; Draw the main toolkey message
             cp   'c'
             call z,TK_CURSOR
             cp   'f'
-            call z,$AC2E
+            call z,FORMAT
             cp   'd'
             call z,$AC9E
             cp   'e'
@@ -1566,13 +1587,65 @@ REDRAWTK:   ld   de,MSG_TOOLKEY
             set  7,c
             call SCRMOVE
             jr   TOOLKEYQ
+;==================================================================
+; Format a disk
+;==================================================================
+FORMAT:     ld   hl,MSG_FORMAT  ; Prompt user for drive to format
+            call TK_WRLINE
+            ld   hl,DISK_BUFF   ; Set disk buffer with E5
+            ld   (hl),0E5H
+            ld   d,h
+            ld   e,l
+            inc  de
+            ld   bc,01FFH
+            ldir
+            call KEYORESC       ; Get drive or exit if user hits ESC
+            call TK_CHKDRVL     ; Valid drive letter?
+            jr   nc,FORMAT      ; Loop if not
+            ld   (DISK_DRV),a   ; Save drive
+            ; Figure out how many sectors of directory
+            call GETDPB       
+            ld   a,(iy+DPB_BLS)
+            ld   hl,0008H
+            sub  5
+            jr   c,FMTINSDISK   ; It's going to be a disk II so don't bother
+            jr   z,FMTCHKBLKS   ; Check if we need to tweak for 5
+FMTDIRDBL:  add  hl,hl
+            dec  a
+            jr   nz,FMTDIRDBL
+FMTCHKBLKS: bit  6,(iy+DPB_AL0) ; Reserved blocks for directory
+            jr   z,FMTFNDSECT   ; 
+            add  hl,hl
+FMTFNDSECT: ld   a,l
+            ld   (DISK_TRKL),a
+FMTINSDISK: ld   hl,MSG_INSDISK ; Tell user to insert a disk
+            call TK_WRLINE
+            call KEYORESC       ; Last chance to get out
+            ld   hl,MSG_FMTING  ; Tell 'em we're formatting
+            call TK_WRLINE
+            ld   a,DSKOP_FMT    ; Do the deed
+            ld   (DISK_OP),a
+            call $AE1C
+            ld   hl,MSG_FORMOK  ; Assume it went ok
+            jr   z,FMTDISPRES   ; Tell user if so
+            cp   010H           ; Write protected?
+            jr   nz,FMTDISKERR  ; Nope display generic error
+            ld   hl,ERR_WRPRO   ; Write protected
+            jr   FMTDISPRES     ; Tell the user
+FMTDISKERR: ld   hl,ERR_DSKERR  ; Generic error
+FMTDISPRES: call TK_WRLINE      ; Display the result
+            call KEYORESC       ; Does the user want to try again?
+            cp   'y'
+            jr   z,FMTINSDISK   ; Apparently so
+            xor  a
+            ret
             ORG 0AE2DH
 ;==================================================================
 ; Get a drive letter from the user, if they hit escape
 ; pop the return address off the stack and go back to
 ; parent caller.
 ;==================================================================
-GETDRVLETR: call GETUSERKEY
+KEYORESC: call GETUSERKEY
             ret  nz
             pop  hl
             xor  a
@@ -1677,31 +1750,35 @@ LAEC0:      DB   0,0,0,0,0,0,0,0,0
 ;======================================
 ; Dunno yet
 ;======================================            
-LAEC9:      ld   hl,LAEC0+1
+LAEC9:      ld   hl,LAEC0+1     ;Not sure if +1 is valid..
             bit  0,(hl)
             ret
 ;==================================================================
+; GETDPB
 ; c = drive letter 0=A,1=B,2=C ....
 ; iy= DPB drive parameter block
+; hl=number of 4096 byte blocks on the drive (not valid if BLS<5)
+;    Equivalent to number of tracks?
+;
 ;==================================================================
-AECF: CB 21    sla  c           ; Multiply by 2
-AED1: 59       ld   e,c
-AED2: 21 00 5E ld   hl,DRVTBL   ; Drive table
-AED5: CD 2F A8 call GETHLPLUSE  ; HL=(HL + E) aka DPH
-AED8: 1E 0C    ld   e,DPBL
-AEDA: CD 2F A8 call GETHLPLUSE  ; hl=(DPH + DPBL)
-AEDD: E5       push hl          ; hl=DPB for this drive
-AEDE: FD E1    pop  iy
-AEE0: FD 7E 02 ld   a,(iy+$02)  ; BLS Block shift factor
-AEE3: FD 6E 05 ld   l,(iy+$05)  ; DSM Blocks on drive
-AEE6: FD 66 06 ld   h,(iy+$06)
-AEE9: D6 05    sub  5
-AEEB: B7       or   a
-AEEC: C8       ret  z
-AEED: 29       add  hl,hl
-AEEE: 3D       dec  a
-AEEF: 18 FA    jr   $AEEB
-AEF1: C9       ret
+GETDPB:     sla  c           ; Multiply by 2
+            ld   e,c
+            ld   hl,DRVTBL   ; Drive table
+            call GETHLPLUSE  ; HL=(HL + E) aka DPH
+            ld   e,DPBL
+            call GETHLPLUSE  ; hl=(DPH + DPBL)
+            push hl          ; hl=DPB for this drive
+            pop  iy
+            ld   a,(iy+DPB_BLS)  ; BLS Block shift factor
+            ld   l,(iy+DPB_DSM)  ; DSM Blocks on drive
+            ld   h,(iy+DPB_DSM+1)
+            sub  5
+GETDPBMULT: or   a
+            ret  z
+            add  hl,hl       
+            dec  a
+            jr   GETDPBMULT
+            ret
 ;==================================================================
 ;  Converts a character from the Apple //e screen (even if inverse)
 ;==================================================================
