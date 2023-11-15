@@ -64,8 +64,6 @@ ZFLAG_6502  EQU 0F048H          ; 6502 flag
 ;
 PAGE300Z80  EQU 0F300H          ; Page 300
 SCRLINES    EQU 0F312H          ; Screen lines table going up
-ROUT_6502   EQU 0F3D0H          ; 6502 routine to call
-CARD_Z80    EQU 0F3DEH          ; Card address from Z80 0E401H
 DISK_TRKL   EQU 0F380H          ; Disk track low
 DISK_SECT   EQU 0F381H          ; Disk sector
 DISK_DRV    EQU 0F384H          ; Disk drive slot (060)
@@ -73,9 +71,11 @@ DISK_ACTD   EQU 0F385H          ; Disk active drive
 DISK_TRKH   EQU 0F386H          ; Disk track high
 DISK_OP     EQU 0F388H          ; Disk operation
 DISK_ERR    EQU 0F389H          ; Disk Result
-DISK_ROUT   EQU 03DCH           ; Disk routine to call
 SLOT_INFO   EQU 0F3B8H          ; Slot info
 IO_STATUS   EQU 0F3BEH          ; Io status, bit 2=key press ready
+ROUT_6502   EQU 0F3D0H          ; 6502 routine to call
+DISK_ROUT   EQU 003DCH          ; Disk routine to call
+CARD_Z80    EQU 0F3DEH          ; Card address from Z80 0E401H
 ; Constants for TOOLKEY popbuf
 LEFTEDGE    EQU 9               ; Left edge of window  
 SCRL8       EQU 0428H + LEFTEDGE + Z80OFFS 
@@ -119,7 +119,14 @@ MSG_FMTING  EQU  0FD1EH         ; Formatting
 MSG_FORMOK  EQU  0FD44H         ; Format successful, do again 
 ERR_DSKERR  EQU  0FD6AH         ; Disk error
 ERR_WRPRO   EQU  0FD90H         ; Write protected error
+MSG_GETSRC  EQU  0FDB6H         ; Which drive is source
+MSG_GETDST  EQU  0FDDCH         ; Which drive is dest
+MSG_INSDSKS EQU  0FE02H         ; Insert disks
 MSG_DUPLIC  EQU  0FE28H         ; Duplicating disk
+MSG_DUPOK   EQU  0FE4EH         ; Operation sucessful, do again
+MSG_SRCDSK  EQU  0FE74H         ; Insert source disk
+MSG_DSTDSK  EQU  0FE9AH         ; Insert destination disk
+MSG_WRNGDSK EQU  0FEC0H         ; Incompatible drives
 ;******************************************************************
 ;*                                                                *
 ;*  Set the common memory segment, code from here on in lives     *
@@ -142,7 +149,7 @@ MSG_DUPLIC  EQU  0FE28H         ; Duplicating disk
             ; BIOS Jump table, address in Axxx range are in main memory
             ; Not generally accessable from users side
             ;
-            jp   B_COLD         ; $A623 0  - Cold Start
+COLDJP:     jp   B_COLD         ; $A623 0  - Cold Start
 WARMJP:     jp   B_WBOOT        ; $DEF8 1  - WBOOT - Warm Start
             jp   B_CONIST       ; $DF35 2  - CONST - Console input character read
             jp   B_CONIN        ; $DF42 3  - CONIN - Read console in
@@ -1486,7 +1493,7 @@ TK_FORMAT:  call DRWTOOLKEY
             call FORMAT
             jp   TK_RESTSCR
 TK_DUPLIC:  call DRWTOOLKEY
-            call $AC9E
+            call DUPLICATE
             jp   TK_RESTSCR
 TK_SAVEDRV: DB   1              ; Save the CP/M drive across toolkey
 LAB74:      DB   0              ; Dunno what yet
@@ -1574,7 +1581,7 @@ TOOLKEYQ:   call DRWTOOLKEY     ; Draw the main toolkey message
             cp   'f'
             call z,FORMAT
             cp   'd'
-            call z,$AC9E
+            call z,DUPLICATE
             cp   'e'
             call z,TK_EMPTBUF
             cp   'x'
@@ -1625,7 +1632,7 @@ FMTINSDISK: ld   hl,MSG_INSDISK ; Tell user to insert a disk
             call TK_WRLINE
             ld   a,DSKOP_FMT    ; Do the deed
             ld   (DISK_OP),a
-            call $AE1C
+            call CALLDISK
             ld   hl,MSG_FORMOK  ; Assume it went ok
             jr   z,FMTDISPRES   ; Tell user if so
             cp   010H           ; Write protected?
@@ -1639,13 +1646,29 @@ FMTDISPRES: call TK_WRLINE      ; Display the result
             jr   z,FMTINSDISK   ; Apparently so
             xor  a
             ret
-            ORG 0AE2DH
+DUPLICATE:  ld   a,(COLDJP)     ; Not sure why we're doing this?
+            or   a              ; Cold boot jump seems a bit odd..
+            jr   nz,DUPHASMEM   ; Not zero we have memory?
+            ld   hl,MEMUSED     ; Get the message
+            call TK_WRLINE      ; Write to screen
+            call KEYORESC       ; Get a key
+            ret
+MEMUSED:    DB ' Sorry,  memory space required is in use '
+DUPHASMEM:
+            ORG 0AE1CH
+CALLDISK:   ld   de,DISK_ROUT
+            ld   (ROUT_6502),de
+            ld   de,(CARD_Z80)
+            ld   (de),a
+            ld   a,(DISK_ERR)
+            or   a
+            ret            
 ;==================================================================
 ; Get a drive letter from the user, if they hit escape
 ; pop the return address off the stack and go back to
 ; parent caller.
 ;==================================================================
-KEYORESC: call GETUSERKEY
+KEYORESC:   call GETUSERKEY
             ret  nz
             pop  hl
             xor  a
@@ -1682,7 +1705,7 @@ TK_CHKDRVL: sub  061H           ; Convert a..z to 0..25
             ret  z              ; Yep go home
             scf                 ; Set carry flag
             ret
-LAE57:      ld   hl,MSG_DUPLIC
+TK_WRTDUP:  ld   hl,MSG_DUPLIC
 ;==================================================================
 ; User function 7 - writes 38 characters from (hl) to 
 ; the middle of the Cirtech toolkey popup
@@ -1747,11 +1770,17 @@ LMV_NOSWP1: inc  de             ; Add one to save area
             inc  hl             ; Yes don't increment this time
 LMV_ODD:    djnz LMV_LOOP
             ret                 ; Go home
-LAEC0:      DB   0,0,0,0,0,0,0,0,0
+DUPSRCDRV:  DB   0              ; AEC0 - Apple style Duplicate src drive
+DUPDSTDRV:  DB   0              ; AEC1 - Apple style Duplicate dst drive
+            DW   0              ; AEC2 - Tracks left
+            DW   0              ; AEC4 - Tracks left
+SRCDRVTYP:  DB   0              ; AEC6 - Drive type 2=DISK II
+SRCCPMDRV:  DB   0              ; AEC7 - 0=A,1=B,2=C src cpm drive
+            DB   0              ; AEC8 - 
 ;======================================
 ; Dunno yet
 ;======================================            
-LAEC9:      ld   hl,LAEC0+1     ;Not sure if +1 is valid..
+LAEC9:      ld   hl,LAEC1     ;Not sure if +1 is valid..
             bit  0,(hl)
             ret
 ;==================================================================
