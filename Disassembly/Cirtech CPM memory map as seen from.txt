@@ -9,8 +9,8 @@ Cirtech CPM memory map
 2100  1100                    |  CPMLDR                |                        |
 3000  2000                    |  CPMLDR                |                        |
 3100  2100                    |  CPMLDR                |                        |
-4000  3000                    |                        |                        |
-5000  4000                    |                        |                        |
+4000  3000                    |  0E00H-5E00H used for  |                        |
+5000  4000                    |  Disk duplicate        |                        |
 6000  5000                    |                        |                        |
 6DBC  5DBC                    |  DPB x 4 (044H)        |                        |
                               |  (DPB copied to DE6CH) |                        |

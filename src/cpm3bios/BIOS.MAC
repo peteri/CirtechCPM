@@ -44,6 +44,8 @@ LF          EQU 0AH
 DSKOP_RD    EQU 01H             ; Disk operation Read
 DSKOP_WR    EQU 02H             ; Disk operation Write
 DSKOP_FMT   EQU 03H             ; Disk operation Format
+DSKOP_WRTRK EQU 04H             ; Disk operation Write Track
+DSKOP_RDTRK EQU 05H             ; Disk operation Read Track
 CHAR_OP_INI EQU 0DH             ; Character IO Init (same as pascal offset)
 CHAR_OP_RD  EQU 0EH             ; Character IO Read (same as pascal offset)
 CHAR_OP_WR  EQU 0FH             ; Character IO Write (same as pascal offset)
@@ -1654,8 +1656,142 @@ DUPLICATE:  ld   a,(COLDJP)     ; Not sure why we're doing this?
             call KEYORESC       ; Get a key
             ret
 MEMUSED:    DB ' Sorry,  memory space required is in use '
-DUPHASMEM:
-            ORG 0AE1CH
+DUPHASMEM:  ld   hl,MSG_GETSRC    ; Prompt user for source disk
+            call TK_WRLINE
+DP_GETSRC:  call KEYORESC   ; Get src drive letter
+            call TK_CHKDRVL   ; Check it's a drive
+            jr   nc,DP_GETSRC ; Nope loop back
+            ld   (DUPSRCDRV),a ; Save away apple style ($60=A,$E0=B for DiskII)
+            ld   hl,SRCCPMDRV ;Save away CPM drive
+            ld   (hl),c
+            call DRVISDISK2   ; Get the disk drive device type
+            ld   (SRCDRVTYP),a ; Save it away
+DP_GETDST:  ld   hl,MSG_GETDST  ; Prompt user for destination disk
+            call TK_WRLINE
+            call KEYORESC     ; Get dest drive letter
+            call TK_CHKDRVL   ; Is it a drive
+            jr   nc,DP_GETDST ; Loop until user does something
+            ld   (DUPDSTDRV),a ; Save away drive for later
+            call DRVISDISK2   ; Get drive device type
+            ld   hl,SRCDRVTYP ; Same type as source
+            cp   (hl)
+            jr   z,DP_SAMEDRV
+DP_WNRGDISK:ld   hl,MSG_WRNGDSK   ; Tell the user disk types don't match
+            call TK_WRLINE        
+            call KEYORESC         ; Do they want to try again
+            cp   'y'
+            ret  nz               ; Nope, go home
+            jr   DUPLICATE        ; Yes ask them again
+DP_SAMEDRV: ld   hl,35    ; Assume we're a DISK II
+            ld   (DUPDSTTRKS),hl
+            ld   (DUPSRCTRKS),hl
+            ld   (DP_CURTRACK+1),hl
+            ld   a,(SRCDRVTYP)    ; Get drive type
+            cp   2    ; Is it a disk II
+            jr   z,DP_CHKSAME ; See if it's the same drive
+            call GETDPB   ; Get number of tracks
+            ld   (DUPDSTTRKS),hl  ;Save away destination details
+            ld   (DUPSRCTRKS),hl
+            ld   (DP_CURTRACK+1),hl
+            ld   a,(SRCCPMDRV)    ;Get the src drive
+            ld   c,a
+            call GETDPB      ; Get number of tracks on source
+            ld   de,(DUPDSTTRKS)  ; Check against destination
+            or   a
+ sbc  hl,de        ; Same number of tracks
+ jr   nz,DP_WNRGDISK   ; Nope tell the user it's wrong
+DP_CHKSAME: ld   hl,DUPDSTDRV  ; Check the destination
+ ld   a,(DUPSRCDRV)    ; Is it the same drive as source
+ cp   (hl)
+ jr   z,DP_NEXT    ; Yes go ask for source disk
+ set  0,(hl)       ; Set the flag
+ call DP_PROMPT    ; Won't be zero
+ jr   z,DP_ASKSRC
+ ld   hl,MSG_INSDSKS ; Prompt for disks
+ call TK_WRLINE
+ jr   DP_RDSRC
+DP_NEXT: call DP_PROMPT    ;See if we need to prompt user
+ jr   nz,DP_RDSRC      ; Not zero we need to tell user
+DP_ASKSRC: ld   hl,MSG_SRCDSK
+ call TK_WRLINE
+DP_RDSRC: call KEYORESC
+ call TK_WRTDUP    ; Tell them we're duplicating
+ ld   a,(DUPSRCDRV)    ; Read in some data from source
+ ld   hl,DUPSRCTRKS    ; Start here
+ ld   d,DSKOP_RDTRK    ; Read in a track
+ call DP_TRKOP
+ jr   nz,DP_ERR_CHK    ; Not zero go do error
+ call DP_PROMPT
+ jr   nz,DP_WRDST
+ ld   hl,MSG_DSTDSK    ; Prompt user for destination 
+ call TK_WRLINE
+ call KEYORESC
+ call TK_WRTDUP ; Tell them we're duplicating
+DP_WRDST: ld   a,(DUPDSTDRV)    ; Get destination drive
+ ld   hl,DUPDSTTRKS    ; Track we're writing
+ ld   d,DSKOP_WRTRK    ; We're writing
+ call DP_TRKOP     ; Go read 20K of data
+ jr   z,DP_NEXTCHK ; Bugger we had an error
+ ld   hl,DUPSRCDRV ; Get our we've already formatted flag
+ bit  0,(hl)       ; set zero flag if we've been here before
+ set  0,(hl)       ; Set flag in variable
+ jr   nz,DP_ERR_CHK ; may tell the user
+ ld   a,DSKOP_FMT  ; Set up for format
+ ld   (DISK_OP),a
+ ld   hl,MSG_FMTING    ; Tell the user we're formatting
+ call TK_WRLINE
+ call CALLDISK     ; Do the operation
+ jr   nz,DP_ERR_CHK ; Tell the user if we had error
+DP_CURTRACK: ld   hl,$0000
+ ld   (DUPDSTTRKS),hl
+ ld   (DUPSRCTRKS),hl
+ jr   DP_NEXT
+DP_NEXTCHK: ld   hl,(DUPDSTTRKS)   ; More tracks to do
+ ld   a,h ; Zero?
+ or   l
+ jp   nz,DP_NEXT ; Nope loop around
+DP_ERR_CHK: ld   hl,MSG_DUPOK  ; Was it okay, ask user if again
+ jr   z,DP_LASTMSG ; No error just display
+ cp   10H          ; Write protected?
+ jr   nz,DP_DISKERR ; Nope, Generic message
+ ld   hl,ERR_WRPRO  ; Yep write protected
+ jr   DP_LASTMSG   ; Tell user
+DP_DISKERR: ld   hl,ERR_DSKERR ; Disk error
+DP_LASTMSG: call TK_WRLINE ; Show user
+ call KEYORESC ; Do it again?
+ cp   'y'
+ jr   nz,DP_EXIT
+ ld   a,($AEC8)
+ ld   c,a
+ ld   hl,DUPSRCDRV
+ res  0,(hl)
+ ld   a,(DUPDSTDRV)
+ res  0,a
+ jp   $AD00
+DP_EXIT: xor  a
+ ret
+DP_TRKOP: ld   b,5
+ res  0,a
+ ld   (DISK_DRV),a
+ ld   a,d
+ ld   (DISK_OP),a
+ ld   a,$1E
+ ld   ($F382),a
+ ld   a,(hl)
+ dec  a
+ ld   (DISK_TRKL),a
+ call CALLDISK
+ ret  nz
+ dec  (hl)
+ ret  z
+ ld   a,(KBD)
+ or   a
+ pop  de
+ call m,KEYORESC
+ push de
+ djnz $AE04
+ xor  a
+ ret
 CALLDISK:   ld   de,DISK_ROUT
             ld   (ROUT_6502),de
             ld   de,(CARD_Z80)
@@ -1770,17 +1906,23 @@ LMV_NOSWP1: inc  de             ; Add one to save area
             inc  hl             ; Yes don't increment this time
 LMV_ODD:    djnz LMV_LOOP
             ret                 ; Go home
+;===================================================================            
+;
+; Some duplicate disk variables
+;
+;===================================================================            
 DUPSRCDRV:  DB   0              ; AEC0 - Apple style Duplicate src drive
 DUPDSTDRV:  DB   0              ; AEC1 - Apple style Duplicate dst drive
-            DW   0              ; AEC2 - Tracks left
-            DW   0              ; AEC4 - Tracks left
+DUPSRCTRKS: DW   0              ; AEC2 - Tracks left?
+DUPDSTTRKS: DW   0              ; AEC4 - Tracks left?
 SRCDRVTYP:  DB   0              ; AEC6 - Drive type 2=DISK II
 SRCCPMDRV:  DB   0              ; AEC7 - 0=A,1=B,2=C src cpm drive
             DB   0              ; AEC8 - 
-;======================================
-; Dunno yet
-;======================================            
-LAEC9:      ld   hl,LAEC1     ;Not sure if +1 is valid..
+;===================================================================            
+; Used to say if we need to prompt the user to swap disks
+; if they only have a single drive
+;===================================================================            
+DP_PROMPT:  ld   hl,DUPDSTDRV  ; check destination drive flag
             bit  0,(hl)
             ret
 ;==================================================================
