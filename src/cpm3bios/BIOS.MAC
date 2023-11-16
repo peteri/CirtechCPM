@@ -1698,100 +1698,100 @@ DP_SAMEDRV: ld   hl,35    ; Assume we're a DISK II
             call GETDPB      ; Get number of tracks on source
             ld   de,(DUPDSTTRKS)  ; Check against destination
             or   a
- sbc  hl,de        ; Same number of tracks
- jr   nz,DP_WNRGDISK   ; Nope tell the user it's wrong
+            sbc  hl,de        ; Same number of tracks
+             jr   nz,DP_WNRGDISK   ; Nope tell the user it's wrong
 DP_CHKSAME: ld   hl,DUPDSTDRV  ; Check the destination
- ld   a,(DUPSRCDRV)    ; Is it the same drive as source
- cp   (hl)
- jr   z,DP_NEXT    ; Yes go ask for source disk
- set  0,(hl)       ; Set the flag
- call DP_PROMPT    ; Won't be zero
- jr   z,DP_ASKSRC
- ld   hl,MSG_INSDSKS ; Prompt for disks
- call TK_WRLINE
- jr   DP_RDSRC
-DP_NEXT: call DP_PROMPT    ;See if we need to prompt user
- jr   nz,DP_RDSRC      ; Not zero we need to tell user
-DP_ASKSRC: ld   hl,MSG_SRCDSK
- call TK_WRLINE
-DP_RDSRC: call KEYORESC
- call TK_WRTDUP    ; Tell them we're duplicating
- ld   a,(DUPSRCDRV)    ; Read in some data from source
- ld   hl,DUPSRCTRKS    ; Start here
- ld   d,DSKOP_RDTRK    ; Read in a track
- call DP_TRKOP
- jr   nz,DP_ERR_CHK    ; Not zero go do error
- call DP_PROMPT
- jr   nz,DP_WRDST
- ld   hl,MSG_DSTDSK    ; Prompt user for destination 
- call TK_WRLINE
- call KEYORESC
- call TK_WRTDUP ; Tell them we're duplicating
-DP_WRDST: ld   a,(DUPDSTDRV)    ; Get destination drive
- ld   hl,DUPDSTTRKS    ; Track we're writing
- ld   d,DSKOP_WRTRK    ; We're writing
- call DP_TRKOP     ; Go read 20K of data
- jr   z,DP_NEXTCHK ; Bugger we had an error
- ld   hl,DUPSRCDRV ; Get our we've already formatted flag
- bit  0,(hl)       ; set zero flag if we've been here before
- set  0,(hl)       ; Set flag in variable
- jr   nz,DP_ERR_CHK ; may tell the user
- ld   a,DSKOP_FMT  ; Set up for format
- ld   (DISK_OP),a
- ld   hl,MSG_FMTING    ; Tell the user we're formatting
- call TK_WRLINE
- call CALLDISK     ; Do the operation
- jr   nz,DP_ERR_CHK ; Tell the user if we had error
+            ld   a,(DUPSRCDRV)    ; Is it the same drive as source
+            cp   (hl)
+            jr   z,DP_NEXT    ; Yes go ask for source disk
+            set  0,(hl)       ; Set the flag
+            call DP_PROMPT    ; Won't be zero
+            jr   z,DP_ASKSRC
+            ld   hl,MSG_INSDSKS ; Prompt for disks
+            call TK_WRLINE
+            jr   DP_RDSRC
+DP_NEXT:    call DP_PROMPT    ;See if we need to prompt user
+            jr   nz,DP_RDSRC      ; Not zero we need to tell user
+DP_ASKSRC:  ld   hl,MSG_SRCDSK
+            call TK_WRLINE
+DP_RDSRC:   call KEYORESC
+            call TK_WRTDUP    ; Tell them we're duplicating
+            ld   a,(DUPSRCDRV)    ; Read in some data from source
+            ld   hl,DUPSRCTRKS    ; Start here
+            ld   d,DSKOP_RDTRK    ; Read in a track
+            call DP_TRKOP
+            jr   nz,DP_ERR_CHK    ; Not zero go do error
+            call DP_PROMPT
+            jr   nz,DP_WRDST
+            ld   hl,MSG_DSTDSK    ; Prompt user for destination 
+            call TK_WRLINE
+            call KEYORESC
+            call TK_WRTDUP ; Tell them we're duplicating
+DP_WRDST:   ld   a,(DUPDSTDRV)    ; Get destination drive
+            ld   hl,DUPDSTTRKS    ; Track we're writing
+            ld   d,DSKOP_WRTRK    ; We're writing
+            call DP_TRKOP     ; Go read 20K of data
+            jr   z,DP_NEXTCHK ; Bugger we had an error
+            ld   hl,DUPSRCDRV ; Get our we've already formatted flag
+            bit  0,(hl)       ; set zero flag if we've been here before
+            set  0,(hl)       ; Set flag in variable
+            jr   nz,DP_ERR_CHK ; may tell the user
+            ld   a,DSKOP_FMT  ; Set up for format
+            ld   (DISK_OP),a
+            ld   hl,MSG_FMTING    ; Tell the user we're formatting
+            call TK_WRLINE
+            call CALLDISK     ; Do the operation
+            jr   nz,DP_ERR_CHK ; Tell the user if we had error
 DP_CURTRACK: ld   hl,$0000
- ld   (DUPDSTTRKS),hl
- ld   (DUPSRCTRKS),hl
- jr   DP_NEXT
+            ld   (DUPDSTTRKS),hl
+            ld   (DUPSRCTRKS),hl
+            jr   DP_NEXT
 DP_NEXTCHK: ld   hl,(DUPDSTTRKS)   ; More tracks to do
- ld   a,h ; Zero?
- or   l
- jp   nz,DP_NEXT ; Nope loop around
+            ld   a,h ; Zero?
+            or   l
+            jp   nz,DP_NEXT ; Nope loop around
 DP_ERR_CHK: ld   hl,MSG_DUPOK  ; Was it okay, ask user if again
- jr   z,DP_LASTMSG ; No error just display
- cp   10H          ; Write protected?
- jr   nz,DP_DISKERR ; Nope, Generic message
- ld   hl,ERR_WRPRO  ; Yep write protected
- jr   DP_LASTMSG   ; Tell user
+            jr   z,DP_LASTMSG ; No error just display
+            cp   10H          ; Write protected?
+            jr   nz,DP_DISKERR ; Nope, Generic message
+            ld   hl,ERR_WRPRO  ; Yep write protected
+            jr   DP_LASTMSG   ; Tell user
 DP_DISKERR: ld   hl,ERR_DSKERR ; Disk error
 DP_LASTMSG: call TK_WRLINE ; Show user
- call KEYORESC ; Do it again?
- cp   'y'
- jr   nz,DP_EXIT
- ld   a,($AEC8)
- ld   c,a
- ld   hl,DUPSRCDRV
- res  0,(hl)
- ld   a,(DUPDSTDRV)
- res  0,a
- jp   $AD00
-DP_EXIT: xor  a
- ret
+            call KEYORESC ; Do it again?
+            cp   'y'
+            jr   nz,DP_EXIT
+            ld   a,($AEC8)
+            ld   c,a
+            ld   hl,DUPSRCDRV
+            res  0,(hl)
+            ld   a,(DUPDSTDRV)
+            res  0,a
+            jp   $AD00
+DP_EXIT:    xor  a
+            ret
 DP_TRKOP: ld   b,5
- res  0,a
- ld   (DISK_DRV),a
- ld   a,d
- ld   (DISK_OP),a
- ld   a,$1E
- ld   ($F382),a
- ld   a,(hl)
- dec  a
- ld   (DISK_TRKL),a
- call CALLDISK
- ret  nz
- dec  (hl)
- ret  z
- ld   a,(KBD)
- or   a
- pop  de
- call m,KEYORESC
- push de
- djnz $AE04
- xor  a
- ret
+            res  0,a
+            ld   (DISK_DRV),a
+            ld   a,d
+            ld   (DISK_OP),a
+            ld   a,$1E
+            ld   ($F382),a
+            ld   a,(hl)
+            dec  a
+            ld   (DISK_TRKL),a
+            call CALLDISK
+            ret  nz
+            dec  (hl)
+            ret  z
+            ld   a,(KBD)
+            or   a
+            pop  de
+            call m,KEYORESC
+            push de
+            djnz $AE04
+            xor  a
+            ret
 CALLDISK:   ld   de,DISK_ROUT
             ld   (ROUT_6502),de
             ld   de,(CARD_Z80)
