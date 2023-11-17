@@ -307,6 +307,9 @@ src/boot/*.bin
 src/boot/*.$$$
 src/boot/D000.REL
 src/cpm3bios/BIOS.REL
+src/cpm3bios/SCB.REL
+src/cpm3bios/BNKBIOS3.SPR
+src/cpm3bios/*.$$$
 # CPM editors (I'm using Turbo pascal)
 # easiest to just copy them into the working folder
 # But best not to add them to git.

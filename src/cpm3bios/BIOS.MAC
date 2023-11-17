@@ -137,9 +137,10 @@ MSG_WRNGDSK EQU  0FEC0H         ; Incompatible drives
 ;*  the BDOS                                                      *
 ;*                                                                *
 ;******************************************************************  
-            ASEG               ; CSeg stuff lives in common memory
+;            ASEG               ; CSeg stuff lives in common memory
+;            ORG 0DE00H
+            cseg
             .Z80
-            ORG 0DE00H
             ; Externs from SCB.MAC
             EXTRN @COVEC        ; Console out vectors
             EXTRN @CIVEC        ; Console in vectors
@@ -417,8 +418,8 @@ B_USERF:    ld   (SAVEDE),de
 ;*  shared memory with the BDOS                                   *
 ;*                                                                *
 ;******************************************************************            
-            ASEG
-            ORG 0A400H
+            DSEG
+            ; ORG 0A400H
 SIGNONMSG:  DB ESC,'*',CR,LF
             DB '         ',ESC,'(','  CP/M Plus Version 3.0  for the Apple //e  ',CR,LF,ESC,')'
             DB '         ',ESC,'(','    (C)  CIRTECH 1985       Release 1.07    ',CR,LF,ESC,')'
