@@ -1,0 +1,574 @@
+;*******************************************************************************
+;* Console terminal emulation BIOS for 80 column card.                         *
+;*                                                                             *
+;* Two entry points, one is toggling the cursor state                          *
+;* Other one is put character on top of stack to screen and use terminal       *
+;* emulation codes.                                                            *
+;*******************************************************************************
+         cseg 
+         .6502
+SCRLINEL        EQU $20        ;Address of current line in $400
+SCRLINEH        EQU $21        ;Screen address high
+ESCAPE_STATE    EQU $22        ;State for ESCAPE leadin
+CURSOR_STATE    EQU $23        ;Bit 7 high if cursor on screen
+CURSORX         EQU $25        ;Cursor X (80 col)
+ZP_TEMP1        EQU $26        ;Zero page temporary
+CURSORY         EQU $29        ;Cursor Y (80 col)
+MON_INVFLAG     EQU $32        ;text mask (255=normal, 127=flash, 63=inv)
+SET80COL        EQU $c001      ;W use PAGE2 for aux mem (80STOREON)
+SET80VID        EQU $c00d      ;W enable 80-column display mode
+SETALTCHAR      EQU $c00f      ;W use alternate char set
+SPKR            EQU $c030      ;RW toggle speaker
+TXTPAGE1        EQU $c054      ;RW display page 1
+TXTPAGE2        EQU $c055      ;RW display page 2 (or read/write aux mem)
+;*******************************************************************************
+;*                                                                             *
+;* Routines to handle the 80 Column card                                       *
+;*                                                                             *
+;*******************************************************************************
+TOG_CURJMP:
+         jmp     POP_TOGGLE_CURSOR
+PRINT_STACK_CHAR:
+         pla                ;Get our character off the stack
+PRINT_CHAR:
+         ora     #$80       ;Set the high bit
+         bit     ESCAPE_STATE
+         bpl     CHECK_ESC_CHAR1 ;Bit 7 clear check for escape
+         bit     GOTO_Y     ;Goto YX, Y Character set yet?
+         bmi     GOTO_YX    ;Must be the X postion now we can move the  cursor
+         sta     GOTO_Y     ;Setting the Y character
+         rts
+
+; There is a fairly complicated state machine here
+; ESCAPE_STATE 
+;   Bit 7 0=no escape seen
+;   Bit 6 0=Possible normal character
+;   Bit 6 1=Escape seen
+;   Bit 7 1=Waiting for Y position
+; GOTOY
+;   Bit 7 0=Not yet seen Y
+;   Bit 7 1=Seen Y coord, other bits are Y character.
+; 
+; So for a <ESC> C where C is a single character escape state goes through
+; |Escape state| GOTOY     | 
+; |------------|-----------|
+; | 00zz zzzz  | 0yyy yyyy | Waiting for escape
+; | 01zz zzzz  | 0yyy yyyy | Escape seen waiting next char
+; | 00zz zzzz  | 0yyy yyyy | <Esc> C seen C converted to regular ctrl character
+; 
+; However for <ESC> EQU Y X (goto Y X) the states are as follows
+; |Escape state| GOTOY     | 
+; |------------|-----------|
+; | 00zz zzzz  | 0yyy yyyy | Waiting for escape
+; | 01zz zzzz  | 0yyy yyyy | Escape seen waiting next char
+; | 11zz zzzz  | 0yyy yyyy | <Esc> EQU seen waiting Y coord
+; | 11zz zzzz  | 1yyy yyyy | <Esc> EQU Y seen waiting X Coord
+; | 00zz zzzz  | 0yyy yyyy | <Esc> EQU Y X seen cursor moved to correct pos
+; 
+GOTO_YX: jsr     HIDE_CURSOR
+         sec
+         sbc     #$a0       ;Subtract space
+         cmp     #80        ;Okay are we on screen?
+         bcc     CURSORX_OK ;Bigger than screen
+         lda     #$00       ;Zero cursor
+CURSORX_OK:
+         sta     CURSORX    ;Save away X position
+         lda     GOTO_Y     ;Get the Y Coord
+         sec
+         sbc     #$a0
+         cmp     #24
+         bcc     CURSORY_OK
+         lda     #$00
+CURSORY_OK:
+         sta     CURSORY
+         jsr     SET_LINE_PTR
+         ldy     #$00
+         sty     ESCAPE_STATE
+         beq     SHOW_CURSOR
+
+CHECK_ESC_CHAR1:
+         bvc     CHECK_FOR_ESC
+         jmp     ESCAPE_CHAR1
+
+CHECK_FOR_ESC:
+         cmp     #$9b
+         bne     CTRL_WRITE_SCR
+         lda     #$40
+         sta     ESCAPE_STATE
+         rts
+
+; Come here to write a character to screen
+; and handle control characters
+CTRL_WRITE_SCR:
+         cmp     #$a0
+         bcc     TEST_CONTROL_CHAR ;Go off and deal with a control character
+         tax                ;Save A for later
+         lda     CURSORX    ;Get the current cursor
+         lsr     A          ;Divide by two
+         bcs     WRITE_ODD  ;Was it odd
+         bit     TXTPAGE2   ;If so write to the odd columns
+WRITE_ODD:
+         tay                ;Save CursorX/2 -> Y
+         txa                ;Get back our character
+         and     MON_INVFLAG ;Are we in inverse mode?
+         bmi     STORE_TO_SCREEN
+         cmp     #$60       ;Inverse lowercase?
+         bcs     STORE_TO_SCREEN ;No change needed
+         cmp     #$40       ;Inverse Numbers or punctuation?
+         bcc     STORE_TO_SCREEN ;No Change needed
+         and     #$bf       ;Convert uppercase out of mouse text
+STORE_TO_SCREEN:
+         sta     (SCRLINEL),y ;Write character to screen
+         bit     TXTPAGE1   ;Back to main text page
+         inc     CURSORX    ;Move cursor to right
+         lda     CURSORX
+         cmp     #80        ;Cursor still on screen?
+         bcc     SHOW_CURSOR ;Go show it.
+         lda     #$00       ;Set us to back to column zero
+         sta     CURSORX
+         inc     CURSORY    ;Move down a line
+         ldy     CURSORY
+         cpy     #24        ;Still on screen?
+         bcc     NO_SCROLL  ;Yep don't scroll
+         dec     CURSORY    ;Correct us
+         jsr     SCROLL_UP  ;Scroll the screen up
+NO_SCROLL:
+         ldy     CURSORY
+         lda     LINE_STARTH,y ;Set up the current screen line pointer
+         sta     SCRLINEH
+         lda     LINE_STARTL,y
+         sta     SCRLINEL
+SHOW_CURSOR:
+         lda     #$80
+         sta     CURSOR_STATE ;Set the cursor to on
+FLIP_INVERTED:
+         lda     CURSORX    ;Get cursor position
+         lsr     A
+         bcs     CURSOR_PAGE1 ;Which page?
+         bit     TXTPAGE2
+CURSOR_PAGE1:
+         tay                ;Cursor divided by two to Y
+         lda     (SCRLINEL),y ;Get the current character on screen
+         cmp     #$20       ;Is it an inverse Uppercase
+         bcs     INVERT_CHAR ;If not just go and do invert
+         ora     #$40       ;Put back bit 6 so it's a proper Uppercase
+INVERT_CHAR:
+         eor     #$80       ;Invert the character
+         bmi     STORE_CURSOR ;Store if it's normal
+         cmp     #$60       ;Lower case inverted
+         bcs     STORE_CURSOR ;Store it
+         cmp     #$40       ;Inverse Numbers or punctuation?
+         bcc     STORE_CURSOR ;We're good store it
+         and     #$bf       ;Upper case letters, kill bit 6
+STORE_CURSOR:
+         sta     (SCRLINEL),y ;Store on screen
+         bit     TXTPAGE1   ;Back to text page 1
+IGNORE_CHAR:
+         rts                ;Also used in jump table
+
+; Handle a possible control character
+TEST_CONTROL_CHAR:
+         cmp     #$9e       ;Off the end of the table
+         bcs     IGNORE_CHAR ;Ignore it
+         cmp     #$87       ;Off the front of the table
+         bcc     IGNORE_CHAR ;Ignore it
+HANDLE_CONTROL_CHAR:
+         jsr     HIDE_CURSOR
+         sec
+         sbc     #$87       ;Subtract Bell character
+         asl     A          ;Mult by 2 for table index
+         tay
+         lda     CTRL_CHAR_TAB,y ;Lookup the entry and modify jump
+         sta     CTRL_CHAR_JSR+1
+         iny
+         lda     CTRL_CHAR_TAB,y
+         sta     CTRL_CHAR_JSR+2
+CTRL_CHAR_JSR:
+         jsr     $0000      ;Jump to control handler
+         jmp     SHOW_CURSOR
+
+ESCAPE_CHAR1:
+         ldy     #$00       ;First character in escape sequence
+         sty     ESCAPE_STATE
+         cmp     #'=' + $80 ;Goto YX command?
+         beq     GOTO_YX_CMD ;Yes it is
+; Convert any of the single character escape codes
+         ldy     #$05
+FIND_ESC_CHAR_LOOP:
+         cmp     ESC_CTRL_CODES,y ;Is it in the table?
+         beq     FOUND_ESC_CHAR ;Yes it is do something
+         dey
+         bpl     FIND_ESC_CHAR_LOOP
+         jmp     PRINT_CHAR
+
+GOTO_YX_CMD:
+         sec                ;Set the high bit so say we're waiting for Y
+         ror     ESCAPE_STATE
+         clc
+         ror     GOTO_Y     ;Clear bit 7 (Seen Y coord)
+         rts
+
+FOUND_ESC_CHAR:
+         lda     ESC_CHAR_TRANS,y ;Get the regular Ctrl code
+         bne     HANDLE_CONTROL_CHAR
+; Carriage return
+CARRIAGE_RET:
+         lda     #$00
+         sta     CURSORX
+         rts
+
+; Line feed for 80 column
+LINEFEED:
+         inc     CURSORY
+         ldy     CURSORY
+         cpy     #24        ;Last line?
+         bcc     SET_LINE_PTR ;Nope just set the line pointer
+         dec     CURSORY    ;Backup the cursor
+         jsr     SCROLL_UP  ;Scroll up
+SET_LINE_PTR:
+         ldy     CURSORY    ;Lookup new line pointer
+         lda     LINE_STARTH,y
+         sta     SCRLINEH   ;And save it away
+         lda     LINE_STARTL,y
+         sta     SCRLINEL
+         rts
+
+POP_TOGGLE_CURSOR:
+         pla                ;Pop unwanted parameter
+TOGGLE_CURSOR:
+         lda     CURSOR_STATE ;Flip the cursor state
+         eor     #$80
+         sta     CURSOR_STATE
+         jmp     FLIP_INVERTED ;Flip the character on screen inverse state
+
+; Backspace
+BACKSPACE:
+         dec     CURSORX    ;Decrement the cursor position
+         bmi     OFF_LEFT   ;Off left hand of screen?
+         rts                ;Go Home still on screen
+
+OFF_LEFT:
+         lda     #79        ;Right hand edge of screen
+         sta     CURSORX
+         dec     CURSORY    ;Back up a line
+         bpl     SET_LINE_PTR ;Still on screen set pointer
+         lda     #$00
+         sta     CURSORY    ;Top line of screen
+         jsr     SCROLL_CARRY_FLAG ;Scroll depending on state of carry flage
+         jmp     SET_LINE_PTR
+
+; Cursor Right
+CURSOR_RIGHT:
+         inc     CURSORX    ;Add one to cursor position
+         lda     CURSORX
+         cmp     #80        ;Off right hand edge
+         bcs     OFF_RIGHT
+         rts                ;Nope go home
+
+OFF_RIGHT:
+         jsr     CARRIAGE_RET ;Off right hand edge Set to 0
+         jmp     LINEFEED   ;and down a line
+
+; Clear line
+CLR_LINE:
+         lda     #$00       ;Set us to be at the beginning of the line
+         sta     CURSORX
+         jmp     CLR_EOL    ;Now clear to EOL
+
+; Home
+HOME:    ldy     #$00       ;Set Cursor X,Y to 0,0
+         sty     CURSORX
+         sty     CURSORY
+         jmp     SET_LINE_PTR ;Set the current line pointer
+
+; Clear to end of screen
+CLR_TO_ENDSCR:
+         jsr     CLR_EOL
+         lda     SCRLINEL   ;Save away current screen position
+         pha
+         lda     SCRLINEH
+         pha
+         ldx     CURSORY    ;Get line number
+CLR_NEXT_LINE:
+         inx
+         cpx     #24
+         bne     CLR_LINE_X ;Go and clear this line
+         pla
+         sta     SCRLINEH
+         pla
+         sta     SCRLINEL
+         rts
+
+CLR_LINE_X:
+         lda     LINE_STARTH,x
+         sta     SCRLINEH
+         lda     LINE_STARTL,x
+         sta     SCRLINEL
+         ldy     #$00
+         jsr     CLR_FROM_YREG
+         beq     CLR_NEXT_LINE ;Zero flag always set back into loop
+; Clear the screen and initialise the 
+; video system
+CLEAR_SCREEN:
+         sta     TXTPAGE1   ;Setup the //e hardware
+         sta     SETALTCHAR
+         sta     SET80VID
+         sta     SET80COL
+         lda     #$00       ;Set X,Y to zero
+         sta     CURSORX
+         sta     CURSORY
+         sta     SCRLINEL   ;Set the screen ptr up
+         lda     #$04
+         sta     SCRLINEH
+         bne     CLR_TO_ENDSCR
+
+; Clear to end of line
+CLR_EOL: ldy     CURSORX    ;Clear to EOL
+CLR_FROM_YREG:
+         bit     TXTPAGE2
+         tya                ;Divide cursor by two
+         lsr     A
+         pha                ;Save cursor/2 for Page 1 clear
+         tay
+         lda     #$a0       ;Sort out if blank is inverse or not
+         and     MON_INVFLAG
+         sta     ZP_TEMP1   ;Save our blank character
+         bcs     SKIP_ODD_CLR ;Do we need skip the first one?
+CLR_PAGE2_LINE:
+         sta     (SCRLINEL),y ;Clear the character
+SKIP_ODD_CLR:
+         iny                ;Next one
+         cpy     #40        ;All Done?
+         bne     CLR_PAGE2_LINE ;Nah loop
+         pla                ;Restore cursor/2 for page 1 clear
+         tay
+         lda     ZP_TEMP1   ;Get the character to clear with
+         bit     TXTPAGE1   ;Setup for main text page
+CLR_PAGE1_LINE:
+         sta     (SCRLINEL),y ;Clear the character
+         iny                ;Next one
+         cpy     #40        ;All done?
+         bne     CLR_PAGE1_LINE ;Nope do the next one
+         rts
+
+; Ring the bell
+BELL:    lda     #$35
+         sta     BELL_COUNT
+BELL_LOOP:
+         lda     #$05
+         jsr     DELAY
+         sta     SPKR
+         lda     #$20
+         jsr     DELAY
+         sta     SPKR
+         dec     BELL_COUNT
+         bne     BELL_LOOP
+         rts
+
+DELAY:   sec
+DELAY1:  pha                ;Save counter
+DELAY2:  sbc     #$01       ;Decrement our counter
+         bne     DELAY2     ;Inner loop
+         pla                ;Get counter back for the outer loop
+         sbc     #$01
+         bne     DELAY1     ;All done yet?
+         rts
+
+BELL_COUNT:
+         DB   $00
+
+SET_INVERSE:
+         lda     #$7f
+         bne     STORE_INVFLAG
+
+SET_NORMAL:
+         lda     #$ff
+STORE_INVFLAG:
+         sta     MON_INVFLAG
+         rts
+
+SCROLL_UP:
+         sec
+; Come in here with carry flag set to scroll up
+; carry flag clear to scroll down
+SCROLL_CARRY_FLAG:
+         DB   $24        ;BIT Zero page
+SCROLL_DOWN:
+         clc
+         lda     #$a0       ;Space character
+         and     MON_INVFLAG ;Should it be inverted?
+         tay
+         ldx     #39        ;Bytes to move
+SCROLL_LOOP:
+         sta     TXTPAGE2   ;Do half the 80 columns
+         jsr     SCROLL_COLUMN
+         sta     TXTPAGE1
+         jsr     SCROLL_COLUMN ;Do the other half
+         dex
+         bpl     SCROLL_LOOP ;Done all 40?
+         rts
+
+SCROLL_COLUMN:
+         bcs     SCROLL_COL_UP ;Scroll a single column
+         jmp     SCROLL_COL_DOWN
+
+SCROLL_COL_UP:
+         lda     $0480,x    ;Copy line by line
+         sta     $0400,x
+         lda     $0500,x
+         sta     $0480,x
+         lda     $0580,x
+         sta     $0500,x
+         lda     $0600,x
+         sta     $0580,x
+         lda     $0680,x
+         sta     $0600,x
+         lda     $0700,x
+         sta     $0680,x
+         lda     $0780,x
+         sta     $0700,x
+         lda     $0428,x
+         sta     $0780,x
+         lda     $04a8,x
+         sta     $0428,x
+         lda     $0528,x
+         sta     $04a8,x
+         lda     $05a8,x
+         sta     $0528,x
+         lda     $0628,x
+         sta     $05a8,x
+         lda     $06a8,x
+         sta     $0628,x
+         lda     $0728,x
+         sta     $06a8,x
+         lda     $07a8,x
+         sta     $0728,x
+         lda     $0450,x
+         sta     $07a8,x
+         lda     $04d0,x
+         sta     $0450,x
+         lda     $0550,x
+         sta     $04d0,x
+         lda     $05d0,x
+         sta     $0550,x
+         lda     $0650,x
+         sta     $05d0,x
+         lda     $06d0,x
+         sta     $0650,x
+         lda     $0750,x
+         sta     $06d0,x
+         lda     $07d0,x
+         sta     $0750,x
+         tya                ;Blank character in Y
+         sta     $07d0,x
+         rts
+
+SCROLL_COL_DOWN:
+         lda     $0750,x    ;copy lines up
+         sta     $07d0,x
+         lda     $06d0,x
+         sta     $0750,x
+         lda     $0650,x
+         sta     $06d0,x
+         lda     $05d0,x
+         sta     $0650,x
+         lda     $0550,x
+         sta     $05d0,x
+         lda     $04d0,x
+         sta     $0550,x
+         lda     $0450,x
+         sta     $04d0,x
+         lda     $07a8,x
+         sta     $0450,x
+         lda     $0728,x
+         sta     $07a8,x
+         lda     $06a8,x
+         sta     $0728,x
+         lda     $0628,x
+         sta     $06a8,x
+         lda     $05a8,x
+         sta     $0628,x
+         lda     $0528,x
+         sta     $05a8,x
+         lda     $04a8,x
+         sta     $0528,x
+         lda     $0428,x
+         sta     $04a8,x
+         lda     $0780,x
+         sta     $0428,x
+         lda     $0700,x
+         sta     $0780,x
+         lda     $0680,x
+         sta     $0700,x
+         lda     $0600,x
+         sta     $0680,x
+         lda     $0580,x
+         sta     $0600,x
+         lda     $0500,x
+         sta     $0580,x
+         lda     $0480,x
+         sta     $0500,x
+         lda     $0400,x
+         sta     $0480,x
+         tya
+         sta     $0400,x
+         rts
+
+HIDE_CURSOR:
+         bit     CURSOR_STATE ;Get the current cursor state
+         bpl     CURSOR_IS_OFF ;Is it off
+         pha                ;Nope save the accumulator
+         jsr     TOGGLE_CURSOR ;Toggle the cursor
+         pla                ;Restore acc
+CURSOR_IS_OFF:
+         rts
+
+CTRL_CHAR_TAB:
+         DW   BELL       ;Ctrl-G
+         DW   BACKSPACE  ;Ctrl-H
+         DW   IGNORE_CHAR ;Ctrl-I
+         DW   LINEFEED   ;Ctrl-J
+         DW   CLR_TO_ENDSCR ;Ctrl-K
+         DW   CLEAR_SCREEN ;Ctrl-L
+         DW   CARRIAGE_RET ;Ctrl-M
+         DW   SET_NORMAL ;Ctrl-N
+         DW   SET_INVERSE ;Ctrl-O
+         DW   IGNORE_CHAR ;Ctrl-P
+         DW   IGNORE_CHAR ;Ctrl-Q
+         DW   IGNORE_CHAR ;Ctrl-R
+         DW   IGNORE_CHAR ;Ctrl-S
+         DW   IGNORE_CHAR ;Ctrl-T
+         DW   IGNORE_CHAR ;Ctrl-U
+         DW   SCROLL_DOWN ;Ctrl-V
+         DW   SCROLL_UP  ;Ctrl-W
+         DW   IGNORE_CHAR ;Ctrl-X
+         DW   HOME       ;Ctrl-Y
+         DW   CLR_LINE   ;Ctrl-Z
+         DW   IGNORE_CHAR ;Ctrl-[ aka Esc
+         DW   CURSOR_RIGHT ;Ctrl-\
+         DW   CLR_EOL    ;Ctrl-]
+LINE_STARTH:
+         DB   $04,$04,$05,$05,$06,$06,$07,$07 ;Start of video line high
+         DB   $04,$04,$05,$05,$06,$06,$07,$07
+         DB   $04,$04,$05,$05,$06,$06,$07,$07
+LINE_STARTL:
+         DB   $00,$80,$00,$80,$00,$80,$00,$80 ;Start of video line low
+         DB   $28,$a8,$28,$a8,$28,$a8,$28,$a8
+         DB   $50,$d0,$50,$d0,$50,$d0,$50,$d0
+; Used to convert some televideo 920(maybe?) escape codes to Ctrl codes
+ESC_CTRL_CODES:
+         DB   $8c        ;<ESC><FF> - Form feed
+         DB   ')' + $80  ;<ESC> ) - Start half intensity
+         DB   '(' + $80  ;<ESC> ( - End half intesity
+         DB   '*' + $80  ;<ESC> * - Clear all to null
+         DB   'Y' + $80  ;<ESC> Y - Page erase to space
+         DB   'T' + $80  ;<ESC> T - Line erase to space
+ESC_CHAR_TRANS:
+         DB   $8c        ;Ctrl-L - Form feed
+         DB   $8e        ;Ctrl-N - set normal
+         DB   $8f        ;Ctrl-O - Set Inverse
+         DB   $8c        ;Ctrl-L - Form feed
+         DB   $8b        ;Ctrl-K - Clear to end of screen
+         DB   $9d        ;Ctrl-] - Clear to end of line
+GOTO_Y:  DB   $00        ;Goto YX cursor Y
+        END

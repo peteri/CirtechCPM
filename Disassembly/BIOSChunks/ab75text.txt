@@ -1,0 +1,138 @@
+AB75: 21 00 B0    ld   hl,$B000
+AB78: 22 2B AB    ld   ($AB2B),hl
+AB7B: 22 2D AB    ld   ($AB2D),hl
+AB7E: 2A 31 AB    ld   hl,($AB31)
+AB81: 22 2F AB    ld   ($AB2F),hl
+AB84: AF          xor  a
+AB85: 32 82 AA    ld   ($AA82),a
+AB88: 32 87 AA    ld   ($AA87),a
+AB8B: 0E 07       ld   c,$07
+AB8D: CD 9C A9    call $A99C
+AB90: AF          xor  a
+AB91: C9          ret
+; Toggle cursor
+AB92: 06 07       ld   b,$07
+AB94: 3A 63 DE    ld   a,($DE63)
+AB97: B7          or   a
+AB98: 28 0A       jr   z,$ABA4
+AB9A: 3A 23 F0    ld   a,($F023)
+AB9D: CB 7F       bit  7,a
+AB9F: CC A0 A9    call z,$A9A0
+ABA2: 06 00       ld   b,$00
+ABA4: 78          ld   a,b
+ABA5: 32 63 DE    ld   ($DE63),a
+ABA8: AF          xor  a
+ABA9: C9          ret
+; Draw toolkey
+ABAA: 3A 84 F3    ld   a,($F384)
+ABAD: 32 73 AB    ld   ($AB73),a
+ABB0: 11 00 FF    ld   de,$FF00
+ABB3: CB B9       res  7,c
+ABB5: CD 80 AE    call $AE80
+ABB8: 11 00 FC    ld   de,$FC00
+ABBB: CB F9       set  7,c
+ABBD: C3 80 AE    jp   $AE80
+; Print screen...
+ABC0: 3E 0D       ld   a,$0D
+ABC2: CD FA AE    call $AEFA
+ABC5: 3E 0A       ld   a,$0A
+ABC7: CD FA AE    call $AEFA
+ABCA: 21 12 F3    ld   hl,$F312
+ABCD: 5E          ld   e,(hl)
+ABCE: 23          inc  hl
+ABCF: 56          ld   d,(hl)
+ABD0: CB 7A       bit  7,d
+ABD2: 20 02       jr   nz,$ABD6
+ABD4: AF          xor  a
+ABD5: C9          ret
+ABD6: E5          push hl
+ABD7: 06 28       ld   b,$28
+ABD9: 32 55 E0    ld   ($E055),a
+ABDC: 1A          ld   a,(de)
+ABDD: 32 54 E0    ld   ($E054),a
+ABE0: CD F2 AE    call $AEF2
+ABE3: 1A          ld   a,(de)
+ABE4: CD F2 AE    call $AEF2
+ABE7: 13          inc  de
+ABE8: 10 EF       djnz $ABD9
+ABEA: 3E 0D       ld   a,$0D
+ABEC: CD FA AE    call $AEFA
+ABEF: 3E 0A       ld   a,$0A
+ABF1: CD FA AE    call $AEFA
+ABF4: E1          pop  hl
+ABF5: 23          inc  hl
+ABF6: 18 D5       jr   $ABCD
+;
+; draw tool key and prompt user
+;
+TOOLKEYQ: CD AA AB    call $ABAA
+ABFB: CD 34 AE    call GETUSERKEY
+ABFE: CA 75 AE    jp   z,$AE75
+AC01: FE 63       cp   $63
+AC03: CC 92 AB    call z,$AB92
+AC06: FE 66       cp   $66
+AC08: CC 2E AC    call z,$FORMAT
+AC0B: FE 64       cp   $64
+AC0D: CC 9E AC    call z,$AC9E
+AC10: FE 65       cp   $65
+AC12: CC 75 AB    call z,$AB75
+AC15: FE 78       cp   $78
+AC17: CC 5B AB    call z,$AB5B
+AC1A: FE 70       cp   $70
+AC1C: 20 06       jr   nz,$AC24
+AC1E: CD 75 AE    call $AE75
+AC21: C3 C0 AB    jp   $ABC0
+;
+AC24: 11 00 FC    ld   de,$FC00
+AC27: CB F9       set  7,c
+AC29: CD 80 AE    call $AE80
+AC2C: 18 CD       jr   $ABFB
+; FORMAT
+FORMAT: 21 D2 FC    ld   hl,MSG_FORMAT
+AC31: CD 5A AE    call TK_WRLINE
+AC34: 21 00 F8    ld   hl,$F800
+AC37: 36 E5       ld   (hl),$E5
+AC39: 54          ld   d,h
+AC3A: 5D          ld   e,l
+AC3B: 13          inc  de
+AC3C: 01 FF 01    ld   bc,$01FF
+AC3F: ED B0       ldir
+AC41: CD 2D AE    call GETDRVLETR
+AC44: CD 48 AE    call TK_CHKDRVL
+AC47: 30 E5       jr   nc,FORMAT
+AC49: 32 84 F3    ld   ($F384),a
+AC4C: CD CF AE    call GETDPB
+AC4F: FD 7E 02    ld   a,(iy+DPB_BLS)
+AC52: 21 08 00    ld   hl,$0008
+AC55: D6 05       sub  $05
+AC57: 38 11       jr   c,$AC6A
+AC59: 28 04       jr   z,$AC5F
+AC5B: 29          add  hl,hl
+AC5C: 3D          dec  a
+AC5D: 20 FC       jr   nz,$AC5B
+AC5F: FD CB 09 76 bit  6,(iy+DPB_AL0)   ;Reserved blocks for directory
+AC63: 28 01       jr   z,$AC66
+AC65: 29          add  hl,hl
+AC66: 7D          ld   a,l
+AC67: 32 80 F3    ld   ($F380),a
+AC6A: 21 F8 FC    ld   hl,MSG_INSDISK
+AC6D: CD 5A AE    call TK_WRLINE
+AC70: CD 2D AE    call GETDRVLETR
+AC73: 21 1E FD    ld   hl,MSG_FMTING
+AC76: CD 5A AE    call TK_WRLINE
+AC79: 3E 03       ld   a,DSKOP_FMT
+AC7B: 32 88 F3    ld   ($F388),a
+AC7E: CD 1C AE    call $AE1C
+AC81: 21 44 FD    ld   hl,MSG_FORMOK
+AC84: 28 0C       jr   z,$AC92
+AC86: FE 10       cp   $10
+AC88: 20 05       jr   nz,$AC8F
+AC8A: 21 90 FD    ld   hl,ERR_WRPRO
+AC8D: 18 03       jr   $AC92
+AC8F: 21 6A FD    ld   hl,ERR_DSKERR
+AC92: CD 5A AE    call TK_WRLINE
+AC95: CD 2D AE    call GETDRVLETR
+AC98: FE 79       cp   $79
+AC9A: 28 CE       jr   z,$AC6A
+AC9C: AF          xor  a
+AC9D: C9          ret

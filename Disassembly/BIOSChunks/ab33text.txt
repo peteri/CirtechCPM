@@ -1,0 +1,44 @@
+AB33: 47       ld   b,a
+AB34: FE 2F    cp   $2F
+AB36: CA F8 AB jp   z,$ABF8
+AB39: FE 3F    cp   $3F
+AB3B: CA F8 AB jp   z,$ABF8
+AB3E: F6 20    or   $20
+AB40: FE 63    cp   $63
+AB42: 28 4E    jr   z,$AB92
+AB44: FE 66    cp   $66
+AB46: 28 19    jr   z,$AB61
+AB48: FE 64    cp   $64
+AB4A: 28 1E    jr   z,$AB6A
+AB4C: FE 65    cp   $65
+AB4E: 28 25    jr   z,$AB75
+AB50: FE 70    cp   $70
+AB52: CA C0 AB jp   z,$ABC0
+AB55: FE 78    cp   $78
+AB57: 28 02    jr   z,$AB5B
+AB59: 78       ld   a,b
+AB5A: C9       ret
+AB5B: 21 87 AA ld   hl,$AA87
+AB5E: 34       inc  (hl)
+AB5F: 18 2A    jr   $AB8B
+AB61: CD AA AB call $ABAA
+AB64: CD 2E AC call $AC2E
+AB67: C3 75 AE jp   $AE75
+AB6A: CD AA AB call $ABAA
+AB6D: CD 9E AC call $AC9E
+AB70: C3 75 AE jp   $AE75
+AB73: 01 00 21 ld   bc,$2100
+AB76: 00       nop
+AB77: B0       or   b
+AB78: 22 2B AB ld   ($AB2B),hl
+AB7B: 22 2D AB ld   ($AB2D),hl
+AB7E: 2A 31 AB ld   hl,($AB31)
+AB81: 22 2F AB ld   ($AB2F),hl
+AB84: AF       xor  a
+AB85: 32 82 AA ld   ($AA82),a
+AB88: 32 87 AA ld   ($AA87),a
+AB8B: 0E 07    ld   c,$07
+AB8D: CD 9C A9 call $A99C
+AB90: AF       xor  a
+AB91: C9       ret
+AB92: 06 07    ld   b,$07

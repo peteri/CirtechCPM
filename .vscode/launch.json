@@ -5,7 +5,7 @@
             // Use IntelliSense to find out which attributes exist for C# debugging
             // Use hover for the description of the existing attributes
             // For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md
-            "name": ".NET Core Launch (console)",
+            "name": "NibReader",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
@@ -13,6 +13,22 @@
             "program": "${workspaceFolder}/Tools/NibReader/bin/Debug/net8.0/NibReader.dll",
             "args": ["${workspaceFolder}/DiskImages/BlankBootableCPM3.nib"],
             "cwd": "${workspaceFolder}/Tools/NibReader",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            // Use IntelliSense to find out which attributes exist for C# debugging
+            // Use hover for the description of the existing attributes
+            // For further information visit https://github.com/dotnet/vscode-csharp/blob/main/debugger-launchjson.md
+            "name": "CPM3 Sys Dump",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Tools/CPM3SYSDump/bin/Debug/net8.0/CPM3SYSDump.dll",
+            "args": ["${workspaceFolder}/Tools/NibReader/CPM3.SYS"],
+            "cwd": "${workspaceFolder}/Tools/CPM3SYSDump",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false

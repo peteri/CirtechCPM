@@ -25,6 +25,74 @@
 "ExtensionScriptFileIdentifiers":["RT:Apple/ProDOS8.cs",
 "RT:Apple/VisHiRes.cs"],
 "ProjectSyms":{
+"CHAR_OP_INI":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Character IO Init (same as pascal offset)",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"CHAR_OP_INI",
+"Value":13,
+"Source":"Project",
+"Type":"Constant",
+"LabelAnno":"None"},
+
+"CHAR_OP_RD":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Character IO Read (same as pascal offset)",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"CHAR_OP_RD",
+"Value":14,
+"Source":"Project",
+"Type":"Constant",
+"LabelAnno":"None"},
+
+"CHAR_OP_ST":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Character IO Status (same as pascal offset)",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"CHAR_OP_ST",
+"Value":16,
+"Source":"Project",
+"Type":"Constant",
+"LabelAnno":"None"},
+
+"CHAR_OP_WR":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Character IO Write (same as pascal offset)",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"CHAR_OP_WR",
+"Value":15,
+"Source":"Project",
+"Type":"Constant",
+"LabelAnno":"None"},
+
 "CURSOR_STATE":{
 "DataDescriptor":{
 "Length":1,
@@ -89,6 +157,23 @@
 "MultiMask":null,
 "Label":"D2_CHECK_SUM",
 "Value":39,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"DATA6510":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DATA6510",
+"Value":49295,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -348,6 +433,40 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"PARA_ACKIN":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"PARA_ACKIN",
+"Value":49345,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"PARA_DATAOUT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"PARA_DATAOUT",
+"Value":49280,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "PRDOOS_BUFPTRL":{
 "DataDescriptor":{
 "Length":1,
@@ -433,6 +552,23 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"SCC_INIT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Super serial card init",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SCC_INIT",
+"Value":51200,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "SCRLINEH":{
 "DataDescriptor":{
 "Length":1,
@@ -501,6 +637,74 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"SSC_READ":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Super serial card read routine",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SSC_READ",
+"Value":51277,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"SSC_WRITE":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Super serial card write routine",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SSC_WRITE",
+"Value":51626,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"STATUS6510":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"STATUS6510",
+"Value":49294,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"STSBYTE":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"SSC Char",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"STSBYTE",
+"Value":1464,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "TWO_BIT_DATA":{
 "DataDescriptor":{
 "Length":1,
@@ -539,6 +743,13 @@
 "Offset":0,
 "Addr":53248,
 "Length":3584,
+"PreLabel":"",
+"IsRelative":false},
+
+{
+"Offset":1024,
+"Addr":54272,
+"Length":-1024,
 "PreLabel":"",
 "IsRelative":false},
 
@@ -1007,10 +1218,110 @@
 "2957":"Prodos block is TRACK*8 + SECT",
 "2967":"Multiply by two",
 "2973":"Add sector",
-"3113":"Possibly serial card",
+"3072":"Clear decimal mode",
+"3073":"Put acc on stack",
+"3074":"Which slot / what are doing?",
+"3075":"Output to console?",
+"3077":"Yes, page in video BIOS in language card",
+"3083":"Put top of stack onto screen",
+"3086":"Slot number positive",
+"3088":"Nope, so page in video BIOS",
+"3094":"And toggle the cursor",
+"3097":"Setup for paging in rom",
+"3100":"Get the card type",
+"3103":"Mask to low nybble",
+"3105":"Save it for later",
+"3106":"Multiply slot number by 8",
+"3111":"X = Slot number * 8",
+"3113":"Apple Comms or CCS7710A",
 "3117":"High speed serial",
 "3121":"Parallel printer",
-"3125":"Pascal based card"},
+"3125":"Pascal based card",
+"3129":"Remove actual character",
+"3130":"Go home",
+"3132":"Get back the character",
+"3133":"Read operation?",
+"3135":"Go Do it",
+"3137":"Write operation",
+"3139":"Go Do it",
+"3141":"Init operation?",
+"3143":"Go Do it",
+"3145":"Status operation?",
+"3147":"Lie and return OK",
+"3149":"Go do our operation",
+"3152":"Result is No",
+"3154":"Result is Yes",
+"3156":"Save offset of pascal entry",
+"3159":"Save Acc",
+"3160":"Page in $C800 ROM ",
+"3163":"Save Cx00 into get offset instruction",
+"3166":"Save Cx00 into call to card",
+"3169":"Get the offset of the operation",
+"3172":"Save it into jump to pascal operation",
+"3175":"Get back character",
+"3176":"Go call card routine",
+"3179":"Get back the character",
+"3180":"No initialise routine",
+"3182":"So go home",
+"3184":"Get status",
+"3186":"Go do it",
+"3188":"CHAR_OP_WR",
+"3190":"Do the write",
+"3192":"Save character",
+"3193":"Check status",
+"3196":"Wait until clear",
+"3198":"Get back character",
+"3199":"Output the character to card",
+"3202":"Go home",
+"3203":"Page in the rom (sets X)",
+"3209":"Get the status",
+"3212":"Busy?",
+"3214":"Nope",
+"3217":"Get back character",
+"3218":"Status",
+"3220":"Return good always",
+"3222":"Init?",
+"3224":"Go do it",
+"3226":"Write?",
+"3228":"Go do it",
+"3230":"Read a character",
+"3232":"Go do it",
+"3238":"Status operation",
+"3242":"Write operation",
+"3246":"Initialise",
+"3250":"Read operation",
+"3254":"Wait for read data",
+"3259":"Nothing yet",
+"3261":"Get our data",
+"3264":"And over write it!!!!",
+"3267":"Save character",
+"3268":"Check write status",
+"3273":"Wait until we can write",
+"3275":"Get character back",
+"3276":"Send it",
+"3282":"Read or write status",
+"3283":"Get status reg",
+"3286":"Shift into carry",
+"3287":"Read data?",
+"3288":"Yep, use bit 0",
+"3290":"Check bit 1 for write",
+"3291":"Set flag depending on carry",
+"3295":"ACIA master reset",
+"3300":"8 bit data, no parity, 1 stop, clock is 16x",
+"3307":"Bring in the SSC ROM",
+"3310":"Read a character",
+"3313":"Get the character",
+"3318":"Bring in the SSC ROM",
+"3322":"Save character to write",
+"3325":"Call write routine",
+"3328":"Bring in the SSC ROM",
+"3331":"Call the init routine",
+"3334":"Mark us as using rom space",
+"3339":"Value over written by other code",
+"3341":"Put into correct IO space",
+"3344":"Set up for a read from the ROM",
+"3347":"Clear any other ROMS in $C800",
+"3350":"Read from our rom to bring in $C800"},
 
 "LongComments":{
 "-2147483647":{
@@ -1128,7 +1439,7 @@
 "BackgroundColor":0},
 
 "3072":{
-"Text":"Various routines\r\nThese get copied out of $DC00 into $0A00\r\nThey also get copied into the other bank of memory\r\nSo probably have some banking code in there.\r\n",
+"Text":"Character mode device BIOS.\r\nThese get copied out of $DC00 into $0A00\r\nThey also get copied into the other bank of memory\r\nOn entry:\r\nA  = Character to read / write OR\r\n     0 = Output status check\r\n     1 = Input status check\r\nX  = Device slot\r\n 0  = Console\r\n 1..7 Slot number\r\n $80   Toggle cursor on off\r\nY  = operation\r\n $0D = Init\r\n $0E = Read character\r\n $0F = Write character\r\n $10 = Get status\r\n",
 "BoxMode":true,
 "MaxWidth":80,
 "BackgroundColor":0},
@@ -1177,6 +1488,36 @@
 
 "1716":{
 "Text":"Write data every 32 cycles\r\n\r\nTypical call sequence\r\n  2 2 cycles - LDA #D5\r\n  8 6 cycles - JSR WRITE9\r\n 10 2 cycles - CLC\r\n 13 3 cycles - PHA\r\n 17 4 cycles - PLA\r\n 22 5 cycles - STA $C08B,x\r\n 26 4 cycles - ORA $C08C,X\r\n 32 6 cycles - RTS",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"3097":{
+"Text":"See what sort of card is in the slot",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"3179":{
+"Text":"\r\nApple Parallel card code\r\n ",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"3132":{
+"Text":"\r\nPascal card\r\n ",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"3237":{
+"Text":"\r\n6650 based serial comms card\r\nCCS7710 or Apple Communications\r\n ",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"3217":{
+"Text":"\r\nSuper serial card code, calls pascal entry points directly\r\n ",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0}},
@@ -1676,14 +2017,14 @@
 "LabelAnno":"None"},
 
 "3132":{
-"Label":"CARD6",
+"Label":"PASCALCARD",
 "Value":2620,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "3179":{
-"Label":"CARD5",
+"Label":"APPLEPARA",
 "Value":2667,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2152,7 +2493,7 @@
 "LabelAnno":"None"},
 
 "3339":{
-"Label":"ROMSLOT",
+"Label":"PAGEINROM2",
 "Value":2827,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2166,14 +2507,14 @@
 "LabelAnno":"None"},
 
 "3237":{
-"Label":"CARD3",
+"Label":"COMMS6550",
 "Value":2725,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "3217":{
-"Label":"CARD4",
+"Label":"SSC",
 "Value":2705,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2182,6 +2523,146 @@
 "3214":{
 "Label":"CARDRETFF",
 "Value":2702,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3086":{
+"Label":"CHECK_CUR_TOG",
+"Value":2574,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3097":{
+"Label":"DO_SLOT_IO",
+"Value":2585,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"0":{
+"Label":"TOG_CURJMP",
+"Value":53248,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3334":{
+"Label":"PAGEINROM",
+"Value":2822,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3234":{
+"Label":"CHAR_RET_0",
+"Value":2722,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3156":{
+"Label":"DOPASCAL_OP",
+"Value":2644,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3169":{
+"Label":"GETPASENTRY",
+"Value":2657,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3176":{
+"Label":"JMPPASENTRY",
+"Value":2664,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3209":{
+"Label":"GETPARASTAT",
+"Value":2697,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3203":{
+"Label":"PARA_STATUS",
+"Value":2691,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3193":{
+"Label":"PARASTLOOP",
+"Value":2681,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3307":{
+"Label":"JSRSSCREAD",
+"Value":2795,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3317":{
+"Label":"JSRSCCWRITE",
+"Value":2805,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3328":{
+"Label":"JSRSCCINIT",
+"Value":2816,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3295":{
+"Label":"INIT6550",
+"Value":2783,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3282":{
+"Label":"STATUS6550",
+"Value":2770,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3267":{
+"Label":"WRITE6550",
+"Value":2755,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3268":{
+"Label":"WR6550WAIT",
+"Value":2756,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3254":{
+"Label":"RD6550WAIT",
+"Value":2742,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"3291":{
+"Label":"ST6550FLAG",
+"Value":2779,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"}},
@@ -3019,6 +3500,174 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"LCBANK1",
+"Part":"Low"}},
+
+"3133":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_RD",
+"Part":"Low"}},
+
+"3137":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_WR",
+"Part":"Low"}},
+
+"3141":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_INI",
+"Part":"Low"}},
+
+"3145":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_ST",
+"Part":"Low"}},
+
+"3180":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_INI",
+"Part":"Low"}},
+
+"3184":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_ST",
+"Part":"Low"}},
+
+"3188":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_WR",
+"Part":"Low"}},
+
+"3199":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PARA_DATAOUT",
+"Part":"Low"}},
+
+"3218":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_ST",
+"Part":"Low"}},
+
+"3222":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_INI",
+"Part":"Low"}},
+
+"3226":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_WR",
+"Part":"Low"}},
+
+"3230":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_RD",
+"Part":"Low"}},
+
+"3238":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_ST",
+"Part":"Low"}},
+
+"3242":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_WR",
+"Part":"Low"}},
+
+"3246":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_INI",
+"Part":"Low"}},
+
+"3250":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"CHAR_OP_RD",
+"Part":"Low"}},
+
+"3261":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DATA6510",
+"Part":"Low"}},
+
+"3283":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"STATUS6510",
+"Part":"Low"}},
+
+"3310":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SSC_READ",
+"Part":"Low"}},
+
+"3313":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"STSBYTE",
+"Part":"Low"}},
+
+"3325":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SSC_WRITE",
 "Part":"Low"}},
 
 "3344":{

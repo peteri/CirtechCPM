@@ -1,0 +1,399 @@
+DEEF: 32 02 E0    ld   ($E002),a
+DEF2: 32 04 E0    ld   ($E004),a
+DEF5: C3 C3 A6    jp   $A6C3
+DEF8: 32 02 E0    ld   ($E002),a
+DEFB: C3 12 A5    jp   $A512
+DEFE: 32 03 E0    ld   ($E003),a
+DF01: C3 00 01    jp   $0100
+DF04: 2A C0 DD    ld   hl,($DDC0)
+DF07: 18 08       jr   $DF11
+DF09: 2A C4 DD    ld   hl,($DDC4)
+DF0C: 18 03       jr   $DF11
+DF0E: 2A C6 DD    ld   hl,($DDC6)
+DF11: 11 F1 A8    ld   de,$A8F1
+DF14: 18 10       jr   $DF26
+DF16: 2A C0 DD    ld   hl,($DDC0)
+DF19: 18 08       jr   $DF23
+DF1B: 2A C4 DD    ld   hl,($DDC4)
+DF1E: 18 03       jr   $DF23
+DF20: 2A C6 DD    ld   hl,($DDC6)
+DF23: 11 10 A9    ld   de,$A910
+DF26: 32 02 E0    ld   ($E002),a
+DF29: C3 F5 A4    jp   $A4F5
+DF2C: 47          ld   b,a
+DF2D: 3A 64 DE    ld   a,($DE64)
+DF30: B7          or   a
+DF31: 78          ld   a,b
+DF32: C8          ret  z
+DF33: 18 52       jr   $DF87
+DF35: 2A BE DD    ld   hl,($DDBE)
+DF38: 18 03       jr   $DF3D
+DF3A: 2A C2 DD    ld   hl,($DDC2)
+DF3D: 11 69 A9    ld   de,$A969
+DF40: 18 E4       jr   $DF26
+DF42: 2A BE DD    ld   hl,($DDBE)
+DF45: 18 03       jr   $DF4A
+DF47: 2A C2 DD    ld   hl,($DDC2)
+DF4A: 11 80 A9    ld   de,$A980
+DF4D: 18 D7       jr   $DF26
+DF4F: 11 12 AF    ld   de,$AF12
+DF52: 18 D2       jr   $DF26
+DF54: 3E 00       ld   a,$00
+DF56: B7          or   a
+DF57: 20 1A       jr   nz,$DF73
+DF59: 3C          inc  a
+DF5A: 32 55 DF    ld   ($DF55),a
+DF5D: 3E 00       ld   a,$00
+DF5F: 32 02 E0    ld   ($E002),a
+DF62: B7          or   a
+DF63: 28 03       jr   z,$DF68
+DF65: 32 03 E0    ld   ($E003),a
+DF68: 3E 00       ld   a,$00
+DF6A: 32 04 E0    ld   ($E004),a
+DF6D: B7          or   a
+DF6E: 28 03       jr   z,$DF73
+DF70: 32 05 E0    ld   ($E005),a
+DF73: EB          ex   de,hl
+DF74: ED B0       ldir
+DF76: EB          ex   de,hl
+DF77: 3A 64 DE    ld   a,($DE64)
+DF7A: 32 64 DE    ld   ($DE64),a
+DF7D: B7          or   a
+DF7E: 20 07       jr   nz,$DF87
+DF80: 32 02 E0    ld   ($E002),a
+DF83: 32 04 E0    ld   ($E004),a
+DF86: C9          ret
+DF87: 32 03 E0    ld   ($E003),a
+DF8A: 32 05 E0    ld   ($E005),a
+DF8D: C9          ret
+DF8E: 28 03       jr   z,$DF93
+DF90: 32 03 E0    ld   ($E003),a
+DF93: 11 00 F8    ld   de,$F800
+DF96: 2A 66 DE    ld   hl,($DE66)
+DF99: 18 03       jr   $DF9E
+DF9B: 32 03 E0    ld   ($E003),a
+DF9E: ED B0       ldir
+DFA0: 32 02 E0    ld   ($E002),a
+DFA3: C9          ret
+DFA4: 21 AE DE    ld   hl,$DEAE
+DFA7: C9          ret
+DFA8: ED 53 68 DE ld   ($DE68),de
+DFAC: 11 7B A8    ld   de,$A87B
+DFAF: C3 26 DF    jp   $DF26
+DFB2: 00          nop
+DFB3: 00          nop
+DFB4: 00          nop
+DFB5: 00          nop
+DFB6: 00          nop
+DFB7: 00          nop
+DFB8: 00          nop
+DFB9: 00          nop
+DFBA: 00          nop
+DFBB: 00          nop
+DFBC: 00          nop
+DFBD: 00          nop
+DFBE: 00          nop
+DFBF: 00          nop
+DFC0: 00          nop
+DFC1: 00          nop
+DFC2: 00          nop
+DFC3: 00          nop
+DFC4: 00          nop
+DFC5: 00          nop
+DFC6: 00          nop
+DFC7: 00          nop
+DFC8: 00          nop
+DFC9: 00          nop
+DFCA: 00          nop
+DFCB: 00          nop
+DFCC: 00          nop
+DFCD: 00          nop
+DFCE: 00          nop
+DFCF: 00          nop
+DFD0: 00          nop
+DFD1: 00          nop
+DFD2: 00          nop
+DFD3: 00          nop
+DFD4: 00          nop
+DFD5: 00          nop
+DFD6: 00          nop
+DFD7: 00          nop
+DFD8: 00          nop
+DFD9: 00          nop
+DFDA: 00          nop
+DFDB: 00          nop
+DFDC: 00          nop
+DFDD: 00          nop
+DFDE: 00          nop
+DFDF: 00          nop
+DFE0: 00          nop
+DFE1: 00          nop
+DFE2: 00          nop
+DFE3: 00          nop
+DFE4: 00          nop
+DFE5: 00          nop
+DFE6: 00          nop
+DFE7: 00          nop
+DFE8: 00          nop
+DFE9: 00          nop
+DFEA: 00          nop
+DFEB: 00          nop
+DFEC: 00          nop
+DFED: 00          nop
+DFEE: 00          nop
+DFEF: 00          nop
+DFF0: 00          nop
+DFF1: 00          nop
+DFF2: 00          nop
+DFF3: 00          nop
+DFF4: 00          nop
+DFF5: 00          nop
+DFF6: 00          nop
+DFF7: 00          nop
+DFF8: 00          nop
+DFF9: 00          nop
+DFFA: 00          nop
+DFFB: 00          nop
+DFFC: 00          nop
+DFFD: 00          nop
+DFFE: 00          nop
+DFFF: 00          nop
+E000: A0          and  b
+E001: A0          and  b
+E002: A0          and  b
+E003: A0          and  b
+E004: A0          and  b
+E005: A0          and  b
+E006: A0          and  b
+E007: A0          and  b
+E008: A0          and  b
+E009: A0          and  b
+E00A: A0          and  b
+E00B: A0          and  b
+E00C: A0          and  b
+E00D: A0          and  b
+E00E: A0          and  b
+E00F: A0          and  b
+E010: A0          and  b
+E011: A0          and  b
+E012: A0          and  b
+E013: A0          and  b
+E014: A0          and  b
+E015: A0          and  b
+E016: A0          and  b
+E017: A0          and  b
+E018: A0          and  b
+E019: A0          and  b
+E01A: A0          and  b
+E01B: A0          and  b
+E01C: A0          and  b
+E01D: A0          and  b
+E01E: A0          and  b
+E01F: A0          and  b
+E020: A0          and  b
+E021: A0          and  b
+E022: A0          and  b
+E023: A0          and  b
+E024: A0          and  b
+E025: A0          and  b
+E026: A0          and  b
+E027: A0          and  b
+E028: A0          and  b
+E029: A0          and  b
+E02A: A0          and  b
+E02B: A0          and  b
+E02C: A0          and  b
+E02D: A0          and  b
+E02E: A0          and  b
+E02F: A0          and  b
+E030: A0          and  b
+E031: A0          and  b
+E032: A0          and  b
+E033: A0          and  b
+E034: A0          and  b
+E035: A0          and  b
+E036: A0          and  b
+E037: A0          and  b
+E038: A0          and  b
+E039: A0          and  b
+E03A: A0          and  b
+E03B: A0          and  b
+E03C: A0          and  b
+E03D: A0          and  b
+E03E: A0          and  b
+E03F: A0          and  b
+E040: A0          and  b
+E041: A0          and  b
+E042: A0          and  b
+E043: A0          and  b
+E044: A0          and  b
+E045: A0          and  b
+E046: A0          and  b
+E047: A0          and  b
+E048: A0          and  b
+E049: A0          and  b
+E04A: A0          and  b
+E04B: A0          and  b
+E04C: A0          and  b
+E04D: A0          and  b
+E04E: A0          and  b
+E04F: A0          and  b
+E050: A0          and  b
+E051: A0          and  b
+E052: A0          and  b
+E053: A0          and  b
+E054: A0          and  b
+E055: A0          and  b
+E056: A0          and  b
+E057: A0          and  b
+E058: A0          and  b
+E059: A0          and  b
+E05A: A0          and  b
+E05B: A0          and  b
+E05C: A0          and  b
+E05D: A0          and  b
+E05E: A0          and  b
+E05F: A0          and  b
+E060: A0          and  b
+E061: A0          and  b
+E062: A0          and  b
+E063: A0          and  b
+E064: A0          and  b
+E065: A0          and  b
+E066: A0          and  b
+E067: A0          and  b
+E068: A0          and  b
+E069: A0          and  b
+E06A: A0          and  b
+E06B: A0          and  b
+E06C: A0          and  b
+E06D: A0          and  b
+E06E: A0          and  b
+E06F: A0          and  b
+E070: A0          and  b
+E071: A0          and  b
+E072: A0          and  b
+E073: A0          and  b
+E074: A0          and  b
+E075: A0          and  b
+E076: A0          and  b
+E077: A0          and  b
+E078: A0          and  b
+E079: A0          and  b
+E07A: A0          and  b
+E07B: A0          and  b
+E07C: A0          and  b
+E07D: A0          and  b
+E07E: A0          and  b
+E07F: A0          and  b
+E080: A0          and  b
+E081: A0          and  b
+E082: A0          and  b
+E083: A0          and  b
+E084: A0          and  b
+E085: A0          and  b
+E086: A0          and  b
+E087: A0          and  b
+E088: A0          and  b
+E089: A0          and  b
+E08A: A0          and  b
+E08B: A0          and  b
+E08C: A0          and  b
+E08D: A0          and  b
+E08E: A0          and  b
+E08F: A0          and  b
+E090: A0          and  b
+E091: A0          and  b
+E092: A0          and  b
+E093: A0          and  b
+E094: A0          and  b
+E095: A0          and  b
+E096: A0          and  b
+E097: A0          and  b
+E098: A0          and  b
+E099: A0          and  b
+E09A: A0          and  b
+E09B: A0          and  b
+E09C: A0          and  b
+E09D: A0          and  b
+E09E: A0          and  b
+E09F: A0          and  b
+E0A0: A0          and  b
+E0A1: A0          and  b
+E0A2: A0          and  b
+E0A3: A0          and  b
+E0A4: A0          and  b
+E0A5: A0          and  b
+E0A6: A0          and  b
+E0A7: A0          and  b
+E0A8: A0          and  b
+E0A9: A0          and  b
+E0AA: A0          and  b
+E0AB: A0          and  b
+E0AC: A0          and  b
+E0AD: A0          and  b
+E0AE: A0          and  b
+E0AF: A0          and  b
+E0B0: A0          and  b
+E0B1: A0          and  b
+E0B2: A0          and  b
+E0B3: A0          and  b
+E0B4: A0          and  b
+E0B5: A0          and  b
+E0B6: A0          and  b
+E0B7: A0          and  b
+E0B8: A0          and  b
+E0B9: A0          and  b
+E0BA: A0          and  b
+E0BB: A0          and  b
+E0BC: A0          and  b
+E0BD: A0          and  b
+E0BE: A0          and  b
+E0BF: A0          and  b
+E0C0: A0          and  b
+E0C1: A0          and  b
+E0C2: A0          and  b
+E0C3: A0          and  b
+E0C4: A0          and  b
+E0C5: A0          and  b
+E0C6: A0          and  b
+E0C7: A0          and  b
+E0C8: A0          and  b
+E0C9: A0          and  b
+E0CA: A0          and  b
+E0CB: A0          and  b
+E0CC: A0          and  b
+E0CD: A0          and  b
+E0CE: A0          and  b
+E0CF: A0          and  b
+E0D0: A0          and  b
+E0D1: A0          and  b
+E0D2: A0          and  b
+E0D3: A0          and  b
+E0D4: A0          and  b
+E0D5: A0          and  b
+E0D6: A0          and  b
+E0D7: A0          and  b
+E0D8: A0          and  b
+E0D9: A0          and  b
+E0DA: A0          and  b
+E0DB: A0          and  b
+E0DC: A0          and  b
+E0DD: A0          and  b
+E0DE: A0          and  b
+E0DF: A0          and  b
+E0E0: A0          and  b
+E0E1: A0          and  b
+E0E2: A0          and  b
+E0E3: A0          and  b
+E0E4: A0          and  b
+E0E5: A0          and  b
+E0E6: A0          and  b
+E0E7: A0          and  b
+E0E8: A0          and  b
+E0E9: A0          and  b
+E0EA: A0          and  b
+E0EB: A0          and  b
+E0EC: A0          and  b
+E0ED: A0          and  b
+E0EE: A0          and  b

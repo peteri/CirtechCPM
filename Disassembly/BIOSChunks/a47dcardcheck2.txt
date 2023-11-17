@@ -1,0 +1,17 @@
+A47D: 21 7B 78    ld   hl,$787B
+A480: 4E          ld   c,(hl)
+A481: 11 EB B8    ld   de,$B8EB
+A484: ED 53 D0 F3 ld   ($F3D0),de
+A488: ED 5B DE F3 ld   de,($F3DE)
+A48C: 13          inc  de
+A48D: 13          inc  de
+A48E: 12          ld   (de),a
+A48F: 7E          ld   a,(hl)
+A490: 71          ld   (hl),c
+A491: FE 76       cp   $76
+A493: C8          ret  z
+A494: 22 D0 F3    ld   ($F3D0),hl
+A497: ED B8       lddr
+A499: ED B8       lddr
+A49B: 00          nop
+A49C: 00          nop

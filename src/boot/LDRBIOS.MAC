@@ -1,20 +1,29 @@
            title 'LDRBIOS for CP/M 3 CPMLDR'
-;
+;ZACC_6502
 ; Loader BIOS for Cirtech CPM system.
 ;
 ; Created via decompiling by Peter Ibbotson Oct 2023
 ; (C) Copyright Cirtech 1985
 ;
 
-           .z80
+		       .6502
+ACC_6502       EQU $45              ; 6502 Acc
+X_6502         EQU $46              ; 6502 X reg
+Y_6502         EQU $47              ; 6502 Y reg
+FLAG_6502      EQU $48              ; 6502 flag
+LCBANK1        EQU $C08B			; LCBANK 1 has 6502 code
+LCBANK2        EQU $C083			; LCBANK 2 is used by Z80 code
+Z80CARD        EQU $C400			; Address of Z80 card
+BIOSDISK	   EQU $D400			; BIOS disk address
+ROMIN          EQU $C081			; 6502 bring back roms
+F8ROMSAVE      EQU $FF4A			; Save registers from ROM 
+                .z80
 ;
 ;6502 Zero page stuff seen from Z80
 ;
-SLOTX          EQU 0F004H              ; Boot slot 1..7
-ACC_6502       EQU 0F045H              ; 6502 Acc
-X_6502         EQU 0F046H              ; 6502 X reg
-Y_6502         EQU 0F047H              ; 6502 Y reg
-FLAG_6502      EQU 0F048H              ; 6502 flag
+ZSLOTX         EQU 0F004H              ; Boot slot 1..7
+ZACC_6502      EQU 0F045H              ; 6502 Acc
+ZFLAG_6502     EQU 0F048H              ; 6502 flag
 ;
 ;6502 stuff in 0300 range as seen from Z80
 ;
@@ -36,6 +45,8 @@ SLOT_INFO      EQU 0F3B8H              ; Slot info
 WRMAINRAM      EQU 0E004H              ; Write to main ram ($200-$BFFF)
 WRCARDRAM      EQU 0E005H              ; Write to 80 col card ram ($200-$BFFF)
 DPH            EQU 6EA8H               ; DPH for Disk 0
+DRVTBL         EQU 5E00H               ; Table of DPH for drives
+DRVMAP         EQU 5E20H               ; Map of CPM drives to apple drives
                cseg
                org 0
 ;==========================================================
@@ -131,9 +142,9 @@ boot:          ld   (01C73H),sp
                ld   de,05DBDH           ; or 5DBCH-7400H
                ld   bc,01644H
                ldir
-               ld   hl,5E20H            ;No idea what we're doing here
+               ld   hl,DRVMAP            ;Drv map from CPM->Apple
                ld   (L1EDF+1),hl
-               ld   hl,05E00H
+               ld   hl,DRVTBL           
                ld   (L1ED1+1),hl
                ld   hl,DPH
                ld   (L1F4C+1),hl
@@ -151,10 +162,10 @@ boot:          ld   (01C73H),sp
 ; slot, loops back to do count down from slot 7.
 ;
 ;==================================================================
-               ld   a,(SLOTX)          ; Get the boot slot
+               ld   a,(ZSLOTX)          ; Get the boot slot
                ld   e,a
                ld   d,0
-               ld   ix,SLOT_INFO       ; set ix to SLOT_INFO+SLOTX
+               ld   ix,SLOT_INFO       ; set ix to SLOT_INFO+ZSLOTX
                add  ix,de
                or   0E0H               ; Convert slot to 0Ex00H
                ld   h,a
@@ -165,7 +176,7 @@ SLOT_SCAN:     ld   ix,SLOT_INFO+7
 NEXT_SLOT:     ld   a,0E0H             ; Slot zero?
                cp   h
                jr   z,BOOTEXIT         ; Yes go finish this boot code
-               ld   a,(SLOTX)          ; get back boot slot
+               ld   a,(ZSLOTX)          ; get back boot slot
                or   0E0H               ; Set zero flag 
                cp   h
                ld   a,NEXT_SLOT-(SLOTJR+2)
@@ -269,7 +280,7 @@ L1CB8:         pop  hl
                jr   CARDUNK
 L1CBB:         push iy
                pop  de
-               ld   hl,DISKIIDPH
+               ld   hl,DISKIIDPB
                ld   bc,00011H
                ldir
 L1CC6:         call L1E75
@@ -537,18 +548,18 @@ L1EAB:         ld   c,(iy+005H)
                call ST_DE_TO_HL
                ld   de,0FFFFH
                call ST_DE_TO_HL
-L1ED1:         ld   hl,05E00H
+L1ED1:         ld   hl,DRVTBL
                ld   de,0
                call ST_DE_TO_HL
                ld   (L1ED1+1),hl
 L1EDD:         ld   a,00H
-L1EDF:         ld   hl,5E20H
+L1EDF:         ld   hl,DRVMAP
                ld   (hl),a
                inc  hl
                ld   (L1EDF+1),hl
                or   a
                ret
-DISKIIDPH:     DW 0020H                ; SPT number of 128 records per track
+DISKIIDPB:     DW 0020H                ; SPT number of 128 records per track
                DB 03                   ; BLS Block shift factor (1K blocks)
                DB 07                   ; BLM Block mask (1K blocks)
                DB 0                    ; EXM extant mask
@@ -674,7 +685,7 @@ L1F91:         ld   a,c
 ; Exit
 ;==================================================================
 call6502:      ld   a,04H              ;Set 6502 flags
-               ld   (FLAG_6502),a      ;Just Interrupts disabled
+               ld   (ZFLAG_6502),a      ;Just Interrupts disabled
                ld   (ROUT_6502),hl     ;Set our destination
                ld   hl,(CARD_Z80)      ;Bounce off to
                ld   (hl),a             ;6502 land
@@ -695,19 +706,19 @@ JSR6502:       DB   020H,000H,000H     ;JSR 00000
                nop
                nop
 ;==================================================================
-; BIOS Func 5 - CONOUT
+; BIOS Func 4 - CONOUT
 ; Write character in to screen.
 ; Entry
 ; C = Character to write
 ;==================================================================
 conout:        ld   a,c                 ;character to output
-               ld   (ACC_6502),a      
+               ld   (ZACC_6502),a      
                ld   a,(0E30FH)          ;80 column card out
 call80col:     ld   hl,0C330H           ;Set X=030
                ld   (0F046H),hl         ;Set Y=0C3
                ld   l,a                 ;HL=0C3XX
                jr   call6502
-;============= =====================================================
+;==================================================================
 ; BIOS Func 16  - SECTRAN
 ; Translate sector
 ; Entry
@@ -731,7 +742,7 @@ sectran:       ld   h,b                ;Copy BC to HL as we don't translate
 ; Exit
 ; HL = Disk parameter Header
 ;==================================================================
-seldsk:        ld   a,(5E20H)          ;presumably boot drive
+seldsk:        ld   a,(DRVMAP)         ;Get drive A as Apple Drive ID
                ld   (DISK_DRV),a       ;save it for our caller
                ld   hl,DPH             ;return back boot DPH
                ret
@@ -765,7 +776,7 @@ setdma:        ld   (readdest+1),bc    ;Save address into read func
                ret
 ;==================================================================
 ; BIOS Func 13 - READ
-; Set the address next disc operation will use
+; Read in a sector.
 ; Entry
 ; Exit
 ; A = 0 for OK
@@ -790,13 +801,15 @@ readdest:      ld   de,0000H           ;Setup to copy result back
 ; 6502 code in page 0300 reset vectors set to point to here.
 ; This puts a jump to 01100 (the start of the CPM loader) into the Z80
 ; reset vector then bounces back into the Z80
-page300:       DB 0A9H,0C3H            ; LDA #$C3
-               DB 08DH,000H,010H       ; STA $1000
-               DB 0A9H,000H            ; LDA #$00
-               DB 08DH,001H,010H       ; STA $1001
-               DB 0A9H,011H            ; LDA #$11
-               DB 08DH,002H,010H       ; STA $1002
-               DB 04CH,0C0H,003H       ; JMP $03C0
+               .6502
+page300:       
+			   LDA #$C3				   ;JP 
+			   STA $1000
+			   LDA #$00				   ;$00
+			   STA $1001
+			   LDA #$11
+			   STA $1002			   ;$11
+			   JMP $03C0
 ; Z80 screen locations probably used for scrolling
 z80scrn1:      DW 0F400H,0F480H,0F500H,0F580H ;Lines  1, 2, 3, 4
                DW 0F600H,0F680H,0F700H,0F780H ;Lines  5, 6, 7, 8
@@ -812,6 +825,7 @@ z80scrn2:      DW 0F7D0H,0F750H,0F6D0H,0F650H ;Lines 24,23,22,21
                DW 0F780H,0F700H,0F680H,0F600H ;Lines  8, 7, 6, 5
                DW 0F580H,0F500H,0F480H,0F400H ;Lines  4, 3, 2, 1
                DW 00
+			   .z80
 ;=================================================
 ; BIOS Func 11 - SETSEC
 ; Set the sector next disc operation will use
@@ -841,15 +855,17 @@ move:          ex   de,hl
                DB 000H,000H,002H,010H
                DB 001H,001H,000H,000H
                DB 000H,000H
+			   .6502
 ; 6502 code at 038a
-               DB 0A5H,048H            ; LDA FLAG_6502
-               DB 048H                 ; PHA
-               DB 0A5H,045H            ; LDA ACC_6502
-               DB 0A6H,046H            ; LDX X_6502
-               DB 0A4H,047H            ; LDY Y_6502
-               DB 028H                 ; PLP
-               DB 078H                 ; SEI
-               DB 060H                 ; RTS
+               LDA FLAG_6502
+               PHA
+               LDA ACC_6502
+               LDX X_6502
+               LDY Y_6502
+               PLP
+               SEI
+               RTS
+			   .Z80
 ; $396 - Software screen functions (Microsoft softcard compatibility)
                DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
 ; $3A1 - Hardware screen functions (Microsoft softcard compatibility)
@@ -872,27 +888,28 @@ move:          ex   de,hl
 ; 6502 code at 03C0
 ; Loop endlessly bouncing between Z80 code
 ; and whatever 6502 routine we want to run
-               DB 02CH,083H,0C0H       ; BIT LCBANK2
-               DB 02CH,083H,0C0H       ; BIT LCBANK2
-               DB 08DH,000H,0C4H       ; STA $C400
-               DB 02CH,081H,0C0H       ; BIT ROMIN
-               DB 020H,08AH,003H       ; JSR $38A (save registers)
-               DB 020H,000H,000H       ; JSR $0000 (6502 routine to call)
-               DB 08DH,081H,0C0H       ; STA ROMIN
-               DB 078H                 ; SEI
-               DB 020H,04AH,0FFH       ; JSR F8ROM:SAVE
-               DB 04CH,0C0H,003H       ; JMP $3C0 ; back to Z80
+			   .6502
+               BIT LCBANK2
+               BIT LCBANK2
+               STA Z80CARD
+               BIT ROMIN
+               JSR $38A ; save registers
+               JSR $0000 ; 6502 routine to call
+               STA ROMIN
+               SEI
+               JSR F8ROMSAVE
+               JMP $3C0 ; back to Z80
 ;
 ; Call into 0D400 Disk code in 6502 land
 ;
-              DB 0EAH                 ; NOP
-              DB 02CH                 ; BIT Z80_CARD
-Z80_CARD:     DB 001H,0E7H            ; Address of card from Z80 side
-              DB 02CH,08BH,0C0H       ; BIT LCBANK1
-              DB 02CH,08BH,0C0H       ; BIT LCBANK1
-              DB 0D8H                 ; CLD
-              DB 04CH,000H,0D4H       ; JMP $D400
-              DB 000H,000H,080H       ; Dunno?
+               NOP
+               DB 02CH                 ; BIT Z80_CARD
+Z80_CARD:      DB 001H,0E7H            ; Address of card from Z80 side
+               BIT LCBANK1			   ; Get the 6502 BIOS back 
+               BIT LCBANK1             ; into our code
+               CLD
+               JMP BIOSDISK            ; go to 6502 code  
+               DB 000H,000H,080H       ; Dunno?
 page300end:
            
 topofstack    EQU $+20H

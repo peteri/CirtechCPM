@@ -1,0 +1,21 @@
+AEC9: 21 C1 AE ld   hl,$AEC1
+AECC: CB 46    bit  0,(hl)
+AECE: C9       ret
+AECF: CB 21    sla  c
+AED1: 59       ld   e,c
+AED2: 21 00 5E ld   hl,$5E00
+AED5: CD 2F A8 call $A82F
+AED8: 1E 0C    ld   e,$0C
+AEDA: CD 2F A8 call $A82F
+AEDD: E5       push hl
+AEDE: FD E1    pop  iy
+AEE0: FD 7E 02 ld   a,(iy+$02)
+AEE3: FD 6E 05 ld   l,(iy+$05)
+AEE6: FD 66 06 ld   h,(iy+$06)
+AEE9: D6 05    sub  $05
+AEEB: B7       or   a
+AEEC: C8       ret  z
+AEED: 29       add  hl,hl
+AEEE: 3D       dec  a
+AEEF: 18 FA    jr   $AEEB
+AEF1: C9       ret

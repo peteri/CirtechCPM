@@ -1,0 +1,31 @@
+AE80: 21 31 F4 ld   hl,$F431 
+AE83: CD A3 AE call $AEA3
+AE86: 21 B1 F4 ld   hl,$F4B1
+AE89: CD A3 AE call $AEA3
+AE8C: 21 31 F5 ld   hl,$F531
+AE8F: CD A3 AE call $AEA3
+AE92: 21 B1 F5 ld   hl,$F5B1
+AE95: CD A3 AE call $AEA3
+AE98: 21 31 F6 ld   hl,$F631
+AE9B: CD A3 AE call $AEA3
+AE9E: 32 54 E0 ld   ($E054),a
+AEA1: AF       xor  a
+AEA2: C9       ret
+AEA3: 06 2A    ld   b,$2A
+AEA5: 78       ld   a,b
+AEA6: 1F       rra
+AEA7: 32 55 E0 ld   ($E055),a
+AEAA: 38 03    jr   c,$AEAF
+AEAC: 32 54 E0 ld   ($E054),a
+AEAF: CB 79    bit  7,c
+AEB1: 28 01    jr   z,$AEB4
+AEB3: EB       ex   de,hl
+AEB4: 7E       ld   a,(hl)
+AEB5: 12       ld   (de),a
+AEB6: 28 01    jr   z,$AEB9
+AEB8: EB       ex   de,hl
+AEB9: 13       inc  de
+AEBA: 38 01    jr   c,$AEBD
+AEBC: 23       inc  hl
+AEBD: 10 E6    djnz $AEA5
+AEBF: C9       ret

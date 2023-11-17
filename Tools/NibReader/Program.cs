@@ -1,36 +1,60 @@
-﻿using System.Reflection.Metadata;
-using System.Runtime.CompilerServices;
-
-namespace NibReader;
+﻿namespace NibReader;
 class Program
 {
     static int[] prodosSectorMap = { 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15 };
     static int[] cpmSectorMap = { 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13 };
-
+    static bool noDiag;
+    static bool cpm3Sys;
+    static string nibbleFname = "";
 
     static void Main(string[] args)
     {
         if (args.Length != 0)
         {
+            foreach (var arg in args)
+            {
+                if (arg.StartsWith("-"))
+                {
+                    switch (arg.ToLower())
+                    {
+                        case "-nodiag":
+                            noDiag = true;
+                            break;
+                        case "-cpm3sys":
+                            cpm3Sys = true;
+                            break;
+                    }
+                }
+                else
+                    nibbleFname = arg;
+            }
             // Read in our nibbles
-            var tracks = NibReader.ReadTracks(File.ReadAllBytes(args[0]));
-            // Save away the prodos ordered sectors
-            var bootList = CreateTrackSectors(0, 0, 2);
-            SaveSectors("CPMBoot.bin", tracks, bootList, prodosSectorMap);
-            var d000List = CreateTrackSectors(0, 2, 14);
-            SaveSectors("D000.bin", tracks, d000List, prodosSectorMap);
-            var CCP = CreateTrackSectors(1, 0, 13);
-            SaveSectors("CCP.bin", tracks, CCP, prodosSectorMap);
-            var Toolkey = CreateTrackSectors(1, 13, 3);
-            SaveSectors("Toolkey.bin", tracks, Toolkey, prodosSectorMap);
-            var CpmLdr = CreateTrackSectors(2, 0, 16);
-            SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
-            // Now do the CPM bits
-            var CpmDirectory = CreateTrackSectors(3, 0, 8);
-            var cpmDir = ReadSectors(tracks, CpmDirectory, cpmSectorMap);
-            SaveCpmFile("CPM3.SYS", cpmDir, tracks, cpmSectorMap);
-            // Strip off high bits and display the Toolkey messages
-            DumpToolkitMessages();
+            var tracks = NibReader.ReadTracks(File.ReadAllBytes(nibbleFname));
+            if (cpm3Sys)
+            {
+                // Do CPM3.SYS
+                var CpmDirectory = CreateTrackSectors(3, 0, 8);
+                var cpmDir = ReadSectors(tracks, CpmDirectory, cpmSectorMap);
+                SaveCpmFile("CPM3.SYS", cpmDir, tracks, cpmSectorMap);
+            }
+            else
+            {
+                // Do the boot tracks
+                // Save away the prodos ordered sectors
+                var bootList = CreateTrackSectors(0, 0, 2);
+                SaveSectors("BOOTSECT.bin", tracks, bootList, prodosSectorMap);
+                var d000List = CreateTrackSectors(0, 2, 14);
+                SaveSectors("D000.bin", tracks, d000List, prodosSectorMap);
+                var CCP = CreateTrackSectors(1, 0, 13);
+                SaveSectors("CCP.bin", tracks, CCP, prodosSectorMap);
+                var Toolkey = CreateTrackSectors(1, 13, 3);
+                SaveSectors("TOOLKEY.bin", tracks, Toolkey, prodosSectorMap);
+                // Strip off high bits and display the Toolkey messages
+                if (!noDiag)
+                    DumpToolkitMessages();
+                var CpmLdr = CreateTrackSectors(2, 0, 16);
+                SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
+            }
         }
     }
 
@@ -41,6 +65,7 @@ class Program
 
     private static void SaveCpmFile(string filename, byte[] cpmDir, List<NibSector>[] nibTracks, int[] sectorMap)
     {
+        Console.Write("Writing to {0} ", filename);
         var cpmSectors = GetCpmSectors(filename, cpmDir);
         using (var stream = File.Open(filename, FileMode.Create))
         {
@@ -58,6 +83,7 @@ class Program
                 }
             }
         }
+        Console.WriteLine(" Done.");
     }
 
     // This only works for a 143K apple ][ disk.
@@ -112,12 +138,14 @@ class Program
 
     private static void DumpToolkitMessages()
     {
-        var data = File.ReadAllBytes("Toolkey.bin");
+        var data = File.ReadAllBytes("TOOLKEY.bin");
         int i = 0;
         Console.WriteLine();
         while (data[i] != 0x1a)
         {
-            Console.Write("{0}", (char)(data[i] & 0x7f));
+            char c = (char)(data[i] & 0x7f);
+            if (c < 0x20) c = (char)(c + 0x40);
+            Console.Write(c);
             i++;
             if (i <= 42 * 5)
             {
@@ -162,7 +190,8 @@ class Program
                 foreach (var ts in trackSectors)
                 {
                     var mappedSector = sectorMap[ts.sector];
-                    Console.Write("(T:{0:X2} S:{1:X} M:{2:X}) ", ts.track, ts.sector, mappedSector);
+                    if (!noDiag)
+                        Console.Write("(T:{0:X2} S:{1:X} M:{2:X}) ", ts.track, ts.sector, mappedSector);
                     var sector = nibTracks[ts.track].Where(s => s.Header.Sector == mappedSector).First();
                     writer.Write(sector.Data.Bytes);
                 }
