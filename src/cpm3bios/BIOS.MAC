@@ -75,10 +75,10 @@ DISK_TRKH   EQU 0F386H          ; Disk track high
 DISK_OP     EQU 0F388H          ; Disk operation
 DISK_ERR    EQU 0F389H          ; Disk Result
 SLOT_INFO   EQU 0F3B8H          ; Slot info
-IO_STATUS   EQU 0F3BEH          ; Io status, bit 2=key press ready
 ROUT_6502   EQU 0F3D0H          ; 6502 routine to call
 DISK_ROUT   EQU 003DCH          ; Disk routine to call
 CARD_Z80    EQU 0F3DEH          ; Card address from Z80 0E401H
+IO_STATUS   EQU 0F3EBH          ; Io status, bit 2=key press ready
 ; Constants for TOOLKEY popbuf
 LEFTEDGE    EQU 9               ; Left edge of window  
 SCRL8       EQU 0428H + LEFTEDGE + Z80OFFS 
@@ -389,7 +389,7 @@ DMA2BUF:    jr   z,DMANOTAUX    ; DMA is from aux bank
             ld   (RDCARDRAM),a  ; set it up.
 DMANOTAUX:  ld   de,DISK_BUFF   ; Dest is disk buffer
             ld   hl,(DMAADDR)   ; Source is DMA address
-            jr   DMANOTAUX
+            jr   DMADOCOPY
 CPFROMCARD: ld   (RDCARDRAM),a  ; DF9B -
 DMADOCOPY:  ldir                ; Do the copy
             ld   (RDMAINRAM),a  ; back to main memory
@@ -654,7 +654,7 @@ COPY_IOVEC: ld   de,@CIVEC      ; Copy in default IO vectors
             ld   b,07          ; Count down
 DEVCPYLOOP: ld   a,(ix+00)     ; Get card type
             dec  ix
-            cp   0F0H           ; Hi nybble clear
+            cp   00FH           ; Hi nybble clear
             jr   c,OLDCARD      ; Yes it's an old card or disk
             and  0F0H           ; Mask off pascal card type
             cp   0A0H           ; Bigger than we know?
@@ -778,26 +778,26 @@ SIGNONLOOP: ld   c,a
             jr   nz,SIGNONLOOP
             call CARDCHECK
             jp   B_WBOOT
-CARD_TYPES: DB 'NOCRD ',00,00       ; 00 Card type 00
-            DB 'UNKWN ',00,00       ; 08 Card type 01
-            DB 'DSKII ',00,00       ; 10 Card type 02
-            DB 'COMCD ',0B,00       ; 18 Card type 03
-            DB 'SERCD ',0B,00       ; 20 Card type 04
-            DB 'PRINT ',02,00       ; 28 Card type 05
-            DB '      ',00,00       ; 30 Card type 06 - pascal
-            DB 'RAMDR ',00,00       ; 38 Card type 07
-            DB 'PDISK ',00,00       ; 40 Card type 08
-            DB 'FDISK ',00,00       ; 48 Card type 09
-            DB 'UNKWN ',00,00       ; 50 Card type 06 - Pascal, Unknown
-            DB 'PRTCD ',02,00       ; 58 Card type 16 - Pascal, Printer 
-            DB 'MOUSE ',01,00       ; 60 Card type 26 - Pascal, X / Y Device
-            DB 'IODEV ',0B,00       ; 68 Card type 36 - Pascal, Serial or parallel IO
-            DB 'MODEM ',0B,00       ; 70 Card type 46 - Pascal, Modem
-            DB 'SOUND ',03,00       ; 78 Card type 56 - Pascal, Sound or speech
-            DB 'CLOCK ',02,00       ; 80 Card type 66 - Pascal, Clock
-            DB 'STORE ',03,00       ; 88 Card type 76 - Pascal, Mass storage
-            DB '80COL ',02,00       ; 90 Card type 86 - Pascal, 80 column
-            DB 'ATALK ',0B,00       ; 98 Card type 96 - Pascal, Network or bus interface
+CARD_TYPES: DB 'NOCRD ',00H,00       ; 00 Card type 00
+            DB 'UNKWN ',00H,00       ; 08 Card type 01
+            DB 'DSKII ',00H,00       ; 10 Card type 02
+            DB 'COMCD ',0BH,00       ; 18 Card type 03
+            DB 'SERCD ',0BH,00       ; 20 Card type 04
+            DB 'PRINT ',02H,00       ; 28 Card type 05
+            DB '      ',00H,00       ; 30 Card type 06 - pascal
+            DB 'RAMDR ',00H,00       ; 38 Card type 07
+            DB 'PDISK ',00H,00       ; 40 Card type 08
+            DB 'FDISK ',00H,00       ; 48 Card type 09
+            DB 'UNKWN ',00H,00       ; 50 Card type 06 - Pascal, Unknown
+            DB 'PRTCD ',02H,00       ; 58 Card type 16 - Pascal, Printer 
+            DB 'MOUSE ',01H,00       ; 60 Card type 26 - Pascal, X / Y Device
+            DB 'IODEV ',0BH,00       ; 68 Card type 36 - Pascal, Serial or parallel IO
+            DB 'MODEM ',0BH,00       ; 70 Card type 46 - Pascal, Modem
+            DB 'SOUND ',03H,00       ; 78 Card type 56 - Pascal, Sound or speech
+            DB 'CLOCK ',03H,00       ; 80 Card type 66 - Pascal, Clock
+            DB 'STORE ',03H,00       ; 88 Card type 76 - Pascal, Mass storage
+            DB '80COL ',02H,00       ; 90 Card type 86 - Pascal, 80 column
+            DB 'ATALK ',0BH,00       ; 98 Card type 96 - Pascal, Network or bus interface
 ;==================================================================
 ; BIOS Func 22 - B_DRVTBL 
 ; Get the drive table, returns the address of the drive table.
@@ -925,7 +925,7 @@ B_HOME:     ld  c,0H            ; Set track to zero and fall thru
 ; BC = Track to set
 ; Exit
 ;==================================================================          
-B_SETTRK:   ld   (SETTRKEX),sp  ; Save away stack pointer
+B_SETTRK:   ld   (SETTRKEX+1),sp ; Save away stack pointer
             ld   sp,BIOSTOS     ; Set bios stack
             ld   a,(DISK_DRV)   ; Get the drive
             call DRVISDISK2     ; See if it's a disk II 
@@ -978,8 +978,8 @@ B_MULTIO:   xor  a
 ;==================================================================
 USERF:      ld   de,(SAVEDE)    ; Pull back de
             ld   (WRMAINRAM),a  ; swap the memory back to main
-            cp   10             ; off the end of the table
-            ret  nc             ; no, go home
+            cp   10H            ; off the end of the table?
+            ret  nc             ; yep, go home
             sla  a              ; double function to get index
             push hl             ; save hl & bc
             push bc
@@ -990,7 +990,7 @@ USERF:      ld   de,(SAVEDE)    ; Pull back de
             ld   c,(hl)         ; get address into bc
             inc  hl
             ld   b,(hl)
-            ld   (USERFJP),bc   ; Store into jump
+            ld   (USERFJP+1),bc   ; Store into jump
             pop  bc             ; restore bc & hl
             pop  hl
 USERFJP:    jp   0000H          ; Off to user function
@@ -1141,8 +1141,8 @@ SLOTINST:   xor  a              ; Check input status
             ld   c,1            ; Input status check
 SLOTBIOSST: ld   a,CHAR_OP_ST   ; Set us to do a status check
             jp   CON_BIOS       ; Go ask character IO BIOS
-LSTSLOT:    DB 0                ; Slot for the printer
-AUXSLOT:    DB 0                ; Slot for the AUX device
+LSTSLOT:    DB 0FFH             ; Slot for the printer
+AUXSLOT:    DB 0FFH             ; Slot for the AUX device
 ;==================================================================  
 ;
 ;==================================================================  
@@ -1309,7 +1309,7 @@ GET_LST_ST: ld   hl,(LSTBUFIN)  ; next location we will store to
             inc  hl             ; Add one to the counter
             ld   a,HIGH LSTBUFEND ; Off end of list
             cp   h
-            jr   nz,LSTNOWRAP
+            jr   nz,BUFNOWRAP
             ld   h,HIGH ISRBUFFST ; Reset back to start
 BUFNOWRAP:  xor  a              ; Maybe Mark as not ready
             sbc  hl,de          ; In equals out
@@ -1334,8 +1334,8 @@ GET_AUX_ST: ld   hl,(AUXBUFIN)
 ; Add character to the AUX buffer
 ;
 ;==================================================================
-PUT_AUX_BF: ld   a,(AUXSLOT)    ; 
-            cp   0FFH
+PUT_AUX_BF: ld   a,(AUXSLOT)    ; Aux slot  set?
+            cp   0FFH           ; Nope go home early
             ret  z
             ld   hl,(AUXBUFIN)
             ld   (SETALTZP),a
@@ -1359,8 +1359,8 @@ AUXNOWRAP:  ld   (AUXBUFIN),hl
 ; Add character to the LST buffer
 ;
 ;==================================================================
-PUT_LST_BF: ld   a,(LSTSLOT)
-            cp   0FFH
+PUT_LST_BF: ld   a,(LSTSLOT)    ; LST slot set
+            cp   0FFH           ; Nope go home early
             ret  z
             ld   hl,(LSTBUFIN)
             ld   (SETALTZP),a
@@ -1507,8 +1507,8 @@ LAB74:      DB   0              ; Dunno what yet
 TK_EMPTBUF: ld   hl,ISRBUFFST
             ld   (LSTBFOUT),hl  ; Empty LST
             ld   (LSTBUFIN),hl
-            ld   hl,(AUXBFOUT)  ; Empty AUX
-            ld   (AUXBUFIN),hl
+            ld   hl,(AUXBUFIN)   ; Empty AUX
+            ld   (AUXBFOUT),hl
             xor  a              ; Reset the Pseudo ISR flags
             ld   (ISRWORK+1),a
             ld   (ISRCOUNTER+1),a
@@ -1578,7 +1578,7 @@ PRNXTCHAR:  ld   (TXTPAGE2),a
 ; draw tool key and prompt user
 ;==================================================================
 TOOLKEYQ:   call DRWTOOLKEY     ; Draw the main toolkey message
-            call GETUSERKEY
+TOOLKEYQ2:  call GETUSERKEY
             jp   z,TK_RESTSCR
             cp   'c'
             call z,TK_CURSOR
@@ -1597,7 +1597,7 @@ TOOLKEYQ:   call DRWTOOLKEY     ; Draw the main toolkey message
 REDRAWTK:   ld   de,MSG_TOOLKEY
             set  7,c
             call SCRMOVE
-            jr   TOOLKEYQ
+            jr   TOOLKEYQ2
 ;==================================================================
 ; Format a disk
 ;==================================================================
@@ -1673,8 +1673,8 @@ DP_GETDST:  ld   hl,MSG_GETDST  ; Prompt user for destination disk
             call KEYORESC       ; Get dest drive letter
             call TK_CHKDRVL     ; Is it a drive
             jr   nc,DP_GETDST   ; Loop until user does something
-DUPAGAIN:   ld   (DUPDSTDRV),a  ; Save away drive for later
-            call DRVISDISK2     ; Get drive device type
+            ld   (DUPDSTDRV),a  ; Save away drive for later
+DUPAGAIN:   call DRVISDISK2     ; Get drive device type
             ld   hl,SRCDRVTYP   ; Same type as source
             cp   (hl)
             jr   z,DP_SAMEDRV
@@ -1713,11 +1713,11 @@ DP_CHKSAME: ld   hl,DUPDSTDRV   ; Check the destination
             call TK_WRLINE
             jr   DP_RDSRC       ; Do the read
 DP_NEXT:    call DP_PROMPT      ; See if we need to prompt user
-            jr   nz,DP_RDSRC    ; Not zero we need to tell user
+            jr   nz,DP_NOKEY    ; Not zero we need to tell user
 DP_ASKSRC:  ld   hl,MSG_SRCDSK  ; Ask user to put in source
             call TK_WRLINE
 DP_RDSRC:   call KEYORESC       ; Wait for a key press
-            call TK_WRTDUP      ; Tell them we're duplicating
+DP_NOKEY:   call TK_WRTDUP      ; Tell them we're duplicating
             ld   a,(DUPSRCDRV)  ; Read in some data from source
             ld   hl,DUPSRCTRKS  ; Start here
             ld   d,DSKOP_RDTRK  ; Read in a track
@@ -1987,7 +1987,7 @@ PRINTCHW:   call PSUEDOISR      ; Do any IO we can
 ;==================================================================
 DEVINI:     xor  a
             cp   c              ; Console?
-            jp   nz,ININOTCONS  ; Nope go do a BIOS call 
+            jr   nz,ININOTCONS  ; Nope go do a BIOS call 
             ld   c,ESC          ; Send ESC
             call C_TO_CONS
             ld   c,'*'          ; Followed by * to clear screen
