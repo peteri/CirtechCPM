@@ -811,6 +811,12 @@ CARD_TYPES: DB 'NOCRD ',00H,00       ; 00 Card type 00
 ; Entry
 ; Exit 
 ; HL = DRVTBL
+;
+; Surprisingly important that the initial DRVTBL result points to
+; a blank drive table (we use the DPB TBL for this) when GENCPM runs
+; it peeks at this code to find how many drives have been defined
+; if the number is zero, it never asks for any of the hash stuff.
+;
 ;==================================================================
 B_DRVTBL:   ld   hl,DPBTBL           ; Cold boot sets this to DRVTBL at 5E00H
             ret   
