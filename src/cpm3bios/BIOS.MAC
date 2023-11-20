@@ -124,12 +124,19 @@ ERR_DSKERR  EQU  0FD6AH         ; Disk error
 ERR_WRPRO   EQU  0FD90H         ; Write protected error
 MSG_GETSRC  EQU  0FDB6H         ; Which drive is source
 MSG_GETDST  EQU  0FDDCH         ; Which drive is dest
-MSG_INSDSKS EQU  0FE02H-8000H         ; Insert disks
-MSG_DUPLIC  EQU  0FE28H-8000H         ; Duplicating disk
-MSG_DUPOK   EQU  0FE4EH-8000H         ; Operation sucessful, do again
-MSG_SRCDSK  EQU  0FE74H-8000H         ; Insert source disk
-MSG_DSTDSK  EQU  0FE9AH-8000H         ; Insert destination disk
-MSG_WRNGDSK EQU  0FEC0H-8000H         ; Incompatible drives
+MSG_INSDSKS EQU  0FE02H         ; Insert disks
+;
+; Note duplicate message is at the same address as 
+; @AOVEC before GENCPM runs unclear why this does not
+; nobbled by the SCB relocate, best guess is it's not in
+; the common area so it never gets done. Need to investigate
+; via the CP/M plus code.
+;
+MSG_DUPLIC  EQU  0FE28H         ; Duplicating disk
+MSG_DUPOK   EQU  0FE4EH         ; Operation sucessful, do again
+MSG_SRCDSK  EQU  0FE74H         ; Insert source disk
+MSG_DSTDSK  EQU  0FE9AH         ; Insert destination disk
+MSG_WRNGDSK EQU  0FEC0H         ; Incompatible drives
 ;******************************************************************
 ;*                                                                *
 ;*  Set the common memory segment, code from here on in lives     *
