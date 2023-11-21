@@ -773,38 +773,38 @@ DEVININEXT: push bc             ; Save counter
             ld   (ZESC_STATE),a ; Reset Console escape state
             ld   (WRMAINRAM),a
             di                  ; turn off interrupts
-            ld   hl,SIGNONMSG
+            ld   hl,SIGNONMSG   ; Display sign on message
             ld   a,(hl)
-SIGNONLOOP: ld   c,a
+SIGNONLOOP: ld   c,a            ; Get a character
             push hl
-            call C_TO_CONS
+            call C_TO_CONS      ; Output it
             pop  hl
             inc  hl
             ld   a,(hl)
             or   a
-            jr   nz,SIGNONLOOP
-            call CARDCHECK
-            jp   B_WBOOT
-CARD_TYPES: DB 'NOCRD ',00H,00       ; 00 Card type 00
-            DB 'UNKWN ',00H,00       ; 08 Card type 01
-            DB 'DSKII ',00H,00       ; 10 Card type 02
-            DB 'COMCD ',0BH,00       ; 18 Card type 03
-            DB 'SERCD ',0BH,00       ; 20 Card type 04
-            DB 'PRINT ',02H,00       ; 28 Card type 05
-            DB '      ',00H,00       ; 30 Card type 06 - pascal
-            DB 'RAMDR ',00H,00       ; 38 Card type 07
-            DB 'PDISK ',00H,00       ; 40 Card type 08
-            DB 'FDISK ',00H,00       ; 48 Card type 09
-            DB 'UNKWN ',00H,00       ; 50 Card type 06 - Pascal, Unknown
-            DB 'PRTCD ',02H,00       ; 58 Card type 16 - Pascal, Printer 
-            DB 'MOUSE ',01H,00       ; 60 Card type 26 - Pascal, X / Y Device
-            DB 'IODEV ',0BH,00       ; 68 Card type 36 - Pascal, Serial or parallel IO
-            DB 'MODEM ',0BH,00       ; 70 Card type 46 - Pascal, Modem
-            DB 'SOUND ',03H,00       ; 78 Card type 56 - Pascal, Sound or speech
-            DB 'CLOCK ',03H,00       ; 80 Card type 66 - Pascal, Clock
-            DB 'STORE ',03H,00       ; 88 Card type 76 - Pascal, Mass storage
-            DB '80COL ',02H,00       ; 90 Card type 86 - Pascal, 80 column
-            DB 'ATALK ',0BH,00       ; 98 Card type 96 - Pascal, Network or bus interface
+            jr   nz,SIGNONLOOP  ; Loop until done.
+            call CARDCHECK      ; Check if this Cirtech hardware
+            jp   B_WBOOT        ; Go to warm boot
+CARD_TYPES: DB 'NOCRD ',00H,00  ; 00 Card type 00
+            DB 'UNKWN ',00H,00  ; 08 Card type 01
+            DB 'DSKII ',00H,00  ; 10 Card type 02
+            DB 'COMCD ',0BH,00  ; 18 Card type 03
+            DB 'SERCD ',0BH,00  ; 20 Card type 04
+            DB 'PRINT ',02H,00  ; 28 Card type 05
+            DB '      ',00H,00  ; 30 Card type 06 - pascal
+            DB 'RAMDR ',00H,00  ; 38 Card type 07
+            DB 'PDISK ',00H,00  ; 40 Card type 08
+            DB 'FDISK ',00H,00  ; 48 Card type 09
+            DB 'UNKWN ',00H,00  ; 50 Card type 06 - Pascal, Unknown
+            DB 'PRTCD ',02H,00  ; 58 Card type 16 - Pascal, Printer 
+            DB 'MOUSE ',01H,00  ; 60 Card type 26 - Pascal, X / Y Device
+            DB 'IODEV ',0BH,00  ; 68 Card type 36 - Pascal, Serial or parallel IO
+            DB 'MODEM ',0BH,00  ; 70 Card type 46 - Pascal, Modem
+            DB 'SOUND ',03H,00  ; 78 Card type 56 - Pascal, Sound or speech
+            DB 'CLOCK ',03H,00  ; 80 Card type 66 - Pascal, Clock
+            DB 'STORE ',03H,00  ; 88 Card type 76 - Pascal, Mass storage
+            DB '80COL ',02H,00  ; 90 Card type 86 - Pascal, 80 column
+            DB 'ATALK ',0BH,00  ; 98 Card type 96 - Pascal, Network or bus interface
 ;==================================================================
 ; BIOS Func 22 - B_DRVTBL 
 ; Get the drive table, returns the address of the drive table.
@@ -1157,7 +1157,7 @@ SLOTBIOSST: ld   a,CHAR_OP_ST   ; Set us to do a status check
 LSTSLOT:    DB 0FFH             ; Slot for the printer
 AUXSLOT:    DB 0FFH             ; Slot for the AUX device
 ;==================================================================  
-;
+; Output character to a slot
 ;==================================================================  
 SLOTOUTCH:  ld   a,(LSTSLOT)    ; Output device is LST?
             cp   b              
@@ -1168,7 +1168,7 @@ SLOTOUTCH:  ld   a,(LSTSLOT)    ; Output device is LST?
 SLOTOUTCH2: ld   a,CHAR_OP_WR   ; Nope call regular 
             jp   CON_BIOS       ; character BIOS
 ;==================================================================  
-;
+; Get character from a slot
 ;==================================================================  
 SLOTINCH:   pop  hl             ; Get rid of vector saved on stack
             ld   a,b            ; Check if it was slot 0
@@ -1228,14 +1228,12 @@ VECINNXT:   xor  a              ; Assume not ready
             jr   VECIN          ; And do it all again until we get some input
 ;==================================================================
 ; Character in C to console
-; Lives at 0A99AH
 ;==================================================================
 C_TO_CONS:  res  7,c            ; Clear the high bit
 C_TO_CONS2: ld   b,0            ; Flag we want console
             jr   CON_BIOS
 ;==================================================================
 ; Toggle cursor
-; Lives at 0A9A0H
 ;==================================================================            
 TOG_CURSOR: ld   b,80H          ; Toggle the cusor
 ;=================================================================
@@ -1350,21 +1348,21 @@ GET_AUX_ST: ld   hl,(AUXBUFIN)
 PUT_AUX_BF: ld   a,(AUXSLOT)    ; Aux slot  set?
             cp   0FFH           ; Nope go home early
             ret  z
-            ld   hl,(AUXBUFIN)
-            ld   (SETALTZP),a
+            ld   hl,(AUXBUFIN)  ; get buf pointer
+            ld   (SETALTZP),a   ; Off to LCBANK1 on the aux card
             ld   a,(LCBANK1)
             ld   a,(LCBANK1)
-            ld   (hl),c
-            ld   a,(LCBANK2)
+            ld   (hl),c         ; Store the character
+            ld   a,(LCBANK2)    ; Back to normal memeory
             ld   a,(LCBANK2)
             ld   (SETSTDZP),a
-            inc  hl
+            inc  hl             ; Increment the pointer
             ld   a,HIGH AUXBUFEND
-            cp   h
+            cp   h              ; wrapped around?
             jr   nz,AUXNOWRAP
-            ld   hl,ISRBUFFST
+            ld   hl,ISRBUFFST   ; Back to start
 AUXNOWRAP:  ld   (AUXBUFIN),hl
-            ld   hl,ISRWORK+1
+            ld   hl,ISRWORK+1   ; Flag it's time do some work
             set  0,(hl)
             ret
 ;==================================================================
@@ -1375,17 +1373,17 @@ AUXNOWRAP:  ld   (AUXBUFIN),hl
 PUT_LST_BF: ld   a,(LSTSLOT)    ; LST slot set
             cp   0FFH           ; Nope go home early
             ret  z
-            ld   hl,(LSTBUFIN)
-            ld   (SETALTZP),a
-            ld   (hl),c
-            ld   (SETSTDZP),a
-            inc  hl
+            ld   hl,(LSTBUFIN)  ; get buffer pointer
+            ld   (SETALTZP),a   ; We're using aux language card LCBANK2
+            ld   (hl),c         ; Store it
+            ld   (SETSTDZP),a   ; Back to main memeory
+            inc  hl             ; Increment pointer
             ld   a,HIGH LSTBUFEND
-            cp   h
+            cp   h              ; Wrapped around?
             jr   nz,LSTNOWRAP
-            ld   hl,ISRBUFFST
+            ld   hl,ISRBUFFST   ; Back to start
 LSTNOWRAP:  ld   (LSTBUFIN),hl
-            ld   hl,ISRWORK+1
+            ld   hl,ISRWORK+1   ; Flag it's time to do some work
             set  7,(hl)
             ret
 ;==================================================================
@@ -1558,35 +1556,35 @@ DRWTOOLKEY: ld   a,(DISK_DRV)   ; Save current disk drive before we
 ;==================================================================
 ; User function 8 - Print screen
 ;==================================================================
-TK_PRTSCR:  ld   a,CR
+TK_PRTSCR:  ld   a,CR           ; Print CR LF
             call PRINTCHAR
             ld   a,LF
             call PRINTCHAR
-            ld   hl,SCRLINES
+            ld   hl,SCRLINES    ; Screen Line addresses from $312
 PRNXTLINE:  ld   e,(hl)
             inc  hl
             ld   d,(hl)
-            bit  7,d
-            jr   nz,PRLINE
+            bit  7,d            ; zero at the end?
+            jr   nz,PRLINE      ; Nope lets do a line
             xor  a
             ret
-PRLINE:     push hl
-            ld   b,40
-PRNXTCHAR:  ld   (TXTPAGE2),a
+PRLINE:     push hl             ; Save current line pointer
+            ld   b,40           ; 40 characters
+PRNXTCHAR:  ld   (TXTPAGE2),a   ; Odd page
             ld   a,(de)
             ld   (TXTPAGE1),a
-            call SCRTOPRINT
-            ld   a,(de)
-            call SCRTOPRINT
+            call SCRTOPRINT     ; Print odd column character
+            ld   a,(de)         ; Get even column
+            call SCRTOPRINT     ; Print even column character
             inc  de
-            djnz PRNXTCHAR
-            ld   a,CR
+            djnz PRNXTCHAR      ; Repeat until all done
+            ld   a,CR           ; Print CR LF
             call PRINTCHAR
             ld   a,LF
             call PRINTCHAR
-            pop  hl
+            pop  hl             ; Get back pointer to table of lines
             inc  hl
-            jr   PRNXTLINE
+            jr   PRNXTLINE      ; and loop
 ;==================================================================
 ; draw tool key and prompt user
 ;==================================================================
@@ -1617,7 +1615,7 @@ REDRAWTK:   ld   de,MSG_TOOLKEY
 FORMAT:     ld   hl,MSG_FORMAT  ; Prompt user for drive to format
             call TK_WRLINE
             ld   hl,DISK_BUFF   ; Set disk buffer with E5
-            ld   (hl),0E5H
+            ld   (hl),0E5H      ; CP/M empty directory
             ld   d,h
             ld   e,l
             inc  de
@@ -1775,30 +1773,34 @@ DP_DISKERR: ld   hl,ERR_DSKERR  ; Disk error
 DP_LASTMSG: call TK_WRLINE      ; Show user
             call KEYORESC       ; Do it again?
             cp   'y'
-            jr   nz,DP_EXIT
-            ld   a,(SAVESRCDR)
+            jr   nz,DP_EXIT     ; No go home
+            ld   a,(SAVESRCDR)  ; Yes setup for another run
             ld   c,a
-            ld   hl,DUPSRCDRV
+            ld   hl,DUPSRCDRV   ; Reset stuff
             res  0,(hl)
             ld   a,(DUPDSTDRV)
             res  0,a
-            jp   DUPAGAIN
+            jp   DUPAGAIN       ; And loop back
 DP_EXIT:    xor  a
             ret
-DP_TRKOP:   ld   b,5
+;==================================================================
+; Perform a track duplicate operation
+; Reads or write 5 tracks.
+;==================================================================
+DP_TRKOP:   ld   b,5            ; Do 5 tracks      
             res  0,a
-            ld   (DISK_DRV),a
-            ld   a,d
+            ld   (DISK_DRV),a   ; which drive
+            ld   a,d            ; operation to do
             ld   (DISK_OP),a
             ld   a,01EH         ; Destination for track data
-            ld   (TRACK_ADDR),a
-DP_TRKLOOP: ld   a,(hl)
-            dec  a
+            ld   (TRACK_ADDR),a ; $1E00 or 0E00H from z80
+DP_TRKLOOP: ld   a,(hl)         ; hl is track 
+            dec  a              ; decrement it
             ld   (DISK_TRKL),a
-            call CALLDISK
+            call CALLDISK       ; Read in a whole track (4K)
             ret  nz
-            dec  (hl)
-            ret  z
+            dec  (hl)           ; Done all the tracks?
+            ret  z              ; Go home
             ld   a,(KBD)        ; User hit a key?
             or   a
             pop  de             ; Get rid our ret address
@@ -1807,6 +1809,9 @@ DP_TRKLOOP: ld   a,(hl)
             djnz DP_TRKLOOP     ; loop until done
             xor  a
             ret
+;==================================================================
+; Call a disk routine
+;==================================================================
 CALLDISK:   ld   de,DISK_ROUT
             ld   (ROUT_6502),de
             ld   de,(CARD_Z80)
@@ -1883,12 +1888,12 @@ TK_RESTSCR: ld   a,(TK_SAVEDRV) ; restore saved disk drive
             ld   (DISK_DRV),a   ; put it into regular bios
             ld   de,0FF00H
             set   7,c
-; 
+;===================================================================
 ; Screen mover routine, saves or restores screen
 ; from lines 8-12 columns 18-60 to or from de.
 ; Direction is controlled by hi bit of C register
 ; clear is screen to DE, set is DE to screen
-;
+;===================================================================            
 SCRMOVE:    ld   hl,SCRL8 
             call LINEMOVE
             ld   hl,SCRL9
@@ -1902,7 +1907,9 @@ SCRMOVE:    ld   hl,SCRL8
             ld   (TXTPAGE1),a
             xor  a
             ret
+;===================================================================            
 ; Matching line mover
+;===================================================================            
 LINEMOVE:   ld   b,42           ; Copy 42 characters
 LMV_LOOP:   ld   a,b            ; get our column
             rra                 ; Shuffle it in carry
@@ -1944,8 +1951,8 @@ DP_PROMPT:  ld   hl,DUPDSTDRV  ; check destination drive flag
 ; GETDPB
 ; c = drive letter 0=A,1=B,2=C ....
 ; iy= DPB drive parameter block
-; hl=number of 4096 byte blocks on the drive (not valid if BLS<5)
-;    Equivalent to number of tracks?
+; hl= number of 4096 byte blocks on the drive (not valid if BLS<5)
+;     Equivalent to number of tracks
 ;
 ;==================================================================
 GETDPB:     sla  c           ; Multiply by 2
