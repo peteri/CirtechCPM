@@ -9,3 +9,5 @@ Write-Host 'Building files'
 .\M80.ps1 BIOS
 Write-Host 'Linking'
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BNKBIOS3[b]=BIOS,SCB
+Write-Host 'Running GENCPM'
+C:\tools\ntvcm.exe GENCPM AUTO DISPLAY

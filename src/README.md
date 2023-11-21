@@ -7,6 +7,10 @@ The Microsoft .net 8.0 SDK is needed to build a tool used to add and remove CP/M
 
 NTVCM from https://github.com/davidly/ntvcm has been used to run the CP/M binaries under windows. 
 
+For the original patch free `GENCPM.COM`, `BDOS3.SPR`, `BNKBDOS3.SPR` and `RESBDOS3.SPR` I've used files found in the `CPM3/FLOPPY` folder of `TARBELL.ZIP` from http://www.retroarchive.org/cpm/os/os.htm the only changes made to the SPR files has been to patch the correct CP/M Plus serial number in for the Cirtech distribution disk I have.
+
+For future use I am planning to use the patched SPR files from RomWBW as these contain the DRI patch sets.
+
 ## boot
 
 `boot` contains code for the boot tracks, most of the `MAC` assembler files are just compiled and linked individually,  `LDRBIOS.MAC` is an exception to this it's output `LDRBIOS.REL`  gets linked with `CPMLDR.REL` from DRI.
