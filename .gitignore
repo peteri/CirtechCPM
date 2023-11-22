@@ -295,22 +295,22 @@ Tools/NibReader/CPM3.SYS
 *.PRN
 *.SYM
 # Ignore the loader BIOS output from assembly
-src/boot/BOOTSECT.REL
-src/boot/BIOSDISK.REL
-src/boot/BIOSCHAR.REL
-src/boot/BIOSVID.REL
-src/boot/LDRBIOS.REL
-src/boot/TOOLKEY.REL
-src/boot/*.COM
-src/boot/*.BIN
-src/boot/*.$$$
-src/boot/*.LOG
-src/boot/comparison/*
-src/cpm3bios/BIOS.REL
-src/cpm3bios/SCB.REL
-src/cpm3bios/BNKBIOS3.SPR
-src/cpm3bios/CPM3.SYS
-src/cpm3bios/*.$$$
+src/OEM/boot/BOOTSECT.REL
+src/OEM/boot/BIOSDISK.REL
+src/OEM/boot/BIOSCHAR.REL
+src/OEM/boot/BIOSVID.REL
+src/OEM/boot/LDRBIOS.REL
+src/OEM/boot/TOOLKEY.REL
+src/OEM/boot/*.COM
+src/OEM/boot/*.BIN
+src/OEM/boot/*.$$$
+src/OEM/boot/*.LOG
+src/OEM/boot/comparison/*
+src/OEM/cpm3bios/BIOS.REL
+src/OEM/cpm3bios/SCB.REL
+src/OEM/cpm3bios/BNKBIOS3.SPR
+src/OEM/cpm3bios/CPM3.SYS
+src/OEM/cpm3bios/*.$$$
 # CPM editors (I'm using Turbo pascal)
 # easiest to just copy them into the working folder
 # But best not to add them to git.
