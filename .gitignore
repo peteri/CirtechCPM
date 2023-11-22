@@ -301,11 +301,11 @@ src/boot/BIOSCHAR.REL
 src/boot/BIOSVID.REL
 src/boot/LDRBIOS.REL
 src/boot/TOOLKEY.REL
-src/boot/D000.REL
 src/boot/*.COM
-src/boot/*.bin
+src/boot/*.BIN
 src/boot/*.$$$
-src/boot/D000.REL
+src/boot/*.LOG
+src/boot/comparison/*
 src/cpm3bios/BIOS.REL
 src/cpm3bios/SCB.REL
 src/cpm3bios/BNKBIOS3.SPR

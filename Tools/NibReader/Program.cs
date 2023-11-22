@@ -42,18 +42,22 @@ class Program
                 // Do the boot tracks
                 // Save away the prodos ordered sectors
                 var bootList = CreateTrackSectors(0, 0, 2);
-                SaveSectors("BOOTSECT.bin", tracks, bootList, prodosSectorMap);
-                var d000List = CreateTrackSectors(0, 2, 14);
-                SaveSectors("D000.bin", tracks, d000List, prodosSectorMap);
+                SaveSectors("BOOTSECT.BIN", tracks, bootList, prodosSectorMap);
+                var biosVidList = CreateTrackSectors(0, 2, 4);
+                SaveSectors("BIOSVID.BIN", tracks, biosVidList, prodosSectorMap);
+                var biosDiskList = CreateTrackSectors(0, 6, 8);
+                SaveSectors("BIOSDISK.BIN", tracks, biosDiskList, prodosSectorMap);
+                var biosCharList = CreateTrackSectors(0, 14, 2);
+                SaveSectors("BIOSCHAR.BIN", tracks, biosCharList, prodosSectorMap);
                 var CCP = CreateTrackSectors(1, 0, 13);
-                SaveSectors("CCP.bin", tracks, CCP, prodosSectorMap);
+                SaveSectors("CCP.COM", tracks, CCP, prodosSectorMap);
                 var Toolkey = CreateTrackSectors(1, 13, 3);
-                SaveSectors("TOOLKEY.bin", tracks, Toolkey, prodosSectorMap);
+                SaveSectors("TOOLKEY.BIN", tracks, Toolkey, prodosSectorMap);
                 // Strip off high bits and display the Toolkey messages
                 if (!noDiag)
                     DumpToolkitMessages();
                 var CpmLdr = CreateTrackSectors(2, 0, 16);
-                SaveSectors("CPMLDR.bin", tracks, CpmLdr, prodosSectorMap);
+                SaveSectors("CPMLDR.BIN", tracks, CpmLdr, prodosSectorMap);
             }
         }
     }
