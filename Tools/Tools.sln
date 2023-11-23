@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CtrlZ", "CtrlZ\CtrlZ.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPM3SYSDump", "CPM3SYSDump\CPM3SYSDump.csproj", "{DE65E04F-C65F-4DF4-90B5-AA7E57D3815D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenDsk", "GenDsk\GenDsk.csproj", "{6A10AC41-644D-4101-81EA-12A810E4CAEE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{DE65E04F-C65F-4DF4-90B5-AA7E57D3815D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE65E04F-C65F-4DF4-90B5-AA7E57D3815D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE65E04F-C65F-4DF4-90B5-AA7E57D3815D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A10AC41-644D-4101-81EA-12A810E4CAEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A10AC41-644D-4101-81EA-12A810E4CAEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A10AC41-644D-4101-81EA-12A810E4CAEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A10AC41-644D-4101-81EA-12A810E4CAEE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
