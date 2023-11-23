@@ -4,7 +4,6 @@ class Program
     static int[] prodosSectorMap = { 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15 };
     static int[] cpmSectorMap = { 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13 };
     static bool noDiag;
-    static bool cpm3Sys;
     static string nibbleFname = "";
 
     static void Main(string[] args)
@@ -20,9 +19,6 @@ class Program
                         case "-nodiag":
                             noDiag = true;
                             break;
-                        case "-cpm3sys":
-                            cpm3Sys = true;
-                            break;
                     }
                 }
                 else
@@ -30,35 +26,29 @@ class Program
             }
             // Read in our nibbles
             var tracks = NibReader.ReadTracks(File.ReadAllBytes(nibbleFname));
-            if (cpm3Sys)
-            {
-                // Do CPM3.SYS
-                var CpmDirectory = CreateTrackSectors(3, 0, 8);
-                var cpmDir = ReadSectors(tracks, CpmDirectory, cpmSectorMap);
-                SaveCpmFile("CPM3.SYS", cpmDir, tracks, cpmSectorMap);
-            }
-            else
-            {
-                // Do the boot tracks
-                // Save away the prodos ordered sectors
-                var bootList = CreateTrackSectors(0, 0, 2);
-                SaveSectors("BOOTSECT.BIN", tracks, bootList, prodosSectorMap);
-                var biosVidList = CreateTrackSectors(0, 2, 4);
-                SaveSectors("BIOSVID.BIN", tracks, biosVidList, prodosSectorMap);
-                var biosDiskList = CreateTrackSectors(0, 6, 8);
-                SaveSectors("BIOSDISK.BIN", tracks, biosDiskList, prodosSectorMap);
-                var biosCharList = CreateTrackSectors(0, 14, 2);
-                SaveSectors("BIOSCHAR.BIN", tracks, biosCharList, prodosSectorMap);
-                var CCP = CreateTrackSectors(1, 0, 13);
-                SaveSectors("CCP.COM", tracks, CCP, prodosSectorMap);
-                var Toolkey = CreateTrackSectors(1, 13, 3);
-                SaveSectors("TOOLKEY.BIN", tracks, Toolkey, prodosSectorMap);
-                // Strip off high bits and display the Toolkey messages
-                if (!noDiag)
-                    DumpToolkitMessages();
-                var CpmLdr = CreateTrackSectors(2, 0, 16);
-                SaveSectors("CPMLDR.BIN", tracks, CpmLdr, prodosSectorMap);
-            }
+            // Do CPM3.SYS
+            var CpmDirectory = CreateTrackSectors(3, 0, 8);
+            var cpmDir = ReadSectors(tracks, CpmDirectory, cpmSectorMap);
+            SaveCpmFile("CPM3.SYS", cpmDir, tracks, cpmSectorMap);
+            // Do the boot tracks
+            // Save away the prodos ordered sectors
+            var bootList = CreateTrackSectors(0, 0, 2);
+            SaveSectors("BOOTSECT.BIN", tracks, bootList, prodosSectorMap);
+            var biosVidList = CreateTrackSectors(0, 2, 4);
+            SaveSectors("BIOSVID.BIN", tracks, biosVidList, prodosSectorMap);
+            var biosDiskList = CreateTrackSectors(0, 6, 8);
+            SaveSectors("BIOSDISK.BIN", tracks, biosDiskList, prodosSectorMap);
+            var biosCharList = CreateTrackSectors(0, 14, 2);
+            SaveSectors("BIOSCHAR.BIN", tracks, biosCharList, prodosSectorMap);
+            var CCP = CreateTrackSectors(1, 0, 13);
+            SaveSectors("CCP.COM", tracks, CCP, prodosSectorMap);
+            var Toolkey = CreateTrackSectors(1, 13, 3);
+            SaveSectors("TOOLKEY.BIN", tracks, Toolkey, prodosSectorMap);
+            // Strip off high bits and display the Toolkey messages
+            if (!noDiag)
+                DumpToolkitMessages();
+            var CpmLdr = CreateTrackSectors(2, 0, 16);
+            SaveSectors("CPMLDR.BIN", tracks, CpmLdr, prodosSectorMap);
         }
     }
 
