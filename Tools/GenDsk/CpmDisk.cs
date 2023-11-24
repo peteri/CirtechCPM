@@ -51,9 +51,12 @@ internal class CpmDisk
         WriteFile(cpm3sys);
     }
 
-    private void WriteFile(FileInfo cpm3sys)
+    // See https://github.com/fadden/CiderPress2/blob/main/DiskArc/FS/CPM-notes.md
+    private void WriteFile(FileInfo fileInfo)
     {
-        throw new NotImplementedException();
+        ReadFreeBlocks();
+        extent=CreateExtent(fileInfo);
+        DeleteExtents(extent);
     }
 
     private void WriteBootTrack(List<FileInfo> bootTrackFiles)
@@ -80,7 +83,12 @@ internal class CpmDisk
             }
         }
         var lastDirectorySector=ReadCpmSector(3,7);
-        byte[]lastBytes={0x00};
+        byte[]lastBytes=
+        {
+            0x00,0x73,0x79,0x73,0x74,0x65,0x6d,0x20,0x20,0xf4,0xf2,0xeb,0x00,0x00,0x00,0x60,
+            0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x00,0x00,0x00,0x00
+        };
+        lastBytes.CopyTo(lastDirectorySector.Slice(7*0x20,0x20));
         WriteCpmSector(3,7,lastDirectorySector);
     }
 
