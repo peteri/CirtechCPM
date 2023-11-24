@@ -29,8 +29,11 @@ internal class CpmDisk
     {
         this.diskFileInfo = diskFileInfo;
         data = new byte[Tracks * SectorsPerTrack * SectorSize];
+        var emptySector=new byte[SectorSize];
+        Array.Fill(emptySector,CpmEmptyByte);
         // Fill all of the directory with empty bytes...
-        Array.Fill(data, CpmEmptyByte, BootTracks * SectorsPerTrack * SectorSize, SectorsPerTrack * SectorSize);
+        for(int sector=0;sector<8;sector++)
+            WriteCpmSector(3,sector,emptySector.AsSpan());
     }
 
     internal void CopyBootable(DirectoryInfo binariesDirectory)
@@ -43,9 +46,9 @@ internal class CpmDisk
         var bootTrackFiles = ValidateBootFiles(files);
         WriteBootTrack(bootTrackFiles);
         // Check for CPM3.SYS
-        // FileInfo? cpm3sys = files.FirstOrDefault(f => f.Name.Equals("CPM3.SYS", StringComparison.OrdinalIgnoreCase));
-        // if (cpm3sys == null) throw new Exception("Could not find file CPM3.SYS");
-        // WriteFile(cpm3sys);
+        FileInfo? cpm3sys = files.FirstOrDefault(f => f.Name.Equals("CPM3.SYS", StringComparison.OrdinalIgnoreCase));
+        if (cpm3sys == null) throw new Exception("Could not find file CPM3.SYS");
+        WriteFile(cpm3sys);
     }
 
     private void WriteFile(FileInfo cpm3sys)
@@ -76,12 +79,30 @@ internal class CpmDisk
                 track++;
             }
         }
-        // Todo write out the system track into the CP/M directory
+        var lastDirectorySector=ReadCpmSector(3,7);
+        byte[]lastBytes={0x00};
+        WriteCpmSector(3,7,lastDirectorySector);
     }
 
     private void WriteProdosSector(int track, int sector, Span<byte> span)
     {
         WriteRawSector(track, prodosSectorMap[sector], span);
+    }
+
+    private void WriteCpmSector(int track, int sector, Span<byte> span)
+    {
+        WriteRawSector(track, cpmSectorMap[sector], span);
+    }
+
+    private Span<byte> ReadCpmSector(int track, int sector)
+    {
+        return ReadRawSector(track, cpmSectorMap[sector]);
+    }
+
+    private Span<byte> ReadRawSector(int track, int rawSector)
+    {
+        int sector = rawToDos33Map[rawSector];
+        return data.AsSpan((track * SectorsPerTrack + sector) * SectorSize, SectorSize);
     }
 
     private void WriteRawSector(int track, int rawSector, Span<byte> span)
