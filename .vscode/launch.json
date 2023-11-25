@@ -36,11 +36,45 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Tools/GenDsk/bin/Debug/net8.0/CpmDsk.dll",
+            "program": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0/CpmDsk.dll",
             "args": [
                 "create",
                 "--binaries-folder","${workspaceFolder}/src/OEM/binaries/",
                 "--disk-image","${workspaceFolder}/src/OEM/binaries/SYSTEM.DSK",
+            ],
+            "cwd": "${workspaceFolder}/Tools/CPM3SYSDump",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Directory DSK",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0/CpmDsk.dll",
+            "args": [
+                "directory",
+                "--disk-image","${workspaceFolder}/DiskImages/CIRTECH CPM PLUS SYSTEM.DSK",
+            ],
+            "cwd": "${workspaceFolder}/Tools/CPM3SYSDump",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Filter Directory DSK",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0/CpmDsk.dll",
+            "args": [
+                "directory",
+                "P??.*",
+                "C*.COM",
+                "--disk-image","${workspaceFolder}/DiskImages/CIRTECH CPM PLUS SYSTEM.DSK",
             ],
             "cwd": "${workspaceFolder}/Tools/CPM3SYSDump",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

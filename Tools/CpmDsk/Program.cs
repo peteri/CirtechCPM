@@ -6,32 +6,93 @@ class Program
 {
     static void Main(string[] args)
     {
-        var destDiskOption = new Option<FileInfo>(name: "--disk-image", description: "Disk II disk image to modify / create.");
-        var binaryFolderOption = new Option<DirectoryInfo>(name: "--binaries-folder", description: "Folder for boot track binaries to copy to a disk.");
+        var diskImageOption = new Option<FileInfo>(
+            name: "--disk-image",
+            description: "Disk II disk image to modify / create.")
+        {
+            IsRequired = true
+        };
+        var binaryFolderOption = new Option<DirectoryInfo>(
+            name: "--binaries-folder",
+            description: "Folder for boot track binaries to copy to a disk.")
+        {
+            IsRequired = true
+        };
+        var fileFilterOption = new Argument<List<string>>(
+            name: "files",
+            description: "Files to extract or add.",
+            getDefaultValue: () => new List<string> { "*.*" });
+        // Setup commands
+        var directoryCommand = new Command("directory", "Directory of the disk image.")
+            { diskImageOption, fileFilterOption};
+        var extractCommand = new Command("extract", "Extract files from disk image.")
+            { diskImageOption, fileFilterOption};
+        var removeCommand = new Command("remove", "Remove files from disk image.")
+            { diskImageOption, fileFilterOption};
+        var addCommand = new Command("add", "Add files to disk image.")
+            { diskImageOption, fileFilterOption};
         var createCommand = new Command("create", "Create a bootable disk image.")
-            { destDiskOption, binaryFolderOption };
+            { diskImageOption, binaryFolderOption };
+        // Set handlers
+        directoryCommand.SetHandler(
+            (diskImage, fileFilter) => ShowDirectory(diskImage, fileFilter),
+            diskImageOption,
+            fileFilterOption);
+        extractCommand.SetHandler(
+            (diskImage, fileFilter) => ExtractFiles(diskImage, fileFilter),
+            diskImageOption,
+            fileFilterOption);
+        removeCommand.SetHandler(
+            (diskImage, fileFilter) => RemoveFiles(diskImage, fileFilter),
+            diskImageOption,
+            fileFilterOption);
+        addCommand.SetHandler(
+            (diskImage, fileFilter) => AddFiles(diskImage, fileFilter),
+            diskImageOption,
+            fileFilterOption);
         createCommand.SetHandler(
-            (destDisk, binaryFolder) => Create(destDisk, binaryFolder),
-            destDiskOption,
+            (diskImage, binaryFolder) => Create(diskImage, binaryFolder),
+            diskImageOption,
             binaryFolderOption);
         var rootCommand = new RootCommand("CpmDsk - a tool for creating Apple ][ emulator disks")
-            { createCommand };
+            { createCommand, addCommand, directoryCommand, extractCommand, removeCommand };
         rootCommand.Invoke(args);
     }
 
-    static public int Create(FileInfo destinationDisk, DirectoryInfo binariesDirectory)
+    private static void ShowDirectory(FileInfo diskImage, List<string> fileFilter)
     {
-        try
-        {
-            var cpmDisk = new CpmDisk(destinationDisk);
-            cpmDisk.CopyBootable(binariesDirectory);
-            cpmDisk.Write();
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine("Create threw an exception {0}", ex.Message);
-            return 1;
-        }
+        var cpmDisk = new CpmDisk(diskImage);
+        cpmDisk.ReadImage();
+        cpmDisk.DirectoryFiles(fileFilter);
+    }
+
+    private static void AddFiles(FileInfo diskImage, List<string> fileFilter)
+    {
+        var cpmDisk = new CpmDisk(diskImage);
+        cpmDisk.ReadImage();
+        cpmDisk.AddFiles(fileFilter);
+        cpmDisk.WriteImage();
+    }
+
+    private static void RemoveFiles(FileInfo diskImage, List<string> fileFilter)
+    {
+        var cpmDisk = new CpmDisk(diskImage);
+        cpmDisk.ReadImage();
+        cpmDisk.RemoveFiles(fileFilter);
+        cpmDisk.WriteImage();
+    }
+
+    private static void ExtractFiles(FileInfo diskImage, List<string> fileFilter)
+    {
+        var cpmDisk = new CpmDisk(diskImage);
+        cpmDisk.ReadImage();
+        cpmDisk.ExtractFiles(fileFilter);
+    }
+
+    private static void Create(FileInfo diskImage, DirectoryInfo binariesDirectory)
+    {
+        var cpmDisk = new CpmDisk(diskImage);
+        cpmDisk.CopyBootable(binariesDirectory);
+        cpmDisk.WriteImage();
     }
 }
