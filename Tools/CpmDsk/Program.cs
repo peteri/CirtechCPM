@@ -1,20 +1,20 @@
 ﻿using System.CommandLine;
 
-namespace GenDsk;
+namespace CpmDsk;
 
 class Program
 {
     static void Main(string[] args)
     {
-        var destDiskOption = new Option<FileInfo>(name: "--destination-disk", description: "Destination disk image to create.");
-        var binaryFolderOption = new Option<DirectoryInfo>(name: "--binaries-folder", description: "Folder for binaries to copy to a disk.");
+        var destDiskOption = new Option<FileInfo>(name: "--disk-image", description: "Disk II disk image to modify / create.");
+        var binaryFolderOption = new Option<DirectoryInfo>(name: "--binaries-folder", description: "Folder for boot track binaries to copy to a disk.");
         var createCommand = new Command("create", "Create a bootable disk image.")
             { destDiskOption, binaryFolderOption };
         createCommand.SetHandler(
             (destDisk, binaryFolder) => Create(destDisk, binaryFolder),
             destDiskOption,
             binaryFolderOption);
-        var rootCommand = new RootCommand("GenDsk - a tool for creating Apple ][ emulator disks")
+        var rootCommand = new RootCommand("CpmDsk - a tool for creating Apple ][ emulator disks")
             { createCommand };
         rootCommand.Invoke(args);
     }

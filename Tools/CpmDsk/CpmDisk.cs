@@ -1,4 +1,4 @@
-namespace GenDsk;
+namespace CpmDsk;
 internal class CpmDisk
 {
     private const int SectorsPerTrack = 16;

@@ -36,11 +36,11 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Tools/GenDsk/bin/Debug/net8.0/GenDsk.dll",
+            "program": "${workspaceFolder}/Tools/GenDsk/bin/Debug/net8.0/CpmDsk.dll",
             "args": [
                 "create",
                 "--binaries-folder","${workspaceFolder}/src/OEM/binaries/",
-                "--destination-disk","${workspaceFolder}/src/OEM/binaries/BLANK.DSK",
+                "--disk-image","${workspaceFolder}/src/OEM/binaries/SYSTEM.DSK",
             ],
             "cwd": "${workspaceFolder}/Tools/CPM3SYSDump",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
