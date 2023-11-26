@@ -42,7 +42,7 @@
                 "--binaries-folder","${workspaceFolder}/src/OEM/binaries/",
                 "--disk-image","${workspaceFolder}/src/OEM/binaries/SYSTEM.DSK",
             ],
-            "cwd": "${workspaceFolder}/Tools/CPM3SYSDump",
+            "cwd": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false
@@ -58,7 +58,7 @@
                 "directory",
                 "--disk-image","${workspaceFolder}/DiskImages/CIRTECH CPM PLUS SYSTEM.DSK",
             ],
-            "cwd": "${workspaceFolder}/Tools/CPM3SYSDump",
+            "cwd": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false
@@ -76,7 +76,40 @@
                 "C*.COM",
                 "--disk-image","${workspaceFolder}/DiskImages/CIRTECH CPM PLUS SYSTEM.DSK",
             ],
-            "cwd": "${workspaceFolder}/Tools/CPM3SYSDump",
+            "cwd": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Extract DSK",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0/CpmDsk.dll",
+            "args": [
+                "extract",
+                "--disk-image","${workspaceFolder}/DiskImages/CIRTECH CPM PLUS SYSTEM.DSK",
+            ],
+            "cwd": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Add Wildcard DSK",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0/CpmDsk.dll",
+            "args": [
+                "add",
+                "${workspaceFolder}/src/OEM/system/*.*",
+                "--disk-image","${workspaceFolder}/src/OEM/binaries/SYSTEM.DSK",
+            ],
+            "cwd": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
             "console": "internalConsole",
             "stopAtEntry": false

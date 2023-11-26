@@ -49,6 +49,7 @@ internal class CpmDisk
         ReadDirectoryFreeBlocks();
         var memoryDirEntry = new DirectoryEntry(fileInfo.Name);
         RemoveFile(memoryDirEntry);
+        Console.WriteLine("Adding file {0}", memoryDirEntry.Name);
         var diskDirEntry = FindBlankEntry();
         int length = (int)fileInfo.Length;
         var fileData = File.ReadAllBytes(fileInfo.FullName);
@@ -72,7 +73,7 @@ internal class CpmDisk
             if ((memoryDirEntry.RecordCount & 0x07) == 0x00)
             {
                 WriteBlock(currentBlock);
-                currentBlock = ReadFreeBlock();
+                currentBlock = ReadNextFreeBlock();
                 memoryDirEntry.SetBlock(memoryDirEntry.RecordCount / 8, currentBlock.block);
             }
 
@@ -99,13 +100,8 @@ internal class CpmDisk
             WriteCpmSector(track, sector + i, currentBlock.data.AsSpan(i * 0x100, 0x100));
     }
 
-    private (byte block, byte[] data) ReadFreeBlock()
+    private (byte block, byte[] data) ReadBlock(byte block)
     {
-        if (freeBlocks.Count == 0)
-            throw new Exception("Out of disk image space.");
-        byte block = freeBlocks.First();
-        usedBlocks.Add(block);
-        freeBlocks.Remove(block);
         var data = new byte[0x400];
         int track = block / 4 + BootTracks;
         int sector = (block * 4) & 0x0f;
@@ -118,6 +114,16 @@ internal class CpmDisk
             src.CopyTo(dst);
         }
         return (block, data);
+    }
+
+    private (byte block, byte[] data) ReadNextFreeBlock()
+    {
+        if (freeBlocks.Count == 0)
+            throw new Exception("Out of disk image space.");
+        byte block = freeBlocks.First();
+        usedBlocks.Add(block);
+        freeBlocks.Remove(block);
+        return ReadBlock(block);
     }
 
     DirectoryEntry FindBlankEntry()
@@ -133,11 +139,17 @@ internal class CpmDisk
 
     private void RemoveFile(DirectoryEntry extent)
     {
+        bool firstTime = true;
         for (int i = 0; i < DirectoryEntries; i++)
         {
             var directoryEntry = GetDirectoryEntry(i);
             if (extent.Match(directoryEntry))
             {
+                if (firstTime)
+                {
+                    Console.WriteLine("Removing file {0}", extent.Name);
+                    firstTime = false;
+                }
                 int rc = directoryEntry.RecordCount;
                 int j = -1;
                 while (rc > 0)
@@ -150,13 +162,14 @@ internal class CpmDisk
                         usedBlocks.Remove(directoryEntry.GetBlock(j));
                     }
                 }
+                directoryEntry.MarkAsEmpty();
             }
-            directoryEntry.MarkAsEmpty();
         }
     }
 
     private void ReadFile(DirectoryEntry file)
     {
+        Console.WriteLine("Extracting file {0}", file.Name);
         using var stream = File.Open(file.Name, FileMode.Create);
         using var writer = new BinaryWriter(stream);
         bool more = true;
@@ -169,9 +182,22 @@ internal class CpmDisk
                 if (file.Match(diskEntry) && (file.Extent == diskEntry.Extent))
                 {
                     file.Extent++;
-                    more=true;
-                    int rc=diskEntry.RecordCount;
-                    int j=0;
+                    more = true;
+                    int rc = 0;
+                    int j = 0;
+                    (byte block, byte[] data) block = emptyBlock;
+
+                    while (rc < diskEntry.RecordCount)
+                    {
+                        if ((rc & 0x07) == 0)
+                        {
+                            // Doesn't cope with sparse files
+                            block = ReadBlock(diskEntry.GetBlock(j));
+                            j++;
+                        }
+                        writer.Write(block.data.AsSpan((rc & 0x07) * 0x80, 0x80));
+                        rc++;
+                    }
                 }
             }
         }
@@ -182,7 +208,7 @@ internal class CpmDisk
         // Go home if we've already ready everything
         if ((freeBlocks.Count != 0) || (usedBlocks.Count != 0))
             return;
-        for (int i = 2; i < (Tracks * SectorsPerTrack / 2); i++)
+        for (int i = 2; i < (Tracks * SectorsPerTrack / 4); i++)
             freeBlocks.Add((byte)i);
         // Mark directory blocks as used
         usedBlocks.Add(0);
@@ -250,10 +276,10 @@ internal class CpmDisk
         diskImageData = File.ReadAllBytes(diskFileInfo.FullName);
     }
 
-
     private bool DirMatches(DirectoryEntry dirEntry, List<string> filters)
     {
         if (dirEntry.IsNotFile) return false;
+        if (dirEntry.IsHidden) return false;
         foreach (var filter in filters)
         {
             if (new DirectoryEntry(filter).Match(dirEntry))
@@ -374,8 +400,12 @@ internal class CpmDisk
     {
         foreach (var filePattern in filePatterns)
         {
-            // foreach(var fileInfo in DirectoryInfo.GetFiles(filePattern))
-            //     WriteFile(fileInfo);
+            var path = Path.GetDirectoryName(filePattern);
+            if (string.IsNullOrEmpty(path))
+                path = Directory.GetCurrentDirectory();
+            var dir = new DirectoryInfo(path);
+            foreach (var fileInfo in dir.GetFiles(Path.GetFileName(filePattern)))
+                WriteFile(fileInfo);
         }
     }
 }

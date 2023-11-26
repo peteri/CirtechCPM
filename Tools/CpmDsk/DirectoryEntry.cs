@@ -55,6 +55,8 @@ public ref struct DirectoryEntry
 
     public bool IsNotFile
         => entry[0] >= 0x10;
+    public bool IsHidden
+        => (entry[11] & 0x80) == 0x80;
     public bool IsAvailable
         => entry[0] == CpmDisk.CpmEmptyByte;
     public void MarkAsEmpty()
