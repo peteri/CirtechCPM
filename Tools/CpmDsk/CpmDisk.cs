@@ -1,7 +1,3 @@
-using System.Reflection.Metadata;
-using System.Security.Authentication.ExtendedProtection;
-using System.Transactions;
-
 namespace CpmDsk;
 internal class CpmDisk
 {
@@ -20,19 +16,11 @@ internal class CpmDisk
     private FileInfo diskFileInfo;
     private (byte block, byte[] data) emptyBlock = (0, Array.Empty<byte>());
     private byte[] diskImageData;
-    // These files are written out in order to
-    // the first three tracks of our image.
-    private readonly string[] bootTrackFilenames =
-    [
-        "BOOTSECT.BIN",
-        "BIOSVID.BIN",
-        "BIOSDISK.BIN",
-        "BIOSCHAR.BIN",
-        "CCP.COM",
-        "TOOLKEY.BIN",
-        "CPMLDR.BIN"
-    ];
 
+    /// <summary>
+    /// Constructor for the in memory CPM disk image.
+    /// </summary>
+    /// <param name="diskFileInfo">Disk image to use.</param>
     public CpmDisk(FileInfo diskFileInfo)
     {
         this.diskFileInfo = diskFileInfo;
@@ -44,6 +32,10 @@ internal class CpmDisk
             WriteCpmSector(BootTracks, sector, emptySector.AsSpan());
     }
 
+    /// <summary>
+    /// Writes a file from the host system to the in memory disk image.
+    /// </summary>
+    /// <param name="fileInfo">File to write.</param>
     private void WriteFile(FileInfo fileInfo)
     {
         ReadDirectoryFreeBlocks();
@@ -90,7 +82,11 @@ internal class CpmDisk
         memoryDirEntry.CopyTo(diskDirEntry);
     }
 
-    private void WriteBlock((int block, byte[] data) currentBlock)
+    /// <summary>
+    /// Writes a block of data back to the in memory image
+    /// </summary>
+    /// <param name="currentBlock">Tuple of the block number and data</param>
+    private void WriteBlock((byte block, byte[] data) currentBlock)
     {
         if (currentBlock == emptyBlock)
             return;
@@ -100,6 +96,11 @@ internal class CpmDisk
             WriteCpmSector(track, sector + i, currentBlock.data.AsSpan(i * 0x100, 0x100));
     }
 
+    /// <summary>
+    /// Reads a block of data from the in memory image, creates a new copy
+    /// </summary>
+    /// <param name="block">Block number to read</param>
+    /// <returns>Copy of data from disk image.</returns>
     private (byte block, byte[] data) ReadBlock(byte block)
     {
         var data = new byte[0x400];
@@ -116,6 +117,11 @@ internal class CpmDisk
         return (block, data);
     }
 
+    /// <summary>
+    /// Gets a block of data from the free block list.
+    /// </summary>
+    /// <returns>Copy of the data from the in memory image.</returns>
+    /// <exception cref="Exception">Throws an exception if there is no disk image.</exception>
     private (byte block, byte[] data) ReadNextFreeBlock()
     {
         if (freeBlocks.Count == 0)
@@ -126,6 +132,11 @@ internal class CpmDisk
         return ReadBlock(block);
     }
 
+    /// <summary>
+    /// Returns a blank directory entry from the in memory image.
+    /// </summary>
+    /// <returns>Blank directory entry.</returns>
+    /// <exception cref="Exception">Throws an exception if out directory entries</exception>
     DirectoryEntry FindBlankEntry()
     {
         for (int i = 0; i < DirectoryEntries; i++)
@@ -137,17 +148,22 @@ internal class CpmDisk
         throw new Exception("Out of directory entries");
     }
 
-    private void RemoveFile(DirectoryEntry extent)
+    /// <summary>
+    /// Removes a file from in memory disk image.
+    /// Returns blocks to the free list, removing them from the used list.
+    /// </summary>
+    /// <param name="file">Directory entry of the file.</param>
+    private void RemoveFile(DirectoryEntry file)
     {
         bool firstTime = true;
         for (int i = 0; i < DirectoryEntries; i++)
         {
             var directoryEntry = GetDirectoryEntry(i);
-            if (extent.Match(directoryEntry))
+            if (file.Match(directoryEntry))
             {
                 if (firstTime)
                 {
-                    Console.WriteLine("Removing file {0}", extent.Name);
+                    Console.WriteLine("Removing file {0}", file.Name);
                     firstTime = false;
                 }
                 int rc = directoryEntry.RecordCount;
@@ -167,6 +183,10 @@ internal class CpmDisk
         }
     }
 
+    /// <summary>
+    /// Reads a file from the disk image and writes it to host file system.
+    /// </summary>
+    /// <param name="file">Directory entry of the file.</param>
     private void ReadFile(DirectoryEntry file)
     {
         Console.WriteLine("Extracting file {0}", file.Name);
@@ -203,6 +223,11 @@ internal class CpmDisk
         }
     }
 
+    /// <summary>
+    /// Reads the directory and computes a list of free and 
+    /// used blocks on the disk from the allocation
+    /// in the directory blocks.
+    /// </summary>
     private void ReadDirectoryFreeBlocks()
     {
         // Go home if we've already ready everything
@@ -233,49 +258,98 @@ internal class CpmDisk
         }
     }
 
+    /// <summary>
+    /// Reads a directory entry from the in memory disk image.
+    /// </summary>
+    /// <param name="entry">Directory entry to read</param>
+    /// <returns>Directory entry.</returns>
     private DirectoryEntry GetDirectoryEntry(int entry)
     {
         var sectorData = ReadCpmSector(BootTracks, entry / 8);
         return new DirectoryEntry(sectorData.Slice((entry & 0x07) * 0x20, 0x20));
     }
 
+    /// <summary>
+    /// Write to a sector on the in memory disk image in prodos order.
+    /// </summary>
+    /// <param name="track">Track to write to.</param>
+    /// <param name="sector">Sector to write to.</param>
+    /// <param name="span">Data to write.</param>
     private void WriteProdosSector(int track, int sector, Span<byte> span)
     {
         WriteRawSector(track, prodosSectorMap[sector], span);
     }
 
+    /// <summary>
+    /// Write to a sector on the in memory disk image in CPM order.
+    /// </summary>
+    /// <param name="track">Track to write to.</param>
+    /// <param name="sector">Sector to write to.</param>
+    /// <param name="span">Data to write.</param>
     private void WriteCpmSector(int track, int sector, Span<byte> span)
     {
         WriteRawSector(track, cpmSectorMap[sector], span);
     }
 
+    /// <summary>
+    /// Read from a sector on the in memory disk image in CPM order
+    /// </summary>
+    /// <param name="track">Track to write to.</param>
+    /// <param name="sector">Sector to write to.</param>
+    /// <returns>Span of data from the in memory image.</returns>
     private Span<byte> ReadCpmSector(int track, int sector)
     {
         return ReadRawSector(track, cpmSectorMap[sector]);
     }
 
+    /// <summary>
+    /// Read from a sector on the in memory disk image in Raw order
+    /// Note translates to Apple DOS 3.3 order before reading.
+    /// </summary>
+    /// <param name="track">Track to write to.</param>
+    /// <param name="sector">Sector to write to.</param>
+    /// <returns>Span of data from the in memory image.</returns>
     private Span<byte> ReadRawSector(int track, int rawSector)
     {
         int sector = rawToDos33Map[rawSector];
         return diskImageData.AsSpan((track * SectorsPerTrack + sector) * SectorSize, SectorSize);
     }
 
+    /// <summary>
+    /// Writes to a sector on the in memory disk image in Raw order
+    /// Note translates to Apple DOS 3.3 order before writing.
+    /// </summary>
+    /// <param name="track">Track to write to.</param>
+    /// <param name="sector">Sector to write to.</param>
+    /// <param name="span">Data to write.</param>
     private void WriteRawSector(int track, int rawSector, Span<byte> span)
     {
         int sector = rawToDos33Map[rawSector];
         span.CopyTo(diskImageData.AsSpan((track * SectorsPerTrack + sector) * SectorSize, SectorSize));
     }
 
+    /// <summary>
+    /// Writes in memory image to disk.
+    /// </summary>
     internal void WriteImage()
     {
         File.WriteAllBytes(diskFileInfo.FullName, diskImageData);
     }
 
+    /// <summary>
+    /// Reads in memory image from disk.
+    /// </summary>
     internal void ReadImage()
     {
         diskImageData = File.ReadAllBytes(diskFileInfo.FullName);
     }
 
+    /// <summary>
+    /// Checks if a directory entry matches a list of filters.
+    /// </summary>
+    /// <param name="dirEntry">Directory entry to check.</param>
+    /// <param name="filters">List of filters (wildcard allows)</param>
+    /// <returns>True if file matches.</returns>
     private bool DirMatches(DirectoryEntry dirEntry, List<string> filters)
     {
         if (dirEntry.IsNotFile) return false;
@@ -288,6 +362,11 @@ internal class CpmDisk
         return false;
     }
 
+    /// <summary>
+    /// Get a list of files and sizes from the CPM image in memory.
+    /// </summary>
+    /// <param name="filters">List of filters (wildcard allowed)</param>
+    /// <returns>Dictionary where the key value is the name, value is the file size.</returns>
     Dictionary<string, int> GetCpmFiles(List<string> filters)
     {
         var results = new Dictionary<string, int>();
@@ -306,6 +385,25 @@ internal class CpmDisk
         return results;
     }
 
+    // These files are written out in order to
+    // the first three tracks of our image.
+    private readonly string[] bootTrackFilenames =
+    [
+        "BOOTSECT.BIN",
+        "BIOSVID.BIN",
+        "BIOSDISK.BIN",
+        "BIOSCHAR.BIN",
+        "CCP.COM",
+        "TOOLKEY.BIN",
+        "CPMLDR.BIN"
+    ];
+
+    /// <summary>
+    /// Validates all the boot track files are in a directory.
+    /// </summary>
+    /// <param name="files">List of files in the directory.</param>
+    /// <returns>List of FileInfo entires for the binary files.</returns>
+    /// <exception cref="Exception">Throws an exception if a file is missing or total size is not 12K.</exception>
     private List<FileInfo> ValidateBootFiles(FileInfo[] files)
     {
         var bootTrackFiles = new List<FileInfo>();
@@ -322,6 +420,10 @@ internal class CpmDisk
         return bootTrackFiles;
     }
 
+    /// <summary>
+    /// Writes out the boot track for the Cirtech CPM system
+    /// </summary>
+    /// <param name="bootTrackFiles">List of fileInfo entries in order.</param>
     private void WriteBootTrack(List<FileInfo> bootTrackFiles)
     {
         byte[] data = new byte[(BootTracks * SectorsPerTrack * SectorSize)];
@@ -355,6 +457,11 @@ internal class CpmDisk
         WriteCpmSector(3, 7, lastDirectorySector);
     }
 
+    /// <summary>
+    /// Copies the individual files from a binary directory into a disk image.
+    /// </summary>
+    /// <param name="binariesDirectory">Binaries directory</param>
+    /// <exception cref="Exception">Throws an exception if the binary directory does not exist</exception>
     internal void CopyBootable(DirectoryInfo binariesDirectory)
     {
         if (!binariesDirectory.Exists)
@@ -366,6 +473,11 @@ internal class CpmDisk
         WriteBootTrack(bootTrackFiles);
     }
 
+    /// <summary>
+    /// Perform an action against a wild card search on a CP/M disk.
+    /// </summary>
+    /// <param name="fileFilters">List of files to filter against.</param>
+    /// <param name="action">Action to perform, takes a string for the file name and an integer for the file size.</param>
     internal void CpmWildcardAction(List<string> fileFilters, Action<string, int> action)
     {
         foreach (var KV in GetCpmFiles(fileFilters))
@@ -374,6 +486,10 @@ internal class CpmDisk
         }
     }
 
+    /// <summary>
+    /// Displays a directory of files on a disk image.
+    /// </summary>
+    /// <param name="fileFilters">List of files to filter against.</param>
     internal void DirectoryFiles(List<string> fileFilters)
     {
         CpmWildcardAction(
@@ -381,6 +497,10 @@ internal class CpmDisk
             (name, size) => Console.WriteLine("{0,-14} {1,6}", name, size));
     }
 
+    /// <summary>
+    /// Deletes files from the disk image.
+    /// </summary>
+    /// <param name="fileFilters">List of files to filter against.</param>
     internal void RemoveFiles(List<string> fileFilters)
     {
         ReadDirectoryFreeBlocks();
@@ -389,6 +509,10 @@ internal class CpmDisk
             (name, _) => RemoveFile(new DirectoryEntry(name)));
     }
 
+    /// <summary>
+    /// Extracts files from the disk image.
+    /// </summary>
+    /// <param name="fileFilters">List of files to filter against.</param>
     internal void ExtractFiles(List<string> fileFilters)
     {
         CpmWildcardAction(
@@ -396,6 +520,10 @@ internal class CpmDisk
             (name, _) => ReadFile(new DirectoryEntry(name)));
     }
 
+    /// <summary>
+    /// Add files from the host file system to the disk image.
+    /// </summary>
+    /// <param name="filePatterns">List of files to copy to the disk image.</param>
     internal void AddFiles(List<string> filePatterns)
     {
         foreach (var filePattern in filePatterns)

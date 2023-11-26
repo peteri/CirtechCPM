@@ -2,6 +2,13 @@
 
 namespace CpmDsk;
 
+/// <summary>
+/// Tool to write Disk II Cirtech format Disks. 
+/// Does not support disks that are not for a Disk II.
+/// 
+/// For wider support look at CiderPress instead.
+/// 
+/// </summary>
 class Program
 {
     static void Main(string[] args)

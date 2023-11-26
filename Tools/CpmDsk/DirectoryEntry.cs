@@ -1,19 +1,39 @@
 namespace CpmDsk;
 
+/// <summary>
+/// This wraps a backing span containing a CP/M format directory entry.
+/// It only understands about simple entries and ignores anything with
+/// a 16 bit block number. Designed for use with Apple ][ disk formats.
+/// </summary>
 public ref struct DirectoryEntry
 {
     private Span<byte> entry;
 
+    /// <summary>
+    /// Blank constructor.
+    /// </summary>
     public DirectoryEntry()
     {
         entry = new byte[32].AsSpan();
     }
 
+    /// <summary>
+    /// Constructor used to create a disk entry from a block read.
+    /// of a directory entry.
+    /// </summary>
+    /// <param name="entry">Span of bytes for a directory entry from disk.</param>
     public DirectoryEntry(Span<byte> entry)
     {
         this.entry = entry;
     }
 
+    /// <summary>
+    /// Constructor used to create a blank entry from a file name.
+    /// Supports wild cards i.e. it extends P*.C* to P???????.C??
+    /// Throws exceptions if file name is too big
+    /// </summary>
+    /// <param name="filename">Filename to use</param>
+    /// <exception cref="Exception">Exception for when the file name is too big.</exception>
     public DirectoryEntry(string filename)
     {
         int i = 0;
@@ -53,38 +73,80 @@ public ref struct DirectoryEntry
         }
     }
 
+    /// <summary>
+    /// Returns true if a directory entry is not a file
+    /// OR if it is a password entry, date, label.
+    /// </summary>
     public bool IsNotFile
         => entry[0] >= 0x10;
+
+    /// <summary>
+    /// Returns true if a file is marked as Hidden
+    /// </summary>
     public bool IsHidden
         => (entry[11] & 0x80) == 0x80;
+
+    /// <summary>
+    /// Returns true if a directory starts with the CP/M empty byte character.
+    /// </summary>
     public bool IsAvailable
         => entry[0] == CpmDisk.CpmEmptyByte;
+    
+    /// <summary>
+    /// Marks a directory entry as deleted.
+    /// </summary>
     public void MarkAsEmpty()
         => entry[0] = CpmDisk.CpmEmptyByte;
-
+    
+    /// <summary>
+    /// Gets the block number for directory entry
+    /// </summary>
+    /// <param name="index">Index of the block allocation</param>
+    /// <returns>Block allocation for a directory entry.</returns>
     public byte GetBlock(int index)
         => entry[0x10 + index];
 
+    /// <summary>
+    /// Sets the block number for a directory entry
+    /// </summary>
+    /// <param name="index">Index of the block allocation</param>
+    /// <param name="value">New value of block</param>
+    /// <returns>Block number</returns>
     public byte SetBlock(int index, byte value)
         => entry[0x10 + index] = value;
 
+    /// <summary>
+    /// Gets or sets the record count of the directory entry.
+    /// </summary>
     public byte RecordCount
     {
         get => entry[0x0f];
         set => entry[0x0f] = value;
     }
 
+    /// <summary>
+    /// Gets or sets the extent field of the directory entry.
+    /// </summary>
     public byte Extent
     {
         get => entry[0x0c];
         set => entry[0x0c] = value;
     }
 
+    /// <summary>
+    /// Copies a directory entry into another directory entry.
+    /// Used during the write process.
+    /// </summary>
+    /// <param name="destination">Destination directory entry.</param>
     public void CopyTo(DirectoryEntry destination)
     {
         entry.CopyTo(destination.entry);
     }
 
+    /// <summary>
+    /// Gets the name from the directory entry as a name without spaces
+    /// but a dot between the extensions and name.
+    /// </summary>
     public string Name
     {
         get
@@ -101,6 +163,12 @@ public ref struct DirectoryEntry
         }
     }
 
+    /// <summary>
+    /// Compares a directory entry with another, supports question mark as 
+    /// a wild card character.
+    /// </summary>
+    /// <param name="fromDisk">Entry from disk</param>
+    /// <returns>true if names match.</returns>
     public bool Match(DirectoryEntry fromDisk)
     {
         if (fromDisk.IsNotFile) return false;
