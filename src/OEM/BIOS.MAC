@@ -435,10 +435,10 @@ SIGNONMSG:  DB ESC,'*',CR,LF
 ; Secondary check for Cirtech card, called
 ; when we output to either LST or AUX
 ;            
-CARDCHECK2: ret
-            nop 
-            nop
-            ;ld   hl,0787BH      ; Code at A47D check if we're on a Cirtech card
+CARDCHECK2: ;ret    ; Uncomment these
+            ;nop    ; and comment the line below
+            ;nop    ; with the ld hl
+            ld   hl,0787BH      ; Code at A47D check if we're on a Cirtech card
             ld   c,(hl)         ; Save byte for later 
             ld   de,CC6502_2+1000H ; 6502 routine 
             ld   (ROUT_6502),de
@@ -2028,10 +2028,10 @@ ININOTCONS: ld   b,c            ; Copy device to b
 ; Seems likely if we patch CPM3.SYS at the right offset to be
 ; dec $8800, code will on a softcard.
 ;
-CARDCHECK:  ret
-            nop 
-            nop 
-            ;ld   hl,07800H      ; two pages into the BDOS (contains 00)
+CARDCHECK:  ;ret                ; Uncomment these lines
+            ;nop                ; Comment out the ld hl line
+            ;nop                ;
+            ld   hl,07800H      ; two pages into the BDOS (contains 00)
             ld   b,(hl)         ; save value into b
             ld   c,0          
             ld   (hl),c         ; put a zero back into location
