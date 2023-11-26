@@ -16,10 +16,21 @@ if ((Test-Path -Path binaries -PathType Container) -eq $false)
 {
     New-Item -ItemType Directory -Path binaries
 }
-# Delete output from earlier runs and create some comparison binaries from a disk image
+if ((Test-Path -Path system -PathType Container) -eq $false)
+{
+    New-Item -ItemType Directory -Path system
+}
+# Delete output from earlier runs
 remove-item binaries\*.*
+remove-item system\*.*
+remove-item comparison\*.*
+# create some comparison binaries from a disk image
 Set-location -Path comparison
-dotnet run --project ../../../tools\NibReader ../../../DiskImages/BlankBootableCPM3.nib -nodiag
+dotnet run --project ../../../tools/NibReader -- ../../../DiskImages/BlankBootableCPM3.nib -nodiag
+# extract files from the cirtech drive
+Set-location -Path ../system
+dotnet run --project ../../../tools/CpmDsk -- directory --disk-image "../../../DiskImages/CIRTECH CPM PLUS SYSTEM.DSK" 
+dotnet run --project ../../../tools/CpmDsk -- extract *.* --disk-image "../../../DiskImages/CIRTECH CPM PLUS SYSTEM.DSK" 
 Set-location -Path ..
 Write-Host 'Building files'
 # For M80 we can wrap in powershell script and catch and errors by
@@ -60,9 +71,9 @@ remove-item -Path '*.$$$'
 # compare the binaries
 Write-host '======= Comparing ======='
 Write-Host 'Comparing binaries for BOOTSECT'
-fc.exe /b binaries\BOOTSECT.BIN comparison\BOOTSECT.bin
+fc.exe /b binaries\BOOTSECT.BIN comparison\BOOTSECT.BIN
 Write-Host 'Comparing binaries for TOOLKEY'
-fc.exe /b binaries\TOOLKEY.BIN comparison\TOOLKEY.bin
+fc.exe /b binaries\TOOLKEY.BIN comparison\TOOLKEY.BIN
 Write-Host 'Comparing binaries for BIOSVID'
 fc.exe /b binaries\BIOSVID.BIN comparison\BIOSVID.BIN  
 Write-Host 'Comparing binaries for BIOSDISK'
@@ -70,9 +81,10 @@ fc.exe /b binaries\BIOSDISK.BIN comparison\BIOSDISK.BIN
 Write-Host 'Comparing binaries for BIOSCHAR'
 fc.exe /b binaries\BIOSCHAR.BIN comparison\BIOSCHAR.BIN  
 Write-Host 'Comparing binaries for CPMLDR'
-fc.exe /b binaries\CPMLDR.BIN comparison\CPMLDR.bin
+fc.exe /b binaries\CPMLDR.BIN comparison\CPMLDR.BIN
 Write-Host 'Comparing binaries for CPM3.SYS'
 fc.exe /b binaries\CPM3.SYS comparison\CPM3.SYS
-# At this point here we should go and create our .DSK with our 
-# binaries on it ready to boot on real hardware.
-# but thats for future me
+dotnet run --project ../../tools/CpmDsk -- create --disk-image binaries/system.dsk --binaries-folder ./binaries
+dotnet run --project ../../tools/CpmDsk -- add system/*.* --disk-image binaries/system.dsk
+dotnet run --project ../../tools/CpmDsk -- remove cpm3.sys --disk-image binaries/system.dsk
+dotnet run --project ../../tools/CpmDsk -- add binaries/cpm3.sys --disk-image binaries/system.dsk

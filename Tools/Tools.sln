@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CtrlZ", "CtrlZ\CtrlZ.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CPM3SYSDump", "CPM3SYSDump\CPM3SYSDump.csproj", "{DE65E04F-C65F-4DF4-90B5-AA7E57D3815D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CpmDsk", "CpmDsk\CpmDsk.csproj", "{0CB74950-5DBC-40C4-9F22-C6740FF763A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{DE65E04F-C65F-4DF4-90B5-AA7E57D3815D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE65E04F-C65F-4DF4-90B5-AA7E57D3815D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE65E04F-C65F-4DF4-90B5-AA7E57D3815D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0CB74950-5DBC-40C4-9F22-C6740FF763A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0CB74950-5DBC-40C4-9F22-C6740FF763A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0CB74950-5DBC-40C4-9F22-C6740FF763A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0CB74950-5DBC-40C4-9F22-C6740FF763A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
