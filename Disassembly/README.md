@@ -202,5 +202,11 @@ Currently the Smart Drive code is disassembled, ProDOS and regular RWTS code sti
 ### Slot / Card driver
 Code is copied in $A00-$BFF by the boot routine from $DC00
 
-Looks like this deals with talking to the other cards (serial ports / printers etc)
+This code deals with talking to the video card BIOS and handles talking to various character orientated devices.
+
+There is a bug here in the CCS 7710 card driver, characters read from the card are overwritten by a `LDA #$FF` just before the return statement.
+
+## Disassembling the Z80 code
+
+The Z80 code was mostly disassembled by starting from the BIOS jump table inside a mame debug session using the `dasm` command. Chunks of code are stored in the BIOSChunks folder sometimes with work in progress comments.
 

@@ -47,6 +47,22 @@ WRCARDRAM      EQU 0E005H              ; Write to 80 col card ram ($200-$BFFF)
 DPH            EQU 6EA8H               ; DPH for Disk 0
 DRVTBL         EQU 5E00H               ; Table of DPH for drives
 DRVMAP         EQU 5E20H               ; Map of CPM drives to apple drives
+;
+;
+;
+LDRDPBTBL       EQU  05DBCH         ; four DPB created by LDRBIOS
+DPB_SPT         EQU  00H            ; SPT number of 128 records per track
+DPB_BLS         EQU  02H            ; BLS Block shift factor 
+DPB_BLM         EQU  03H            ; BLM Block mask 
+DPB_EXM         EQU  04H            ; EXM extant mask
+DPB_DSM         EQU  05H            ; DSM Blocks on drive
+DPB_DRM         EQU  07H            ; DRM Number of directory entries
+DPB_AL0         EQU  09H            ; AL0 reserved blocks for directory
+DPB_AL1         EQU  0AH            ; AL1
+DPB_CKS         EQU  0BH            ; CKS size of directory check vector
+DPB_OFF         EQU  0DH            ; OFF 3 reserved tracks
+DPB_PSH         EQU  0FH            ; PSH Physical Shift 
+DPB_PHM         EQU  10H            ; PHM Physical Mask  
                cseg
                org 0
 ;==========================================================
@@ -137,13 +153,13 @@ boot:          ld   (01C73H),sp
                ld   bc,00200H
                ldir
 ; probably setting up for DPH etc           
-               ld   hl,05DBCH           ; Clear a bunch of memory
+               ld   hl,LDRDPBTBL        ; Clear a bunch of memory
                ld   (hl),000H           ; $6DBC-$8400
-               ld   de,05DBDH           ; or 5DBCH-7400H
+               ld   de,LDRDPBTBL+1      ; or 5DBCH-7400H
                ld   bc,01644H
                ldir
                ld   hl,DRVMAP            ;Drv map from CPM->Apple
-               ld   (L1EDF+1),hl
+               ld   (STDRVMAP+1),hl
                ld   hl,DRVTBL           
                ld   (L1ED1+1),hl
                ld   hl,DPH
@@ -265,14 +281,14 @@ CHKSLDRIVE:    ld   c,07H              ; Check for a drive
                ld   l,02H
                push hl
                call L1F3E
-               ld   iy,05DBCH
+               ld   iy,LDRDPBTBL
                ld   l,04H
-L1CA6:         ld   a,(iy+02H)
+L1CA6:         ld   a,(iy+DPB_BLS)      ;Get block shift
                or   a
                jr   z,L1CBB
                cp   03H
                jr   z,L1CC6
-               ld   de,0011H
+               ld   de,DPBLEN
                add  iy,de
                dec  l
                jr   nz,L1CA6
@@ -281,11 +297,11 @@ L1CB8:         pop  hl
 L1CBB:         push iy
                pop  de
                ld   hl,DISKIIDPB
-               ld   bc,00011H
+               ld   bc,DPBLEN
                ldir
 L1CC6:         call L1E75
                jr   c,L1CB8
-               ld   hl,1EDEH
+               ld   hl,APPDRV+1
                set  7,(hl)
                call L1E75
                jp   L1D72
@@ -362,7 +378,7 @@ L1D5B:         ld   l,c
                call L1F3E
                call L1D77
                jp   c,L1CB8
-               ld   hl,01EDEH
+               ld   hl,APPDRV+1
                set  7,(hl)
                call L1D77
 L1D72:         pop  hl
@@ -373,7 +389,7 @@ L1D77:         ld   h,000H
                ld   l,(hl)
                res  5,h
                ld   (0F3D0H),hl
-               ld   a,(01EDEH)
+               ld   a,(APPDRV+1)
                ld   (0F043H),a
                xor  a
                ld   (0F042H),a
@@ -453,7 +469,7 @@ L1E0F:         ld   a,l
                ld   (01E67H),a
                ld   a,h
                ld   (01E6AH),a
-               ld   iy,05DBCH
+               ld   iy,LDRDPBTBL
                ld   hl,00000H
                ld   c,000H
                ld   b,004H
@@ -552,12 +568,12 @@ L1ED1:         ld   hl,DRVTBL
                ld   de,0
                call ST_DE_TO_HL
                ld   (L1ED1+1),hl
-L1EDD:         ld   a,00H
-L1EDF:         ld   hl,DRVMAP
+APPDRV:        ld   a,00H               ; Store apple drive code 
+STDRVMAP:      ld   hl,DRVMAP           ; into the drive map
                ld   (hl),a
-               inc  hl
-               ld   (L1EDF+1),hl
-               or   a
+               inc  hl                  ; Add one to drive map
+               ld   (STDRVMAP+1),hl
+               or   a                   ; Set flags based on acc
                ret
 DISKIIDPB:     DW 0020H                ; SPT number of 128 records per track
                DB 03                   ; BLS Block shift factor (1K blocks)
@@ -614,7 +630,7 @@ L1F3E:         ld   a,h
                rrca
                rrca
                rrca
-               ld   (L1EDD+1),a
+               ld   (APPDRV+1),a
                ret
 L1F4C:         ld   de,DPH
                ld   (hl),e
