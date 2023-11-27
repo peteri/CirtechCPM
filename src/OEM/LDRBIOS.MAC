@@ -1,193 +1,202 @@
-           title 'LDRBIOS for CP/M 3 CPMLDR'
-;ZACC_6502
+                title 'LDRBIOS for CP/M 3 CPMLDR'
+;
 ; Loader BIOS for Cirtech CPM system.
 ;
-; Created via decompiling by Peter Ibbotson Oct 2023
-; (C) Copyright Cirtech 1985
+; Created via decompiling by Peter Ibbotson Oct, Nov 2023
+;
+; Code     (C) Copyright Cirtech 1985
+; Comments (C) Copyright Peter Ibbotson 2023
 ;
 
-		       .6502
-ACC_6502       EQU $45              ; 6502 Acc
-X_6502         EQU $46              ; 6502 X reg
-Y_6502         EQU $47              ; 6502 Y reg
-FLAG_6502      EQU $48              ; 6502 flag
-LCBANK1        EQU $C08B			; LCBANK 1 has 6502 code
-LCBANK2        EQU $C083			; LCBANK 2 is used by Z80 code
-Z80CARD        EQU $C400			; Address of Z80 card
-BIOSDISK	   EQU $D400			; BIOS disk address
-ROMIN          EQU $C081			; 6502 bring back roms
-F8ROMSAVE      EQU $FF4A			; Save registers from ROM 
+		        .6502
+ACC_6502        EQU $45                 ; 6502 Acc
+X_6502          EQU $46                 ; 6502 X reg
+Y_6502          EQU $47                 ; 6502 Y reg
+FLAG_6502       EQU $48                 ; 6502 flag
+DISK_ROUT       EQU $03DC               ; Disk routine to call
+LCBANK1         EQU $C08B			    ; LCBANK 1 has 6502 code
+LCBANK2         EQU $C083			    ; LCBANK 2 is used by Z80 code
+Z80CARD         EQU $C400			    ; Address of Z80 card
+BIOSDISK        EQU $D400			    ; BIOS disk address
+ROMIN           EQU $C081			    ; 6502 bring back roms
+F8ROMSAVE       EQU $FF4A               ; Save registers from ROM 
                 .z80
 ;
 ;6502 Zero page stuff seen from Z80
 ;
-ZSLOTX         EQU 0F004H              ; Boot slot 1..7
-ZPRODOS_CMD    EQU 0F042H              ; Prodos command
-ZPRODOS_UNITNUM EQU 0F043H              ;Prodos unit number
-ZACC_6502      EQU 0F045H              ; 6502 Acc
-ZX_6502        EQU 0F046H              ; 6502 X reg
-ZY_6502        EQU 0F047H              ; 6502 Y reg
-ZFLAG_6502     EQU 0F048H              ; 6502 flag
+ZSLOTX          EQU 0F004H              ; Boot slot 1..7
+ZPRODOS_CMD     EQU 0F042H              ; Prodos command
+ZPRODOS_UNITNUM EQU 0F043H              ; Prodos unit number
+ZACC_6502       EQU 0F045H              ; 6502 Acc
+ZX_6502         EQU 0F046H              ; 6502 X reg
+ZY_6502         EQU 0F047H              ; 6502 Y reg
+ZFLAG_6502      EQU 0F048H              ; 6502 flag
 ;
 ;6502 stuff in 0300 range as seen from Z80
 ;
-PAGE300Z80     EQU 0F300H              ; Page 300
-ROUT_6502      EQU 0F3D0H              ; 6502 routine to call
-CARD_Z80       EQU 0F3DEH              ; Card address from Z80 0E401H
-DISK_TRKL      EQU 0F380H              ; Disk track low
-DISK_SECT      EQU 0F381H              ; Disk sector
-DISK_DRV       EQU 0F384H              ; Disk drive slot (060)
-DISK_ACTD      EQU 0F385H              ; Disk active drive
-DISK_TRKH      EQU 0F386H              ; Disk track high
-DISK_OP        EQU 0F388H              ; Disk operation
-DISK_ERR       EQU 0F389H              ; Disk Result
-DISK_ROUT      EQU 03DCH               ; Disk routine to call
-SLOT_INFO      EQU 0F3B8H              ; Slot info
+PAGE300Z80      EQU 0F300H              ; Page 300
+DISK_TRKL       EQU 0F380H              ; Disk track low
+DISK_SECT       EQU 0F381H              ; Disk sector
+DISK_DRV        EQU 0F384H              ; Disk drive slot (060)
+DISK_ACTD       EQU 0F385H              ; Disk active drive
+DISK_TRKH       EQU 0F386H              ; Disk track high
+DISK_OP         EQU 0F388H              ; Disk operation
+DISK_ERR        EQU 0F389H              ; Disk Result
+SLOT_INFO       EQU 0F3B8H              ; Slot info
+ROUT_6502       EQU 0F3D0H              ; 6502 routine to call
+CARD_Z80        EQU 0F3DEH              ; Card address from Z80 0E401H
 ;
 ; 6502 soft switches
 ;
-WRMAINRAM      EQU 0E004H              ; Write to main ram ($200-$BFFF)
-WRCARDRAM      EQU 0E005H              ; Write to 80 col card ram ($200-$BFFF)
-DPH            EQU 6EA8H               ; DPH for Disk 0
-DRVTBL         EQU 5E00H               ; Table of DPH for drives
-DRVMAP         EQU 5E20H               ; Map of CPM drives to apple drives
+WRMAINRAM       EQU 0E004H              ; Write to main ram ($200-$BFFF)
+WRCARDRAM       EQU 0E005H              ; Write to 80 col card ram ($200-$BFFF)
 ;
+; Memory constants
 ;
+LDRDPBTBL       EQU 05DBCH              ; four DPB created by LDRBIOS
+DRVTBL          EQU 05E00H              ; Table of DPH for drives
+DRVMAP          EQU 05E20H              ; Map of CPM drives to apple drives
+DIRBCB          EQU 05E2CH              ; Start of Directory BCB chain.
+DTABCB          EQU 06A88H              ; Start of Data deblocking BCB chain.
+FREEMEM         EQU 06EA8H              ; FREEMEM for Disk 0
+BDOSSTART       EQU 07400H              ; BDOS start address
 ;
-LDRDPBTBL       EQU  05DBCH         ; four DPB created by LDRBIOS
-BDOSSTART       EQU  07400H         ; BDOS start address
-DPB_SPT         EQU  00H            ; SPT number of 128 records per track
-DPB_BLS         EQU  02H            ; BLS Block shift factor 
-DPB_BLM         EQU  03H            ; BLM Block mask 
-DPB_EXM         EQU  04H            ; EXM extant mask
-DPB_DSM         EQU  05H            ; DSM Blocks on drive
-DPB_DRM         EQU  07H            ; DRM Number of directory entries
-DPB_AL0         EQU  09H            ; AL0 reserved blocks for directory
-DPB_AL1         EQU  0AH            ; AL1
-DPB_CKS         EQU  0BH            ; CKS size of directory check vector
-DPB_OFF         EQU  0DH            ; OFF 3 reserved tracks
-DPB_PSH         EQU  0FH            ; PSH Physical Shift 
-DPB_PHM         EQU  10H            ; PHM Physical Mask  
-DPBLEN          EQU  11H            ; Length of Disk parameter block
-
-DPH_XLT         EQU  00H            ; Logical to physical table 0,1
-DPH_0_          EQU  02H            ; BDOS Scratch - 2,3,4,5, 6,7,8,9, A
-DPH_MF          EQU  0BH            ; Media flag - B
-DPH_DPB         EQU  0CH            ; Pointer to Disk Parameter Block - C,D
-DPH_CSV         EQU  0EH ; CSV - E,F
-DPH_ALV         EQU  10H ; Allocation vector - 10,11
-DPH_DIRBCB      EQU  12H ; DIRBCB - 12,13
-DPH_DTABCB      EQU  14H ; DTABCB - 14,15
-DPH_HASH        EQU  16H ; hash -16,17
-DPH_HBANK       EQU  18H ; 18
-DPHLEN          EQU  19H 
-               cseg
-               org 0
+; DPB constants
+;
+DPB_SPT         EQU 00H                 ; SPT number of 128 records per track
+DPB_BLS         EQU 02H                 ; BLS Block shift factor 
+DPB_BLM         EQU 03H                 ; BLM Block mask 
+DPB_EXM         EQU 04H                 ; EXM extant mask
+DPB_DSM         EQU 05H                 ; DSM Blocks on drive
+DPB_DRM         EQU 07H                 ; DRM Number of directory entries
+DPB_AL0         EQU 09H                 ; AL0 reserved blocks for directory
+DPB_AL1         EQU 0AH                 ; AL1
+DPB_CKS         EQU 0BH                 ; CKS size of directory check vector
+DPB_OFF         EQU 0DH                 ; OFF 3 reserved tracks
+DPB_PSH         EQU 0FH                 ; PSH Physical Shift 
+DPB_PHM         EQU 10H                 ; PHM Physical Mask  
+DPBLEN          EQU 11H                 ; Length of Disk parameter block
+;
+; DPH constants
+;
+DPH_XLT         EQU 00H                 ; Logical to physical table 0,1
+DPH_0_          EQU 02H                 ; BDOS Scratch - 2,3,4,5, 6,7,8,9, A
+DPH_MF          EQU 0BH                 ; Media flag - B
+DPH_DPB         EQU 0CH                 ; Pointer to Disk Parameter Block - C,D
+DPH_CSV         EQU 0EH                 ; CSV - E,F
+DPH_ALV         EQU 10H                 ; Allocation vector - 10,11
+DPH_DIRBCB      EQU 12H                 ; DIRBCB - 12,13
+DPH_DTABCB      EQU 14H                 ; DTABCB - 14,15
+DPH_HASH        EQU 16H                 ; hash - 16, 17
+DPH_HBANK       EQU 18H                 ; 18
+DPHLEN          EQU 19H 
+                cseg
+                org 0
 ;==========================================================
 ;
 ;  BIOS jump table
 ;
 ;==========================================================
-               JP boot                 ; initial entry point on coldstart
-               JP boot                 ; warm start
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               JP conout               ; send console output charcater
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               JP home                 ; set disks to logical home
-               JP seldsk               ; select disk drive, return disk parameter info
-               JP settrk               ; set disk track
-               JP setsec               ; set disk sector
-               JP setdma               ; set disk I/O memory address
-               JP read                 ; read phisical block(s)
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               JP sectran              ; translate logical to physical sector
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               JP move                 ; block move memory to memory
-               ld a,00H
-               ret
-               ld a,00H
-               ret
-               ld a,00H
-               ret
+                JP   boot               ; initial entry point on coldstart
+                JP   boot               ; warm start
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                JP   conout             ; send console output charcater
+                ld   a,00H
+                ret
+                ld a,00H
+                ret
+                ld a,00H
+                ret
+                JP   home               ; set disks to logical home
+                JP   seldsk             ; select disk drive, return disk parameter info
+                JP   settrk             ; set disk track
+                JP   setsec             ; set disk sector
+                JP   setdma             ; set disk I/O memory address
+                JP   read               ; read phisical block(s)
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                JP   sectran            ; translate logical to physical sector
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                JP move                 ; block move memory to memory
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
+                ld   a,00H
+                ret
 ;==================================================================
 ; BIOS Func 0 - BOOT
 ; Perform cold boot stuff.
 ; Entry
 ; Exit
 ;==================================================================
-boot:          ld   (01C73H),sp
-               ld   sp,topofstack
-               ld   hl,0E00H           ; Copy message for the Cirtech
-               ld   de,0FC00H          ; toolkeys into $C00
-               ld   bc,0300H
-               ldir
-               ld   hl,0300H           ; Setup  vectors
-               ld   (0F3F2H),hl        ; 6502 reset vector
-               ld   (0F3F0H),hl        ; 6502 break vector
-               ld   (0F3FCH),hl        ; NMI jump
-               ld   a,0A6H             ; reset checksum
-               ld   (0F3F4H),a
+boot:           ld   (01C73H),sp
+                ld   sp,topofstack
+                ld   hl,0E00H           ; Copy message for the Cirtech
+                ld   de,0FC00H          ; toolkeys into $C00
+                ld   bc,0300H
+                ldir
+                ld   hl,0300H           ; Setup  vectors
+                ld   (0F3F2H),hl        ; 6502 reset vector
+                ld   (0F3F0H),hl        ; 6502 break vector
+                ld   (0F3FCH),hl        ; NMI jump
+                ld   a,0A6H             ; reset checksum
+                ld   (0F3F4H),a
 ; Setup jumps etc
-               ld   a,(0F3DFH)         ; Save card in Z80 land
-               ld   hl,(0F3C7H)        ; Hi byte of Card address
-               exx
-               ld   hl,page300         ; Copy a bunch of code
-               ld   de,0F300H          ; into $300 plus Z80 screen addresses
-               ld   bc,page300end-page300
-               ldir
-               exx
-               ld   (0F3C7H),hl         ; put back card address
-               ld   (0F3DFH),a          ; put back high byte of card
+                ld   a,(0F3DFH)         ; Save card in Z80 land
+                ld   hl,(0F3C7H)        ; Hi byte of Card address
+                exx
+                ld   hl,page300         ; Copy a bunch of code
+                ld   de,0F300H          ; into $300 plus Z80 screen addresses
+                ld   bc,page300end-page300
+                ldir
+                exx
+                ld   (0F3C7H),hl        ; put back card address
+                ld   (0F3DFH),a         ; put back high byte of card
 ; Copy BIOS bits that don't run from language card
-               ld   a,(0E088H)          ; LC1 Bank RAM
-               ld   hl,0BC00H           ; Copy from 0DC00 language card
-               ld   de,0FA00H           ; 6502 destination $A00
-               ld   bc,00200H
-               ldir
+                ld   a,(0E088H)         ; LC1 Bank RAM
+                ld   hl,0BC00H          ; Copy from $DC00 language card
+                ld   de,0FA00H          ; 6502 destination $A00
+                ld   bc,00200H
+                ldir
 ; probably setting up for DPH etc           
-               ld   hl,LDRDPBTBL        ; Clear a bunch of memory
-               ld   (hl),000H           ; $6DBC-$8400
-               ld   de,LDRDPBTBL+1      ; or 5DBCH-7400H
-               ld   bc,BDOSSTART-LDRDPBTBL
-               ldir
-               ld   hl,DRVMAP            ;Drv map from CPM->Apple
-               ld   (STDRVMAP+1),hl
-               ld   hl,DRVTBL           
-               ld   (L1ED1+1),hl
-               ld   hl,DPH
-               ld   (ALLOCDPH+1),hl
-               ld   a,005
-               ld   hl,05E2CH
-               call L1F14
-               ld   a,001
-               ld   hl,06A88H
-               call L1F14
+                ld   hl,LDRDPBTBL       ; Clear a bunch of memory
+                ld   (hl),000H          ; $6DBC-$8400
+                ld   de,LDRDPBTBL+1     ; or 5DBCH-7400H
+                ld   bc,BDOSSTART-LDRDPBTBL
+                ldir
+                ld   hl,DRVMAP          ; Drv map from CPM->Apple
+                ld   (STDRVMAP+1),hl
+                ld   hl,DRVTBL          ; Initialise drive table pointer
+                ld   (DRVTBLADDR+1),hl  ; save into next drive table entry
+                ld   hl,FREEMEM
+                ld   (ALLOCMEM+1),hl
+                ld   a,5                ; Create five Buffer control blocks
+                ld   hl,DIRBCB          ; For storing directories in
+                call CREATEBCBS
+                ld   a,1                ; Create DTA buffer control blocks
+                ld   hl,DTABCB          ; for data.
+                call CREATEBCBS
 ;==================================================================
 ;
 ; Scan slots           
@@ -195,497 +204,518 @@ boot:          ld   (01C73H),sp
 ; gets rewritten first time through does the boot 
 ; slot, loops back to do count down from slot 7.
 ;
+; Boot slot gets done first as it needs to always succeed when
+; the various DPH pointers are allocated (DPB,ALV,CKS)
+; We don't want to run of memory for drive A:
+;
 ;==================================================================
-               ld   a,(ZSLOTX)          ; Get the boot slot
-               ld   e,a
-               ld   d,0
-               ld   ix,SLOT_INFO       ; set ix to SLOT_INFO+ZSLOTX
-               add  ix,de
-               or   0E0H               ; Convert slot to 0Ex00H
-               ld   h,a
-               ld   a,SLOT_SCAN-(SLOTJR+2) ; Patch jr to do rest of loop
-               jr   SAVE_BOOT          ; Save boot slot
-SLOT_SCAN:     ld   ix,SLOT_INFO+7
-               ld   hl,0E700H
-NEXT_SLOT:     ld   a,0E0H             ; Slot zero?
-               cp   h
-               jr   z,BOOTEXIT         ; Yes go finish this boot code
-               ld   a,(ZSLOTX)          ; get back boot slot
-               or   0E0H               ; Set zero flag 
-               cp   h
-               ld   a,NEXT_SLOT-(SLOTJR+2)
-SAVE_BOOT:     ld   (SLOTJR+1),a       ; Patch loop
-               jr   z,SKIPBOOT         ; Already done boot slot? Skip it.
-               call SUMSLROMX2         ; Sum the bytes in the slot twice
-               xor  a                  ; If the space is all $FF
-               cp   b                  ; then B=0
-               jr   z,NOCARD           ; So nothing there
-               ld   a,c                ; Was the sum the same twice
-               cp   e
-               jr   nz,NOCARD          ; different bytes, so no card
-               ld   a,d                ; Check if the high byte is the same?
-               cp   b
-               jr   z,CHKCARD          ; Read the same twice go figure out what it is
-NOCARD:        ld   c,0                ; We read random crap
-               jr   SAVECARD           ; so it's a no from us.
-CHKCARD:       ld   c,3                ; Apple comms or 
-               ld   de,01838H          ; CCS 7710A check 
-               call CHECKCARDSIG
-               jr   z,SAVECARD         ; Found it go save.
-               inc  c
-               ld   de,03818H          ; Pascal card?
-               call CHECKCARDSIG
-               jr   nz,CHKPARAL        ; Not a pascal style card check for parallel
-               ld   l,0BH              ; Check if it's got pascal firmware
-               ld   a,1                ; 1 in 0En0BH
-               cp   (hl)            
-               jr   nz,SAVECARD        ; Not pascal but save as card type 4
-               inc  l               
-               ld   a,(hl)             ; Get device signature type
-               and  0F0H               ; Keep high nibble (class of card)
-               or   006H               ; Set low nibble to six  
-               ld   c,a
-               jr   SAVECARD           ; and save
-CHKPARAL:      inc  c                  ; C=5
-               ld   de,04848H          ; Original Apple parallel card? 
-               call CHECKCARDSIG
-               jr   nz,CHKSLDRIVE
-SAVECARD:      ld   (ix+0),c
-SKIPBOOT:      dec  ix                 ; Decrement SLOT_INFO pointer
-               dec  h                  ; Decrement current slot
-SLOTJR:        jr   SLOT_SCAN          ; Gets overwritten
-BOOTEXIT:      ld   (WRCARDRAM),a      ; Write to aux memory (48K)
-               xor  a
-               ld   (0F027H),a         ; Store a zero in 6502?
-               ld   de,PAGE300Z80      ; Copy 0300 to aux memory
-               ld   h,d                ; Upto 0BFF
-               ld   l,e           
-               ld   bc,08FFH      
-               ldir                    ; Now $300-$BFF is the same in both banks
-               ld   (WRMAINRAM),a      ; Back to main memory
-               ld   a,004
-               ld   (0F47EH),a
-               xor  a
-               ld   (0F4FEH),a
-               ld   a,(0E30DH)         ; 80 column card init
-               call call80col
-               ld   hl,06EBAH
-               ld   de,05E2EH
-               call ST_DE_TO_HL
-               ld   de,06A8AH
-               ld   sp,00000
-ST_DE_TO_HL:   ld   (hl),e
-               inc  hl
-               ld   (hl),d
-               inc  hl
-               ret
-CHKSLDRIVE:    ld   c,07H               ; Check for a drive
-               ld   l,05H               ; Check $Cn05 for
-               ld   a,(hl)         
-               cp   03H                 ; $03
-               jp   nz,CARDUNK          ; Not a disk drive
-               ld   de,2000H            ; Check more signature bytes
-               ld   l,01H               ; Check $Cn01
-               ld   a,(hl)         
-               cp   d                   ; $20
-               jr   nz,CARDUNK          ; Not a disk drive
-               ld   l,03H               ; Check $Cn03 for zero 
-               call CPHLTOE             ; Check if (HL) is E ($00)
-               jr   nz,CARDUNK          ; Not a disk drive
-               ld   l,0FFH              ; Check $CnFF
-               ld   a,(hl)
-               or   a                   ; Zero means Disk ][
-               jr   nz,NOTDISKII
-               ld   l,02H               ; Card type is 2 for DSKII 
-               push hl                  ; Save hl for later
-               call SETUPDRVCODE
-               ld   iy,LDRDPBTBL        ; Set iy to our DPBs
-               ld   l,04H               ; We have four of them
-D2DPBLOOP:     ld   a,(iy+DPB_BLS)      ; Get block shift
-               or   a                   ; blank DPB entry?
-               jr   z,CPYD2DPB          ; Copy Disk II DPB into DPB Table
-               cp   03H                 ; Disk II DPB?
-               jr   z,FNDD2DPB          ; Yep lets use it
-               ld   de,DPBLEN           ; Lets try the next DPB
-               add  iy,de
-               dec  l                   ; Any more DPB to try to use?
-               jr   nz,D2DPBLOOP        ; yes do the loop    
-DSKUNKNOWN:    pop  hl                  ; Get back our saved hl
-               jr   CARDUNK             ; Go home and mark the Disk II as unknown
-CPYD2DPB:      push iy                  ; Copy disk II DPB
-               pop  de                  ; To IY
-               ld   hl,DISKIIDPB
-               ld   bc,DPBLEN
-               ldir
-FNDD2DPB:      call CREATEDPH               ; Excellent found a Disk II DPB
-               jr   c,DSKUNKNOWN
-               ld   hl,APPDRV+1
-               set  7,(hl)              ; Flag second disk drive
-               call CREATEDPH
-               jp   DRIVEDONE
-NOTDISKII:     cp   0FAH               ; Jump out of range
-               jr   nc,CARDUNK         ; Yeah unknown card
-               add  a,03H              ; Add three to get Smart port
-               ld   (JSR6502+1),a      ; Save it away
-               ld   a,h                ; Convert 0En00H to $Cn00
-               sub  20H
-               ld   (JSR6502+2),a
-               dec  l                  ; get byte at $cnFE
-               ld   a,(hl)             
-               ld   b,a                ;
-               and  07H                ; Mask off Prodos status bits
-               cp   07H                ; Check for Status/Read/Write
-               jr   nz,CARDUNK         ; Can't read / write not for us
-               ld   l,0FBH             ; Load smart port ID byte at $CnFB
-               bit  0,(hl)             ; 
-               jr   nz,L1CFE
-               inc  c                  ;Set c to 8
-               bit  7,b
-               jp   nz,L1D5B
-               inc  c
-               jp   L1D5B
-L1CFE:         ld   l,07H
-               ld   a,(hl)
-               or   a
-               jr   z,L1D09
-CARDUNK:       ld   c,01H              ; Unkown card type
-               jp   SAVECARD           ; Save it
-L1D09:         ld   l,0FBH
-               ld   a,(hl)
-               cp   0A5H
-               exx
-               jr   z,L1D4D
-               ld   a,008H
-               ld   hl,03202H
-               ld   c,000H
-               call L1F86
-               ld   hl,0F800H
-               ld   de,02200H
-               ld   b,010H
-L1D23:         ld   a,(de)
-               cp   (hl)
-               jr   nz,L1D2D
-               inc  l
-               inc  e
-               djnz L1D23
-               jr   L1D5A
-L1D2D:         call L1EFA
-               ld   a,0E5H
-               ld   hl,02200H
-               ld   (hl),a
-               ld   de,02201H
-               ld   bc,01FFFH
-               ldir
-               ld   hl,03220H
-               ld   c,030H
-               call L1F89
-               ld   c,050H
-               call L1F91
-               jr   L1D5A
-L1D4D:         ld   hl,(01FA9H)
-               ld   a,l
-               sub  00DH
-               ld   l,a
-               call call6502
-               call L1EFA
-L1D5A:         exx
-L1D5B:         ld   l,c
-               push hl
-               ld   a,c
-               ld   (01E07H),a
-               call SETUPDRVCODE
-               call PDSIZE
-               jp   c,DSKUNKNOWN
-               ld   hl,APPDRV+1
-               set  7,(hl)
-               call PDSIZE
-DRIVEDONE:     pop  hl                  ; h=Slot Ex l=card type
-               ld   c,l                 ; copy card type to c
-               jp   SAVECARD            ; And save card.
-PDSIZE:        ld   h,000H              ; Overwritten by card find routine
-               ld   l,0FFH              ; Get prodos entry point
-               ld   l,(hl)
-               res  5,h                 ; Convert $ExFF to $CxFF
-               ld   (ROUT_6502),hl      ; put the ROM address into 6502 call
-               ld   a,(APPDRV+1)        ; Save disk drive ($6x pr $Ex etc)
-               ld   (ZPRODOS_UNITNUM),a ; For prodos status
-               xor  a                   
-               ld   (ZPRODOS_CMD),a     ; Prodos Status command
-               ld   hl,(CARD_Z80)       ; Lets go to 6502 land
-               ld   (hl),a
-               ld   a,(ZACC_6502)       ; Get error code
-               cp   028H                ; No drive?
-               ld   hl,(ZX_6502)        ; hl=number of blocks
-               scf                      ; Set carry flag to show error
-               ret  z                   ; Go home.
-               ld   de,00018H           ; subtract boot tracks
-               or   a                   ; clear carry
-               sbc  hl,de
-               ex   de,hl
-               srl  d
-               rr   e
-               srl  d
-               rr   e
-               ld   a,d
-               cp   010H
-               jr   c,L1DB5
-               bit  5,a
-               ld   a,010H
-               jr   z,L1DB5
-               set  2,a
-L1DB5:         srl  a
-               srl  a
-               srl  a
-               push af
-               inc  a
-               ld   b,a
-L1DBE:         srl  d
-               rr   e
-               djnz L1DBE
-               dec  de
-               ld   (01E1CH),de
-               ld   l,a
-               add  a,004H
-               ld   (01E1FH),a
-               ld   b,a
-               ld   a,001H
-L1DD2:         sla  a
-               djnz L1DD2
-               dec  a
-               ld   (01E53H),a
-               xor  a
-               cp   d
-               jr   nz,L1DDF
-               inc  a
-L1DDF:         ld   b,l
-               ld   hl,00040H
-L1DE3:         scf
-               rl   a
-               add  hl,hl
-               djnz L1DE3
-               ld   (01E56H),a
-               ld   b,080H
-               pop  af
-               jr   nc,L1DF5
-               add  hl,hl
-               scf
-               rr   b
-L1DF5:         dec  hl
-               ld   (01E5DH),hl
-               ld   a,b
-               ld   (01E63H),a
-               inc  hl
-               srl  h
-               rr   l
-               srl  h
-               rr   l
-               ld   a,000H
-               cp   008H
-               jr   z,L1E0F
-               ld   hl,08000H
-L1E0F:         ld   a,l
-               ld   (01E67H),a
-               ld   a,h
-               ld   (01E6AH),a
-               ld   iy,LDRDPBTBL
-               ld   hl,00000H
-               ld   c,000H
-               ld   b,004H
-L1E22:         ld   a,(iy+002H)
-               or   a
-               jr   z,L1E48
-               cp   c
-               jr   nz,L1E3F
-               ld   a,(iy+005H)
-               cp   l
-               jr   nz,L1E3F
-               ld   a,(iy+006H)
-               cp   h
-               jr   nz,L1E3F
-               ld   a,(01E6AH)
-               cp   (iy+00cH)
-               jr   z,CREATEDPH
-L1E3F:         ld   de,00011H
-               add  iy,de
-               djnz L1E22
-               scf
-               ret
-L1E48:         push hl
-               push iy
-               pop  hl
-               ld   (hl),020H
-               inc  hl
-               inc  hl
-               ld   (hl),c
-               inc  hl
-               ld   (hl),000H
-               inc  hl
-               ld   (hl),000H
-               inc  hl
-               pop  de
-               call ST_DE_TO_HL
-               ld   de,00000H
-               call ST_DE_TO_HL
-               ld   (hl),000H
-               inc  hl
-               inc  hl
-               ld   (hl),000H
-               inc  hl
-               ld   (hl),000H
-               inc  hl
-               ld   (hl),003H
-               inc  hl
-               inc  hl
-               ld   (hl),002H
-               inc  hl
-               ld   (hl),003H
+                ld   a,(ZSLOTX)         ; Get the boot slot
+                ld   e,a
+                ld   d,0
+                ld   ix,SLOT_INFO       ; set ix to SLOT_INFO+ZSLOTX
+                add  ix,de
+                or   0E0H               ; Convert slot to 0Ex00H
+                ld   h,a
+                ld   a,SLOT_SCAN-(SLOTJR+2) ; Patch jr to do rest of loop
+                jr   SAVE_BOOT          ; Save boot slot
+SLOT_SCAN:      ld   ix,SLOT_INFO+7
+                ld   hl,0E700H
+NEXT_SLOT:      ld   a,0E0H             ; Slot zero?
+                cp   h
+                jr   z,BOOTEXIT         ; Yes go finish this boot code
+                ld   a,(ZSLOTX)         ; get back boot slot
+                or   0E0H               ; Set zero flag 
+                cp   h
+                ld   a,NEXT_SLOT-(SLOTJR+2)
+SAVE_BOOT:      ld   (SLOTJR+1),a       ; Patch loop
+                jr   z,SKIPBOOT         ; Already done boot slot? Skip it.
+                call SUMSLROMX2         ; Sum the bytes in the slot twice
+                xor  a                  ; If the space is all $FF
+                cp   b                  ; then B=0
+                jr   z,NOCARD           ; So nothing there
+                ld   a,c                ; Was the sum the same twice
+                cp   e
+                jr   nz,NOCARD          ; different bytes, so no card
+                ld   a,d                ; Check if the high byte is the same?
+                cp   b
+                jr   z,CHKCARD          ; Read the same twice go figure out what it is
+NOCARD:         ld   c,0                ; We read random crap
+                jr   SAVECARD           ; so it's a no from us.
+CHKCARD:        ld   c,3                ; Apple comms or 
+                ld   de,01838H          ; CCS 7710A check 
+                call CHECKCARDSIG
+                jr   z,SAVECARD         ; Found it go save.
+                inc  c
+                ld   de,03818H          ; Pascal card?
+                call CHECKCARDSIG
+                jr   nz,CHKPARAL        ; Not a pascal style card check for parallel
+                ld   l,0BH              ; Check if it's got pascal firmware
+                ld   a,1                ; 1 in 0En0BH
+                cp   (hl)            
+                jr   nz,SAVECARD        ; Not pascal but save as card type 4
+                inc  l               
+                ld   a,(hl)             ; Get device signature type
+                and  0F0H               ; Keep high nibble (class of card)
+                or   006H               ; Set low nibble to six  
+                ld   c,a
+                jr   SAVECARD           ; and save
+CHKPARAL:       inc  c                  ; C=5
+                ld   de,04848H          ; Original Apple parallel card? 
+                call CHECKCARDSIG
+                jr   nz,CHKSLDRIVE
+SAVECARD:       ld   (ix+0),c
+SKIPBOOT:       dec  ix                 ; Decrement SLOT_INFO pointer
+                dec  h                  ; Decrement current slot
+SLOTJR:         jr   SLOT_SCAN          ; Gets overwritten
+BOOTEXIT:       ld   (WRCARDRAM),a      ; Write to aux memory (48K)
+                xor  a
+                ld   (0F027H),a         ; Store a zero in 6502?
+                ld   de,PAGE300Z80      ; Copy 0300 to aux memory
+                ld   h,d                ; Upto 0BFF
+                ld   l,e           
+                ld   bc,08FFH      
+                ldir                    ; Now $300-$BFF is the same in both banks
+                ld   (WRMAINRAM),a      ; Back to main memory
+                ld   a,004
+                ld   (0F47EH),a
+                xor  a
+                ld   (0F4FEH),a
+                ld   a,(0E30DH)         ; 80 column card init
+                call call80col
+                ld   hl,06EBAH
+                ld   de,05E2EH
+                call ST_DE_TO_HL
+                ld   de,06A8AH
+                ld   sp,00000
+ST_DE_TO_HL:    ld   (hl),e
+                inc  hl
+                ld   (hl),d
+                inc  hl
+                ret
+CHKSLDRIVE:     ld   c,07H              ; Check for a drive
+                ld   l,05H              ; Check $Cn05 for
+                ld   a,(hl)         
+                cp   03H                ; $03
+                jp   nz,CARDUNK         ; Not a disk drive
+                ld   de,2000H           ; Check more signature bytes
+                ld   l,01H              ; Check $Cn01
+                ld   a,(hl)         
+                cp   d                  ; $20
+                jr   nz,CARDUNK         ; Not a disk drive
+                ld   l,03H              ; Check $Cn03 for zero 
+                call CPHLTOE            ; Check if (HL) is E ($00)
+                jr   nz,CARDUNK         ; Not a disk drive
+                ld   l,0FFH             ; Check $CnFF
+                ld   a,(hl)
+                or   a                  ; Zero means Disk ][
+                jr   nz,NOTDISKII
+                ld   l,02H              ; Card type is 2 for DSKII 
+                push hl                 ; Save hl for later
+                call SETUPDRVCODE
+                ld   iy,LDRDPBTBL       ; Set iy to our DPBs
+                ld   l,04H              ; We have four of them
+D2DPBLOOP:      ld   a,(iy+DPB_BLS)     ; Get block shift
+                or   a                  ; blank DPB entry?
+                jr   z,CPYD2DPB         ; Copy Disk II DPB into DPB Table
+                cp   03H                ; Disk II DPB?
+                jr   z,FNDD2DPB         ; Yep lets use it
+                ld   de,DPBLEN          ; Lets try the next DPB
+                add  iy,de
+                dec  l                  ; Any more DPB to try to use?
+                jr   nz,D2DPBLOOP       ; yes do the loop    
+DSKUNKNOWN:     pop  hl                 ; Get back our saved hl
+                jr   CARDUNK            ; Go home and mark the Disk II as unknown
+CPYD2DPB:       push iy                 ; Copy disk II DPB
+                pop  de                 ; To IY
+                ld   hl,DISKIIDPB
+                ld   bc,DPBLEN
+                ldir
+FNDD2DPB:       call CREATEDPH          ; Found a Disk II DPB, creat DPH
+                jr   c,DSKUNKNOWN       ; Unkown if we're out of memory
+                ld   hl,APPDRV+1        
+                set  7,(hl)             ; Flag second disk drive
+                call CREATEDPH          ; And create a DPH.
+                jp   DRIVEDONE
+NOTDISKII:      cp   0FAH               ; Jump out of range
+                jr   nc,CARDUNK         ; Yeah unknown card
+                add  a,03H              ; Add three to get Smart port
+                ld   (JSR6502+1),a      ; Save it away
+                ld   a,h                ; Convert 0En00H to $Cn00
+                sub  20H
+                ld   (JSR6502+2),a
+                dec  l                  ; get byte at $cnFE
+                ld   a,(hl)             
+                ld   b,a                ;
+                and  07H                ; Mask off Prodos status bits
+                cp   07H                ; Check for Status/Read/Write
+                jr   nz,CARDUNK         ; Can't read / write not for us
+                ld   l,0FBH             ; Load smart port ID byte at $CnFB
+                bit  0,(hl)             ; 
+                jr   nz,L1CFE
+                inc  c                  ; Set c to 8
+                bit  7,b
+                jp   nz,L1D5B
+                inc  c
+                jp   L1D5B
+L1CFE:          ld   l,07H
+                ld   a,(hl)
+                or   a
+                jr   z,L1D09
+CARDUNK:        ld   c,01H              ; Unkown card type
+                jp   SAVECARD           ; Save it
+L1D09:          ld   l,0FBH
+                ld   a,(hl)
+                cp   0A5H
+                exx
+                jr   z,L1D4D
+                ld   a,008H
+                ld   hl,03202H
+                ld   c,000H
+                call L1F86
+                ld   hl,0F800H
+                ld   de,02200H
+                ld   b,010H
+L1D23:          ld   a,(de)
+                cp   (hl)
+                jr   nz,L1D2D
+                inc  l
+                inc  e
+                djnz L1D23
+                jr   L1D5A
+L1D2D:          call L1EFA
+                ld   a,0E5H
+                ld   hl,02200H
+                ld   (hl),a
+                ld   de,02201H
+                ld   bc,01FFFH
+                ldir
+                ld   hl,03220H
+                ld   c,030H
+                call L1F89
+                ld   c,050H
+                call L1F91
+                jr   L1D5A
+L1D4D:          ld   hl,(01FA9H)
+                ld   a,l
+                sub  00DH
+                ld   l,a
+                call call6502
+                call L1EFA
+L1D5A:          exx
+L1D5B:          ld   l,c
+                push hl
+                ld   a,c
+                ld   (01E07H),a
+                call SETUPDRVCODE
+                call PDSIZE
+                jp   c,DSKUNKNOWN
+                ld   hl,APPDRV+1
+                set  7,(hl)
+                call PDSIZE
+DRIVEDONE:      pop  hl                  ; h=Slot Ex l=card type
+                ld   c,l                 ; copy card type to c
+                jp   SAVECARD            ; And save card.
+PDSIZE:         ld   h,000H              ; Overwritten by card find routine
+                ld   l,0FFH              ; Get prodos entry point
+                ld   l,(hl)
+                res  5,h                 ; Convert $ExFF to $CxFF
+                ld   (ROUT_6502),hl      ; put the ROM address into 6502 call
+                ld   a,(APPDRV+1)        ; Save disk drive ($6x pr $Ex etc)
+                ld   (ZPRODOS_UNITNUM),a ; For prodos status
+                xor  a                   
+                ld   (ZPRODOS_CMD),a     ; Prodos Status command
+                ld   hl,(CARD_Z80)       ; Lets go to 6502 land
+                ld   (hl),a
+                ld   a,(ZACC_6502)       ; Get error code
+                cp   028H                ; No drive?
+                ld   hl,(ZX_6502)        ; hl=number of blocks
+                scf                      ; Set carry flag to show error
+                ret  z                   ; Go home.
+                ld   de,00018H           ; subtract boot tracks
+                or   a                   ; clear carry
+                sbc  hl,de
+                ex   de,hl
+                srl  d
+                rr   e
+                srl  d
+                rr   e
+                ld   a,d
+                cp   010H
+                jr   c,L1DB5
+                bit  5,a
+                ld   a,010H
+                jr   z,L1DB5
+                set  2,a
+L1DB5:          srl  a
+                srl  a
+                srl  a
+                push af
+                inc  a
+                ld   b,a
+L1DBE:          srl  d
+                rr   e
+                djnz L1DBE
+                dec  de
+                ld   (01E1CH),de
+                ld   l,a
+                add  a,004H
+                ld   (01E1FH),a
+                ld   b,a
+                ld   a,001H
+L1DD2:          sla  a
+                djnz L1DD2
+                dec  a
+                ld   (01E53H),a
+                xor  a
+                cp   d
+                jr   nz,L1DDF
+                inc  a
+L1DDF:          ld   b,l
+                ld   hl,00040H
+L1DE3:          scf
+                rl   a
+                add  hl,hl
+                djnz L1DE3
+                ld   (01E56H),a
+                ld   b,080H
+                pop  af
+                jr   nc,L1DF5
+                add  hl,hl
+                scf
+                rr   b
+L1DF5:          dec  hl
+                ld   (01E5DH),hl
+                ld   a,b
+                ld   (01E63H),a
+                inc  hl
+                srl  h
+                rr   l
+                srl  h
+                rr   l
+                ld   a,000H
+                cp   008H
+                jr   z,L1E0F
+                ld   hl,08000H
+L1E0F:          ld   a,l
+                ld   (01E67H),a
+                ld   a,h
+                ld   (01E6AH),a
+                ld   iy,LDRDPBTBL
+                ld   hl,00000H
+                ld   c,000H
+                ld   b,004H
+L1E22:          ld   a,(iy+002H)
+                or   a
+                jr   z,L1E48
+                cp   c
+                jr   nz,L1E3F
+                ld   a,(iy+005H)
+                cp   l
+                jr   nz,L1E3F
+                ld   a,(iy+006H)
+                cp   h
+                jr   nz,L1E3F
+                ld   a,(01E6AH)
+                cp   (iy+00cH)
+                jr   z,CREATEDPH
+L1E3F:          ld   de,00011H
+                add  iy,de
+                djnz L1E22
+                scf
+                ret
+L1E48:          push hl
+                push iy
+                pop  hl
+                ld   (hl),020H
+                inc  hl
+                inc  hl
+                ld   (hl),c
+                inc  hl
+                ld   (hl),000H
+                inc  hl
+                ld   (hl),000H
+                inc  hl
+                pop  de
+                call ST_DE_TO_HL
+                ld   de,00000H
+                call ST_DE_TO_HL
+                ld   (hl),000H
+                inc  hl
+                inc  hl
+                ld   (hl),000H
+                inc  hl
+                ld   (hl),000H
+                inc  hl
+                ld   (hl),003H
+                inc  hl
+                inc  hl
+                ld   (hl),002H
+                inc  hl
+                ld   (hl),003H
 ;=======================================================
 ; Create DPH
-;
+; Allocate a DPH and write into the drive table
+; also create space for the check vector size and 
+; allocation vector
 ; iy=DPB
 ;
 ;=======================================================    
-CREATEDPH:     ld   hl,(ALLOCDPH+1)    ; Get current DPH
-               ld   (DRVTBLENT+1),hl    ; Setup to insert into the Drv table.
-               push hl                  
-               ld   de,DPHLEN
-               add  hl,de
-               call SPACECHECK
-               ld   (ALLOCDPH+1),hl
-               pop  hl
-               ret  c
-               ld   de,0000BH           ; DPH_MF
-               add  hl,de
-               ld   (hl),0FFH           ; Mark drive as changed
-               inc  hl                  ; Move to DPB
-               push iy                  ; Get DPB for drive
-               pop  de                  ; Save int DPH_DPB
-               call ST_DE_TO_HL
-               ld   c,(iy+DPB_CKS)      ; Get directory check vector size 
-               ld   b,(iy+DPB_CKS+1)    ; From DPB
-               bit  7,b                 ; Check permenant disk flag (bit 15)
-               jr   z,DPHREMDRV         ; It's removable
-               ld   (hl),000            ; Set the CVS to 0
-               inc  hl
-               ld   (hl),000
-               inc  hl
-               jr   L1EAB
-DPHREMDRV:     call ALLOCDPH            ; Allocate the DPH
-               ret  c                   ; Out of space? Go home
-L1EAB:         ld   c,(iy+DPB_DSM)
-               ld   b,(iy+DPB_DSM+1)
-               inc  bc
-               srl  b
-               rr   c
-               srl  b
-               rr   c
-               inc  bc
-               call ALLOCDPH
-               ret  c
-               ld   de,05E2CH
-               call ST_DE_TO_HL
-               ld   de,06A88H
-               call ST_DE_TO_HL
-               ld   de,0FFFFH
-               call ST_DE_TO_HL
-L1ED1:         ld   hl,DRVTBL
-DRVTBLENT:     ld   de,0
-               call ST_DE_TO_HL
-               ld   (L1ED1+1),hl
-APPDRV:        ld   a,00H               ; Store apple drive code 
-STDRVMAP:      ld   hl,DRVMAP           ; into the drive map
-               ld   (hl),a
-               inc  hl                  ; Add one to drive map
-               ld   (STDRVMAP+1),hl
-               or   a                   ; Set flags based on acc
-               ret
-DISKIIDPB:     DW 0020H                ; SPT number of 128 records per track
-               DB 03                   ; BLS Block shift factor (1K blocks)
-               DB 07                   ; BLM Block mask (1K blocks)
-               DB 0                    ; EXM extant mask
-               DW (35*4)-1             ; DSM Blocks on drive
-               DW 63                   ; DRM Number of directory entries
-               DB 0C0H                 ; AL0 (Two reserved blocks for directory 2K)
-               DB 00H                  ; AL1
-               DW 0010H                ; CKS size of directory check vector
-               DW 0003H                ; OFF 3 reserved tracks
-               DB 01H                  ; PSH Physical Shift (256 byte sectors)
-               DB 01H                  ; PHM Physical Mask  (256 byte sectors) 
-L1EFA:         ld   a,09H
-               ld   c,000H
-               ld   hl,00802H
-               call L1F86
-               ld   c,002H
-               ld   hl,0D00EH
-               call L1F89
-               ld   c,010H
-               ld   hl,01120H
-               jp   L1F89
-L1F14:         ld   d,h
-               ld   e,l
-               inc  de
-               inc  de
-               call ST_DE_TO_HL
-L1F1B:         call L1F2D
-               inc  hl
-               push hl
-               ld   de,0202H
-               add  hl,de
-               ex   de,hl
-               pop  hl
-               call ST_DE_TO_HL
-               ex   de,hl
-               dec  a
-               jr   nz,L1F1B
-L1F2D:         ld   (hl),0FFH
-               ld   de,000AH
-               add  hl,de
-               push hl
-               pop  de
-               ld   bc,0005H
-               add  hl,bc
-               ex   de,hl
-               call ST_DE_TO_HL
-               ret
+CREATEDPH:      ld   hl,(ALLOCMEM+1)    ; Get current DPH
+                ld   (DRVTBLENT+1),hl   ; Setup to insert into the Drv table.
+                push hl                 ; Save hl
+                ld   de,DPHLEN          ; Allocate DPH len of space
+                add  hl,de
+                call SPACECHECK         ; Check for any space left
+                ld   (ALLOCMEM+1),hl    ; Store it back
+                pop  hl
+                ret  c
+                ld   de,DPH_MF          ; DPH Media flag
+                add  hl,de
+                ld   (hl),0FFH          ; Mark drive as changed
+                inc  hl                 ; Move to DPB
+                push iy                 ; Get DPB for drive
+                pop  de                 ; Save int DPH_DPB
+                call ST_DE_TO_HL
+                ld   c,(iy+DPB_CKS)     ; Get directory check vector size 
+                ld   b,(iy+DPB_CKS+1)   ; From DPB
+                bit  7,b                ; Check permenant disk flag (bit 15)
+                jr   z,DPHREMDRV        ; It's removable
+                ld   (hl),000           ; Set the CVS to 0
+                inc  hl
+                ld   (hl),000
+                inc  hl
+                jr   DPHNOCSV
+DPHREMDRV:      call ALLOCMEM           ; Allocate the CKS
+                ret  c                  ; Out of space? Go home
+DPHNOCSV:       ld   c,(iy+DPB_DSM)     ; Get number of blocks
+                ld   b,(iy+DPB_DSM+1)
+                inc  bc                 ; Add one 
+                srl  b                  ; Two bits for each block
+                rr   c                  ; in the ALV
+                srl  b
+                rr   c
+                inc  bc                 ; Add one more
+                call ALLOCMEM           ; Get memory and store in ALV
+                ret  c                  ; Not enough go home
+                ld   de,DIRBCB          ; Store start of DIRBCB chain into DPH
+                call ST_DE_TO_HL
+                ld   de,DTABCB          ; Store start of DTABCB chain into DPH
+                call ST_DE_TO_HL
+                ld   de,0FFFFH          ; Disable hashing
+                call ST_DE_TO_HL
+DRVTBLADDR:     ld   hl,DRVTBL
+DRVTBLENT:      ld   de,0               ; Overwritten at start of create DPH
+                call ST_DE_TO_HL        ; Add DPH to drive table
+                ld   (DRVTBLADDR+1),hl  ; Increment
+APPDRV:         ld   a,00H              ; Store apple drive code 
+STDRVMAP:       ld   hl,DRVMAP          ; into the drive map
+                ld   (hl),a
+                inc  hl                 ; Add one to drive map
+                ld   (STDRVMAP+1),hl
+                or   a                  ; Set flags based on acc
+                ret
+DISKIIDPB:      DW 0020H                ; SPT number of 128 records per track
+                DB 03                   ; BLS Block shift factor (1K blocks)
+                DB 07                   ; BLM Block mask (1K blocks)
+                DB 0                    ; EXM extant mask
+                DW (35*4)-1             ; DSM Blocks on drive
+                DW 63                   ; DRM Number of directory entries
+                DB 0C0H                 ; AL0 (Two reserved blocks for directory 2K)
+                DB 00H                  ; AL1
+                DW 0010H                ; CKS size of directory check vector
+                DW 0003H                ; OFF 3 reserved tracks
+                DB 01H                  ; PSH Physical Shift (256 byte sectors)
+                DB 01H                  ; PHM Physical Mask  (256 byte sectors) 
+L1EFA:          ld   a,09H
+                ld   c,000H
+                ld   hl,00802H
+                call L1F86
+                ld   c,002H
+                ld   hl,0D00EH
+                call L1F89
+                ld   c,010H
+                ld   hl,01120H
+                jp   L1F89
+;=====================================================
+;  Create some buffer control blocks
+;=====================================================
+CREATEBCBS:     ld   d,h
+                ld   e,l
+                inc  de
+                inc  de
+                call ST_DE_TO_HL
+CR_BCBLOOP:     call CREATEBCB
+                inc  hl
+                push hl
+                ld   de,0202H
+                add  hl,de
+                ex   de,hl
+                pop  hl
+                call ST_DE_TO_HL
+                ex   de,hl
+                dec  a
+                jr   nz,CR_BCBLOOP
+CREATEBCB:      ld   (hl),0FFH
+                ld   de,000AH
+                add  hl,de
+                push hl
+                pop  de
+                ld   bc,0005H
+                add  hl,bc
+                ex   de,hl
+                call ST_DE_TO_HL
+                ret
 ;===================================================
 ;
 ; Setup drive code stuff for later.
 ;
-;==================================================               
-SETUPDRVCODE:  ld   a,h                 ; Store slot into prodos size routine
-               ld   (PDSIZE+1),a        
-               and  0FH                 ; Convert Cx to x0
-               rrca                     ; Mult by 16
-               rrca
-               rrca
-               rrca
-               ld   (APPDRV+1),a        ; Store result back into code
-               ret
-ALLOCDPH:      ld   de,DPH              
-               ld   (hl),e
-               inc  hl
-               ld   (hl),d
-               inc  hl
-               push hl
-               ex   de,hl
-               add  hl,bc
-               call SPACECHECK
-               ex   de,hl
-               pop  hl
-               ret  c
-               ld   (ALLOCDPH+1),de
-               ret
+;===================================================               
+SETUPDRVCODE:   ld   a,h                ; Store slot into prodos size routine
+                ld   (PDSIZE+1),a        
+                and  0FH                ; Convert Cx to x0
+                rrca                    ; Mult by 16
+                rrca
+                rrca
+                rrca
+                ld   (APPDRV+1),a       ; Store result back into code
+                ret
+;===================================================
+; Allocate some memory.
+; Store the result of the allocating BC bytes into HL
+; Entry
+; hl = Address of memory to store allocation into
+; bc = Number of bytes to Allocate
+; Exit
+; Carry flag set if not enough memory
+; hl = hl + 2
+; de = next free memory location
+;
+;===================================================               
+ALLOCMEM:       ld   de,FREEMEM         ; Get the next free memory              
+                ld   (hl),e             ; Store into (hl)
+                inc  hl
+                ld   (hl),d
+                inc  hl                 ; hl = hl + 2
+                push hl                 ; Save hl for later
+                ex   de,hl              ; move free memory to hl
+                add  hl,bc              ; Add amount of space
+                call SPACECHECK         ; Do we have space?
+                ex   de,hl              ; Swap back (de=next free)
+                pop  hl                 ; Restore hl for caller 
+                ret  c                  ; Go home if there was an error
+                ld   (ALLOCMEM+1),de    ; We had enough memory
+                ret                     ; So update pointer.
 ;===============================================
 ; Check if any space left before we run into BDOS
 ; Entry hl=address to check
 ; Exit  carry set if out of space
 ;===============================================               
-SPACECHECK:    ex   de,hl               ; 
-               ld   hl,BDOSSTART        ; Get end of memory
-               or   a                   ; Clear carry flag
-               sbc  hl,de               ; Do subtract
-               ex   de,hl               ; Put back into hl
-               ret
+SPACECHECK:     ex   de,hl              ; 
+                ld   hl,BDOSSTART       ; Get end of memory
+                or   a                  ; Clear carry flag
+                sbc  hl,de              ; Do subtract
+                ex   de,hl              ; Put back into hl
+                ret
 ; Reads the ROM from a slot and sum it up. 
 ; Does the read twice to check for randomness. 
 ; Entry       
@@ -693,81 +723,81 @@ SPACECHECK:    ex   de,hl               ;
 ; Exit de = sum of bytes between 0En00H an 0EnFFH
 ;      bc = sum of bytes between 0En00H an 0EnFFH
 ;      b  = 0 Card slot all read as $FF
-SUMSLROMX2:    call SUMSLROM           ; Do the read twice
-               ld   d,b                ; Save result from first time
-               ld   e,c                ; and fall through
-SUMSLROM:      xor  a                  ; HL=En00
-               ld   l,a
-               ld   b,01H              ; Set high count to 1 
-SUMSLLOOP:     add  a,(hl)             ; read a byte from the ROM
-               jr   nc,SUMSLTOVL       ; no wrap
-               inc  b                  ; bounce the high byte
-SUMSLTOVL:     inc  l                  ; next byte please
-               jr   nz,SUMSLLOOP
-               ld   c,a                ; return back low byte
-               ret
+SUMSLROMX2:     call SUMSLROM           ; Do the read twice
+                ld   d,b                ; Save result from first time
+                ld   e,c                ; and fall through
+SUMSLROM:       xor  a                  ; HL=En00
+                ld   l,a
+                ld   b,01H              ; Set high count to 1 
+SUMSLLOOP:      add  a,(hl)             ; read a byte from the ROM
+                jr   nc,SUMSLTOVL       ; no wrap
+                inc  b                  ; bounce the high byte
+SUMSLTOVL:      inc  l                  ; next byte please
+                jr   nz,SUMSLLOOP
+                ld   c,a                ; return back low byte
+                ret
 ; Check card signature
 ; Entry
 ;      de=signature
 ;      hl=base address of card in slot
 ; Exit
 ;      z clear if d=0E705H, e=0E707H
-CHECKCARDSIG:  ld   l,5H
-               ld   a,(hl)             ; Check first byte
-               cp   d
-               ret  nz
-               ld   l,7H               ; Check second byte
-CPHLTOE:       ld   a,(hl)
-               cp   e
-               ret
-L1F86:         ld   (01FABH),a
-L1F89:         ld   a,h
-               ld   (01FB2H),a
-               ld   a,l
-               ld   (01FB4H),a
-L1F91:         ld   a,c
-               ld   (01FB6H),a
-               ld   hl,XXX6502+01000H
+CHECKCARDSIG:   ld   l,5H
+                ld   a,(hl)             ; Check first byte
+                cp   d
+                ret  nz
+                ld   l,7H               ; Check second byte
+CPHLTOE:        ld   a,(hl)
+                cp   e
+                ret
+L1F86:          ld   (01FABH),a
+L1F89:          ld   a,h
+                ld   (01FB2H),a
+                ld   a,l
+                ld   (01FB4H),a
+L1F91:          ld   a,c
+                ld   (01FB6H),a
+                ld   hl,XXX6502+01000H
 ;==================================================================
 ; Call 6502 helper routine
 ; Entry
 ; HL=address to call
 ; Exit
 ;==================================================================
-call6502:      ld   a,04H              ;Set 6502 flags
-               ld   (ZFLAG_6502),a      ;Just Interrupts disabled
-               ld   (ROUT_6502),hl     ;Set our destination
-               ld   hl,(CARD_Z80)      ;Bounce off to
-               ld   (hl),a             ;6502 land
-               ret
+call6502:       ld   a,04H              ; Set 6502 flags
+                ld   (ZFLAG_6502),a     ; Just Interrupts disabled
+                ld   (ROUT_6502),hl     ; Set our destination
+                ld   hl,(CARD_Z80)      ; Bounce off to
+                ld   (hl),a             ; 6502 land
+                ret
 ; Looks like 6502 code at 2FA5
-XXX6502:       DB   0ADH,088H,0C0H     ;LDA 0C088 ?
-JSR6502:       DB   020H,000H,000H     ;JSR 00000
+XXX6502:        DB   0ADH,088H,0C0H     ; LDA 0C088 ?
+JSR6502:        DB   020H,000H,000H     ; JSR 00000
 ; Possibly back to Z80 code
-               add hl,bc               ;$1FAB?
-               xor a
-               cpl
-               ld h,b
-               inc b
-               ld bc,0
-               nop
-               nop
-               nop
-               nop
-               nop
+                add hl,bc               ; $1FAB?
+                xor a
+                cpl
+                ld h,b
+                inc b
+                ld bc,0
+                nop
+                nop
+                nop
+                nop
+                nop
 ;==================================================================
 ; BIOS Func 4 - CONOUT
 ; Write character in to screen.
 ; Entry
 ; C = Character to write
 ;==================================================================
-conout:        ld   a,c                 ;character to output
-               ld   (ZACC_6502),a      
-               ld   a,(0E30FH)          ;80 column card out
-call80col:     ld   hl,0C330H           ;Set X=030
-               ld   (0F046H),hl         ;Set Y=0C3
-               ld   l,a                 ;HL=0C3XX
-               jr   call6502
+conout:         ld   a,c                ; character to output
+                ld   (ZACC_6502),a      
+                ld   a,(0E30FH)         ; 80 column card out
+call80col:      ld   hl,0C330H          ; Set X=030
+                ld   (0F046H),hl        ; Set Y=0C3
+                ld   l,a                ; HL=0C3XX
+                jr   call6502
 ;==================================================================
 ; BIOS Func 16  - SECTRAN
 ; Translate sector
@@ -777,9 +807,9 @@ call80col:     ld   hl,0C330H           ;Set X=030
 ; Exit
 ; HL = Physical sector number
 ;==================================================================
-sectran:       ld   h,b                ;Copy BC to HL as we don't translate
-               ld   l,c
-               ret
+sectran:        ld   h,b                ; Copy BC to HL as we don't translate
+                ld   l,c
+                ret
 ;==================================================================
 ; BIOS Func 9 - SELDSK
 ; Select the disc drive in register C
@@ -792,17 +822,17 @@ sectran:       ld   h,b                ;Copy BC to HL as we don't translate
 ; Exit
 ; HL = Disk parameter Header
 ;==================================================================
-seldsk:        ld   a,(DRVMAP)         ;Get drive A as Apple Drive ID
-               ld   (DISK_DRV),a       ;save it for our caller
-               ld   hl,DPH             ;return back boot DPH
-               ret
+seldsk:         ld   a,(DRVMAP)         ; Get drive A as Apple Drive ID
+                ld   (DISK_DRV),a       ; save it for our caller
+                ld   hl,FREEMEM         ; return back boot DPH
+                ret
 ;==================================================================
 ; BIOS Func 8 - HOME
 ; Move the current to track 0
 ; Entry
 ; Exit
 ;==================================================================
-home:          ld   bc,0               ;Set track to zero fall thru
+home:           ld   bc,0               ; Set track to zero fall thru
 ;==================================================================
 ; BIOS Func 10 - SETTRK
 ; Set the track
@@ -810,11 +840,11 @@ home:          ld   bc,0               ;Set track to zero fall thru
 ; BC = Track to set
 ; Exit
 ;==================================================================
-settrk:        ld   a,c
-               ld   (DISK_TRKL),a
-               ld   a,b
-               ld   (DISK_TRKH),a
-               ret
+settrk:         ld   a,c
+                ld   (DISK_TRKL),a
+                ld   a,b
+                ld   (DISK_TRKH),a
+                ret
 ;==================================================================
 ; BIOS Func 12 - SETDMA
 ; Set the address next disc operation will use
@@ -822,8 +852,8 @@ settrk:        ld   a,c
 ; BC = Address to read or write from
 ; Exit
 ;==================================================================
-setdma:        ld   (readdest+1),bc    ;Save address into read func
-               ret
+setdma:         ld   (readdest+1),bc    ; Save address into read func
+                ret
 ;==================================================================
 ; BIOS Func 13 - READ
 ; Read in a sector.
@@ -833,49 +863,49 @@ setdma:        ld   (readdest+1),bc    ;Save address into read func
 ;     1 for Unrecoverable error
 ;     FF if media changed.
 ;==================================================================
-read:          ld   a,1
-               ld   (DISK_OP),a
-               ld   hl,DISK_ROUT
-               call call6502
-readdest:      ld   de,0000H           ;Setup to copy result back
-               ld   hl,0F800H
-               ld   bc,0200H
-               ldir
-               ld   a,(DISK_ERR)       ;Disk read result
-               or   a                  ;All ok?
-               ret  z                  ;Go home
-               ld   c,7                ;Ring the bell
-               call conout
-               ld   a,1                ;Flag the error
-               ret
+read:           ld   a,1
+                ld   (DISK_OP),a
+                ld   hl,DISK_ROUT
+                call call6502
+readdest:       ld   de,0000H           ; Setup to copy result back
+                ld   hl,0F800H
+                ld   bc,0200H
+                ldir
+                ld   a,(DISK_ERR)       ; Disk read result
+                or   a                  ; All ok?
+                ret  z                  ; Go home
+                ld   c,7                ; Ring the bell
+                call conout
+                ld   a,1                ; Flag the error
+                ret
 ; 6502 code in page 0300 reset vectors set to point to here.
 ; This puts a jump to 01100 (the start of the CPM loader) into the Z80
 ; reset vector then bounces back into the Z80
                .6502
 page300:       
-			   LDA #$C3				   ;JP 
-			   STA $1000
-			   LDA #$00				   ;$00
-			   STA $1001
-			   LDA #$11
-			   STA $1002			   ;$11
-			   JMP $03C0
+			    LDA #$C3                ; JP 
+			    STA $1000
+			    LDA #$00                ; $00
+			    STA $1001
+			    LDA #$11
+			    STA $1002               ; $11
+			    JMP $03C0
 ; Z80 screen locations probably used for scrolling
-z80scrn1:      DW 0F400H,0F480H,0F500H,0F580H ;Lines  1, 2, 3, 4
-               DW 0F600H,0F680H,0F700H,0F780H ;Lines  5, 6, 7, 8
-               DW 0F428H,0F4A8H,0F528H,0F5A8H ;Lines  9,10,11,12
-               DW 0F628H,0F6A8H,0F728H,0F7A8H ;Lines 13,14,15,16
-               DW 0F450H,0F4D0H,0F550H,0F5D0H ;Lines 17,18,19,20
-               DW 0F650H,0F6D0H,0F750H,0F7D0H ;Lines 21,22,23,24
-               DW 0
-z80scrn2:      DW 0F7D0H,0F750H,0F6D0H,0F650H ;Lines 24,23,22,21
-               DW 0F5D0H,0F550H,0F4D0H,0F450H ;Lines 20,19,18,17
-               DW 0F7A8H,0F728H,0F6A8H,0F628H ;Lines 16,15,14,13
-               DW 0F5A8H,0F528H,0F4A8H,0F428H ;Lines 12,11,10, 9
-               DW 0F780H,0F700H,0F680H,0F600H ;Lines  8, 7, 6, 5
-               DW 0F580H,0F500H,0F480H,0F400H ;Lines  4, 3, 2, 1
-               DW 00
-			   .z80
+z80scrn1:       DW 0F400H,0F480H,0F500H,0F580H ; Lines  1, 2, 3, 4
+                DW 0F600H,0F680H,0F700H,0F780H ; Lines  5, 6, 7, 8
+                DW 0F428H,0F4A8H,0F528H,0F5A8H ; Lines  9,10,11,12
+                DW 0F628H,0F6A8H,0F728H,0F7A8H ; Lines 13,14,15,16
+                DW 0F450H,0F4D0H,0F550H,0F5D0H ; Lines 17,18,19,20
+                DW 0F650H,0F6D0H,0F750H,0F7D0H ; Lines 21,22,23,24
+                DW 0
+z80scrn2:       DW 0F7D0H,0F750H,0F6D0H,0F650H ; Lines 24,23,22,21
+                DW 0F5D0H,0F550H,0F4D0H,0F450H ; Lines 20,19,18,17
+                DW 0F7A8H,0F728H,0F6A8H,0F628H ; Lines 16,15,14,13
+                DW 0F5A8H,0F528H,0F4A8H,0F428H ; Lines 12,11,10, 9
+                DW 0F780H,0F700H,0F680H,0F600H ; Lines  8, 7, 6, 5
+                DW 0F580H,0F500H,0F480H,0F400H ; Lines  4, 3, 2, 1
+                DW 00
+			    .z80
 ;=================================================
 ; BIOS Func 11 - SETSEC
 ; Set the sector next disc operation will use
@@ -884,9 +914,9 @@ z80scrn2:      DW 0F7D0H,0F750H,0F6D0H,0F650H ;Lines 24,23,22,21
 ; BC = Sector number
 ; Exit
 ;==================================================================
-setsec:        ld   a,c
-               ld   (DISK_SECT),a
-               ret
+setsec:         ld   a,c
+                ld   (DISK_SECT),a
+                ret
 ;==================================================================
 ; BIOS Func 25 - MOVE
 ; Copy memory (sadly wrong order for Z80)
@@ -896,35 +926,35 @@ setsec:        ld   a,c
 ; HL = Dest addresss
 ; Exit
 ;==================================================================
-move:          ex   de,hl
-               ldir
-               ex   de,hl
-               ret
+move:           ex   de,hl
+                ldir
+                ex   de,hl
+                ret
 ; $380 Was console status and vectors with a 
 ; Microsoft soft card.
-               DB 000H,000H,002H,010H
-               DB 001H,001H,000H,000H
-               DB 000H,000H
-			   .6502
+                DB 000H,000H,002H,010H
+                DB 001H,001H,000H,000H
+                DB 000H,000H
+			    .6502
 ; 6502 code at 038a
-               LDA FLAG_6502
-               PHA
-               LDA ACC_6502
-               LDX X_6502
-               LDY Y_6502
-               PLP
-               SEI
-               RTS
-			   .Z80
+                LDA FLAG_6502
+                PHA
+                LDA ACC_6502
+                LDX X_6502
+                LDY Y_6502
+                PLP
+                SEI
+                RTS
+			    .Z80
 ; $396 - Software screen functions (Microsoft softcard compatibility)
-               DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
+                DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
 ; $3A1 - Hardware screen functions (Microsoft softcard compatibility)
-               DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
+                DB 020H,01BH,0AAH,0D9H,0D4H,0A9H,0A8H,01EH,0BDH,00BH,00CH
 ; $3AC - Keyboard redefinition table (Microsoft softcard compatibility)           
-               DB 080H,000H,000H,000H,000H,000H,000H,000H
-               DB 000H,000H,000H,000H
+                DB 080H,000H,000H,000H,000H,000H,000H,000H
+                DB 000H,000H,000H,000H
 ; $3B8 - Number of disks (controllers * 2)  
-               DB 002H
+                DB 002H
 ; $3B9 - Slot information (Numbers from Microsoft table)
 ; 0 - Nothing
 ; 1 - Unknown
@@ -938,29 +968,29 @@ move:          ex   de,hl
 ; 6502 code at 03C0
 ; Loop endlessly bouncing between Z80 code
 ; and whatever 6502 routine we want to run
-			   .6502
-               BIT LCBANK2
-               BIT LCBANK2
-               STA Z80CARD
-               BIT ROMIN
-               JSR $38A ; save registers
-               JSR $0000 ; 6502 routine to call
-               STA ROMIN
-               SEI
-               JSR F8ROMSAVE
-               JMP $3C0 ; back to Z80
+			    .6502
+                BIT LCBANK2
+                BIT LCBANK2
+                STA Z80CARD
+                BIT ROMIN
+                JSR $38A ; save registers
+                JSR $0000 ; 6502 routine to call
+                STA ROMIN
+                SEI
+                JSR F8ROMSAVE
+                JMP $3C0 ; back to Z80
 ;
 ; Call into 0D400 Disk code in 6502 land
 ;
-               NOP
-               DB 02CH                 ; BIT Z80_CARD
-Z80_CARD:      DB 001H,0E7H            ; Address of card from Z80 side
-               BIT LCBANK1			   ; Get the 6502 BIOS back 
-               BIT LCBANK1             ; into our code
-               CLD
-               JMP BIOSDISK            ; go to 6502 code  
-               DB 000H,000H,080H       ; Dunno?
+                NOP
+                DB 02CH                 ; BIT Z80_CARD
+Z80_CARD:       DB 001H,0E7H            ; Address of card from Z80 side
+                BIT LCBANK1			    ; Get the 6502 BIOS back 
+                BIT LCBANK1             ; into our code
+                CLD
+                JMP BIOSDISK            ; go to 6502 code  
+                DB 000H,000H,080H       ; Dunno?
 page300end:
            
-topofstack    EQU $+20H
+topofstack      EQU $+20H
            END
