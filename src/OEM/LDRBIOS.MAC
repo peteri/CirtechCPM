@@ -22,7 +22,11 @@ F8ROMSAVE      EQU $FF4A			; Save registers from ROM
 ;6502 Zero page stuff seen from Z80
 ;
 ZSLOTX         EQU 0F004H              ; Boot slot 1..7
+ZPRODOS_CMD    EQU 0F042H              ; Prodos command
+ZPRODOS_UNITNUM EQU 0F043H              ;Prodos unit number
 ZACC_6502      EQU 0F045H              ; 6502 Acc
+ZX_6502        EQU 0F046H              ; 6502 X reg
+ZY_6502        EQU 0F047H              ; 6502 Y reg
 ZFLAG_6502     EQU 0F048H              ; 6502 flag
 ;
 ;6502 stuff in 0300 range as seen from Z80
@@ -51,6 +55,7 @@ DRVMAP         EQU 5E20H               ; Map of CPM drives to apple drives
 ;
 ;
 LDRDPBTBL       EQU  05DBCH         ; four DPB created by LDRBIOS
+BDOSSTART       EQU  07400H         ; BDOS start address
 DPB_SPT         EQU  00H            ; SPT number of 128 records per track
 DPB_BLS         EQU  02H            ; BLS Block shift factor 
 DPB_BLM         EQU  03H            ; BLM Block mask 
@@ -63,6 +68,19 @@ DPB_CKS         EQU  0BH            ; CKS size of directory check vector
 DPB_OFF         EQU  0DH            ; OFF 3 reserved tracks
 DPB_PSH         EQU  0FH            ; PSH Physical Shift 
 DPB_PHM         EQU  10H            ; PHM Physical Mask  
+DPBLEN          EQU  11H            ; Length of Disk parameter block
+
+DPH_XLT         EQU  00H            ; Logical to physical table 0,1
+DPH_0_          EQU  02H            ; BDOS Scratch - 2,3,4,5, 6,7,8,9, A
+DPH_MF          EQU  0BH            ; Media flag - B
+DPH_DPB         EQU  0CH            ; Pointer to Disk Parameter Block - C,D
+DPH_CSV         EQU  0EH ; CSV - E,F
+DPH_ALV         EQU  10H ; Allocation vector - 10,11
+DPH_DIRBCB      EQU  12H ; DIRBCB - 12,13
+DPH_DTABCB      EQU  14H ; DTABCB - 14,15
+DPH_HASH        EQU  16H ; hash -16,17
+DPH_HBANK       EQU  18H ; 18
+DPHLEN          EQU  19H 
                cseg
                org 0
 ;==========================================================
@@ -156,14 +174,14 @@ boot:          ld   (01C73H),sp
                ld   hl,LDRDPBTBL        ; Clear a bunch of memory
                ld   (hl),000H           ; $6DBC-$8400
                ld   de,LDRDPBTBL+1      ; or 5DBCH-7400H
-               ld   bc,01644H
+               ld   bc,BDOSSTART-LDRDPBTBL
                ldir
                ld   hl,DRVMAP            ;Drv map from CPM->Apple
                ld   (STDRVMAP+1),hl
                ld   hl,DRVTBL           
                ld   (L1ED1+1),hl
                ld   hl,DPH
-               ld   (L1F4C+1),hl
+               ld   (ALLOCDPH+1),hl
                ld   a,005
                ld   hl,05E2CH
                call L1F14
@@ -261,51 +279,51 @@ ST_DE_TO_HL:   ld   (hl),e
                ld   (hl),d
                inc  hl
                ret
-CHKSLDRIVE:    ld   c,07H              ; Check for a drive
-               ld   l,05H              ; Check $Cn05 for
+CHKSLDRIVE:    ld   c,07H               ; Check for a drive
+               ld   l,05H               ; Check $Cn05 for
                ld   a,(hl)         
-               cp   03H                ; $03
-               jp   nz,CARDUNK         ; Not a disk drive
-               ld   de,2000H           ; Check more signature bytes
-               ld   l,01H              ; Check $Cn01
+               cp   03H                 ; $03
+               jp   nz,CARDUNK          ; Not a disk drive
+               ld   de,2000H            ; Check more signature bytes
+               ld   l,01H               ; Check $Cn01
                ld   a,(hl)         
-               cp   d                  ; $20
-               jr   nz,CARDUNK         ; Not a disk drive
-               ld   l,03H              ; Check $Cn03 for zero 
-               call CPHLTOE            ; Check if (HL) is E ($00)
-               jr   nz,CARDUNK         ; Not a disk drive
-               ld   l,0FFH             ; Check $CnFF
+               cp   d                   ; $20
+               jr   nz,CARDUNK          ; Not a disk drive
+               ld   l,03H               ; Check $Cn03 for zero 
+               call CPHLTOE             ; Check if (HL) is E ($00)
+               jr   nz,CARDUNK          ; Not a disk drive
+               ld   l,0FFH              ; Check $CnFF
                ld   a,(hl)
-               or   a                  ; Zero means Disk ][
-               jr   nz,L1CD6
-               ld   l,02H
-               push hl
-               call L1F3E
-               ld   iy,LDRDPBTBL
-               ld   l,04H
-L1CA6:         ld   a,(iy+DPB_BLS)      ;Get block shift
-               or   a
-               jr   z,L1CBB
-               cp   03H
-               jr   z,L1CC6
-               ld   de,DPBLEN
+               or   a                   ; Zero means Disk ][
+               jr   nz,NOTDISKII
+               ld   l,02H               ; Card type is 2 for DSKII 
+               push hl                  ; Save hl for later
+               call SETUPDRVCODE
+               ld   iy,LDRDPBTBL        ; Set iy to our DPBs
+               ld   l,04H               ; We have four of them
+D2DPBLOOP:     ld   a,(iy+DPB_BLS)      ; Get block shift
+               or   a                   ; blank DPB entry?
+               jr   z,CPYD2DPB          ; Copy Disk II DPB into DPB Table
+               cp   03H                 ; Disk II DPB?
+               jr   z,FNDD2DPB          ; Yep lets use it
+               ld   de,DPBLEN           ; Lets try the next DPB
                add  iy,de
-               dec  l
-               jr   nz,L1CA6
-L1CB8:         pop  hl
-               jr   CARDUNK
-L1CBB:         push iy
-               pop  de
+               dec  l                   ; Any more DPB to try to use?
+               jr   nz,D2DPBLOOP        ; yes do the loop    
+DSKUNKNOWN:    pop  hl                  ; Get back our saved hl
+               jr   CARDUNK             ; Go home and mark the Disk II as unknown
+CPYD2DPB:      push iy                  ; Copy disk II DPB
+               pop  de                  ; To IY
                ld   hl,DISKIIDPB
                ld   bc,DPBLEN
                ldir
-L1CC6:         call L1E75
-               jr   c,L1CB8
+FNDD2DPB:      call CREATEDPH               ; Excellent found a Disk II DPB
+               jr   c,DSKUNKNOWN
                ld   hl,APPDRV+1
-               set  7,(hl)
-               call L1E75
-               jp   L1D72
-L1CD6:         cp   0FAH               ; Jump out of range
+               set  7,(hl)              ; Flag second disk drive
+               call CREATEDPH
+               jp   DRIVEDONE
+NOTDISKII:     cp   0FAH               ; Jump out of range
                jr   nc,CARDUNK         ; Yeah unknown card
                add  a,03H              ; Add three to get Smart port
                ld   (JSR6502+1),a      ; Save it away
@@ -375,33 +393,33 @@ L1D5B:         ld   l,c
                push hl
                ld   a,c
                ld   (01E07H),a
-               call L1F3E
-               call L1D77
-               jp   c,L1CB8
+               call SETUPDRVCODE
+               call PDSIZE
+               jp   c,DSKUNKNOWN
                ld   hl,APPDRV+1
                set  7,(hl)
-               call L1D77
-L1D72:         pop  hl
-               ld   c,l
-               jp   SAVECARD
-L1D77:         ld   h,000H
-               ld   l,0FFH
+               call PDSIZE
+DRIVEDONE:     pop  hl                  ; h=Slot Ex l=card type
+               ld   c,l                 ; copy card type to c
+               jp   SAVECARD            ; And save card.
+PDSIZE:        ld   h,000H              ; Overwritten by card find routine
+               ld   l,0FFH              ; Get prodos entry point
                ld   l,(hl)
-               res  5,h
-               ld   (0F3D0H),hl
-               ld   a,(APPDRV+1)
-               ld   (0F043H),a
-               xor  a
-               ld   (0F042H),a
-               ld   hl,(0F3DEH)
+               res  5,h                 ; Convert $ExFF to $CxFF
+               ld   (ROUT_6502),hl      ; put the ROM address into 6502 call
+               ld   a,(APPDRV+1)        ; Save disk drive ($6x pr $Ex etc)
+               ld   (ZPRODOS_UNITNUM),a ; For prodos status
+               xor  a                   
+               ld   (ZPRODOS_CMD),a     ; Prodos Status command
+               ld   hl,(CARD_Z80)       ; Lets go to 6502 land
                ld   (hl),a
-               ld   a,(0F045H)
-               cp   028H
-               ld   hl,(0F046H)
-               scf
-               ret  z
-               ld   de,00018H
-               or   a
+               ld   a,(ZACC_6502)       ; Get error code
+               cp   028H                ; No drive?
+               ld   hl,(ZX_6502)        ; hl=number of blocks
+               scf                      ; Set carry flag to show error
+               ret  z                   ; Go home.
+               ld   de,00018H           ; subtract boot tracks
+               or   a                   ; clear carry
                sbc  hl,de
                ex   de,hl
                srl  d
@@ -486,7 +504,7 @@ L1E22:         ld   a,(iy+002H)
                jr   nz,L1E3F
                ld   a,(01E6AH)
                cp   (iy+00cH)
-               jr   z,L1E75
+               jr   z,CREATEDPH
 L1E3F:         ld   de,00011H
                add  iy,de
                djnz L1E22
@@ -521,42 +539,48 @@ L1E48:         push hl
                ld   (hl),002H
                inc  hl
                ld   (hl),003H
-L1E75:         ld   hl,(01F4DH)
-               ld   (01ED5H),hl
-               push hl
-               ld   de,00019H
+;=======================================================
+; Create DPH
+;
+; iy=DPB
+;
+;=======================================================    
+CREATEDPH:     ld   hl,(ALLOCDPH+1)    ; Get current DPH
+               ld   (DRVTBLENT+1),hl    ; Setup to insert into the Drv table.
+               push hl                  
+               ld   de,DPHLEN
                add  hl,de
-               call L1F61
-               ld   (01F4DH),hl
+               call SPACECHECK
+               ld   (ALLOCDPH+1),hl
                pop  hl
                ret  c
-               ld   de,0000BH
+               ld   de,0000BH           ; DPH_MF
                add  hl,de
-               ld   (hl),0FFH
-               inc  hl
-               push iy
-               pop  de
+               ld   (hl),0FFH           ; Mark drive as changed
+               inc  hl                  ; Move to DPB
+               push iy                  ; Get DPB for drive
+               pop  de                  ; Save int DPH_DPB
                call ST_DE_TO_HL
-               ld   c,(iy+00bH)
-               ld   b,(iy+00cH)
-               bit  7,b
-               jr   z,L1EA7
-               ld   (hl),000
+               ld   c,(iy+DPB_CKS)      ; Get directory check vector size 
+               ld   b,(iy+DPB_CKS+1)    ; From DPB
+               bit  7,b                 ; Check permenant disk flag (bit 15)
+               jr   z,DPHREMDRV         ; It's removable
+               ld   (hl),000            ; Set the CVS to 0
                inc  hl
                ld   (hl),000
                inc  hl
                jr   L1EAB
-L1EA7:         call L1F4C
-               ret  c
-L1EAB:         ld   c,(iy+005H)
-               ld   b,(iy+006H)
+DPHREMDRV:     call ALLOCDPH            ; Allocate the DPH
+               ret  c                   ; Out of space? Go home
+L1EAB:         ld   c,(iy+DPB_DSM)
+               ld   b,(iy+DPB_DSM+1)
                inc  bc
                srl  b
                rr   c
                srl  b
                rr   c
                inc  bc
-               call L1F4C
+               call ALLOCDPH
                ret  c
                ld   de,05E2CH
                call ST_DE_TO_HL
@@ -565,7 +589,7 @@ L1EAB:         ld   c,(iy+005H)
                ld   de,0FFFFH
                call ST_DE_TO_HL
 L1ED1:         ld   hl,DRVTBL
-               ld   de,0
+DRVTBLENT:     ld   de,0
                call ST_DE_TO_HL
                ld   (L1ED1+1),hl
 APPDRV:        ld   a,00H               ; Store apple drive code 
@@ -623,16 +647,21 @@ L1F2D:         ld   (hl),0FFH
                ex   de,hl
                call ST_DE_TO_HL
                ret
-L1F3E:         ld   a,h
-               ld   (L1D77+1),a
-               and  0FH
+;===================================================
+;
+; Setup drive code stuff for later.
+;
+;==================================================               
+SETUPDRVCODE:  ld   a,h                 ; Store slot into prodos size routine
+               ld   (PDSIZE+1),a        
+               and  0FH                 ; Convert Cx to x0
+               rrca                     ; Mult by 16
                rrca
                rrca
                rrca
-               rrca
-               ld   (APPDRV+1),a
+               ld   (APPDRV+1),a        ; Store result back into code
                ret
-L1F4C:         ld   de,DPH
+ALLOCDPH:      ld   de,DPH              
                ld   (hl),e
                inc  hl
                ld   (hl),d
@@ -640,17 +669,22 @@ L1F4C:         ld   de,DPH
                push hl
                ex   de,hl
                add  hl,bc
-               call L1F61
+               call SPACECHECK
                ex   de,hl
                pop  hl
                ret  c
-               ld   (L1F4C+1),de
+               ld   (ALLOCDPH+1),de
                ret
-L1F61:         ex   de,hl
-               ld   hl,07400H
-               or   a
-               sbc  hl,de
-               ex   de,hl
+;===============================================
+; Check if any space left before we run into BDOS
+; Entry hl=address to check
+; Exit  carry set if out of space
+;===============================================               
+SPACECHECK:    ex   de,hl               ; 
+               ld   hl,BDOSSTART        ; Get end of memory
+               or   a                   ; Clear carry flag
+               sbc  hl,de               ; Do subtract
+               ex   de,hl               ; Put back into hl
                ret
 ; Reads the ROM from a slot and sum it up. 
 ; Does the read twice to check for randomness. 
