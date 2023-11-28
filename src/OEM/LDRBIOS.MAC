@@ -4,7 +4,7 @@
 ;
 ; Created via decompiling by Peter Ibbotson Oct, Nov 2023
 ;
-; Code     (C) Copyright Cirtech 1985
+; Binary   (C) Copyright Cirtech 1985
 ; Comments (C) Copyright Peter Ibbotson 2023
 ;
 
@@ -90,6 +90,19 @@ DPH_DTABCB      EQU 14H                 ; DTABCB - 14,15
 DPH_HASH        EQU 16H                 ; hash - 16, 17
 DPH_HBANK       EQU 18H                 ; 18
 DPHLEN          EQU 19H 
+;
+; BCB constants
+;
+BCBLEN          EQU 0FH                 ; Length of a BCB
+BCB_DRV         EQU 00H                 ; Disk drive associated with record - 0
+BCB_REC         EQU 01H                 ; Record position of current content - 1,2,3
+BCB_WFLG        EQU 04H                 ; Contains data not written to disk - 4
+BCB_SCRATCH     EQU 05H                 ; Scratch byte - 5
+BCB_TRACK       EQU 06H                 ; Disk track - 6,7
+BCB_SECTOR      EQU 08H                 ; Disk sector - 8,9
+BCB_BUFADDR     EQU 0AH                 ; Buffer address - 10,11
+BCB_BANK        EQU 0CH                 ; Buffer bank - 12
+BCB_LINK        EQU 0DH                 ; Link to next BCB - 13,14
                 cseg
                 org 0
 ;==========================================================
@@ -191,10 +204,10 @@ boot:           ld   (01C73H),sp
                 ld   (DRVTBLADDR+1),hl  ; save into next drive table entry
                 ld   hl,FREEMEM
                 ld   (ALLOCMEM+1),hl
-                ld   a,5                ; Create five Buffer control blocks
+                ld   a,5                ; Create six DIR buffer control blocks
                 ld   hl,DIRBCB          ; For storing directories in
                 call CREATEBCBS
-                ld   a,1                ; Create DTA buffer control blocks
+                ld   a,1                ; Create two DTA buffer control blocks
                 ld   hl,DTABCB          ; for data.
                 call CREATEBCBS
 ;==================================================================
@@ -580,7 +593,7 @@ CREATEDPH:      ld   hl,(ALLOCMEM+1)    ; Get current DPH
                 ld   b,(iy+DPB_CKS+1)   ; From DPB
                 bit  7,b                ; Check permenant disk flag (bit 15)
                 jr   z,DPHREMDRV        ; It's removable
-                ld   (hl),000           ; Set the CVS to 0
+                ld   (hl),000           ; Set the CKS to 0
                 inc  hl
                 ld   (hl),000
                 inc  hl
@@ -638,32 +651,35 @@ L1EFA:          ld   a,09H
                 jp   L1F89
 ;=====================================================
 ;  Create some buffer control blocks
+;  entry 
+;  Acc = number of BCB entries to create - 1
+;  hl  = BCB head
 ;=====================================================
-CREATEBCBS:     ld   d,h
+CREATEBCBS:     ld   d,h                ; de=hl
                 ld   e,l
+                inc  de                 ; de=de+2 (point to start of a BCB)
                 inc  de
-                inc  de
-                call ST_DE_TO_HL
-CR_BCBLOOP:     call CREATEBCB
-                inc  hl
-                push hl
-                ld   de,0202H
+                call ST_DE_TO_HL        ; Store first BCB into BCB Head
+CR_BCBLOOP:     call CREATEBCB          ; Create a BCB
+                inc  hl                 ; HL is buffer pointer, skip bank
+                push hl                 ; Save HL (points at link address)
+                ld   de,0202H           ; Compute next bcb address (0200H + 2 for link)
+                add  hl,de              ; Add that that to hl
+                ex   de,hl              ; de=next BCB
+                pop  hl                 ; Get back link address
+                call ST_DE_TO_HL        ; Save link address
+                ex   de,hl              ; Set hl=next BCB
+                dec  a                  ; Count down
+                jr   nz,CR_BCBLOOP      ; loop until done.
+CREATEBCB:      ld   (hl),0FFH          ; Set DRV
+                ld   de,BCB_BUFADDR     ; hl= BCB buffer pointer
                 add  hl,de
-                ex   de,hl
-                pop  hl
-                call ST_DE_TO_HL
-                ex   de,hl
-                dec  a
-                jr   nz,CR_BCBLOOP
-CREATEBCB:      ld   (hl),0FFH
-                ld   de,000AH
-                add  hl,de
-                push hl
+                push hl                 ; DE=HL
                 pop  de
-                ld   bc,0005H
-                add  hl,bc
-                ex   de,hl
-                call ST_DE_TO_HL
+                ld   bc,BCBLEN-BCB_BUFADDR 
+                add  hl,bc              ; hl now equals buffer
+                ex   de,hl              ; hl= BCB Buffer ptr
+                call ST_DE_TO_HL        ; DE= BCB Buffer address
                 ret
 ;===================================================
 ;
