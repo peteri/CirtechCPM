@@ -56,7 +56,7 @@ CHAR_OP_ST  EQU 10H             ; Character IO Status (same as pascal offset)
 Z80OFFS     EQU 0F000H
 ZSLOTX      EQU 0F004H          ; Boot slot 1..7
 ZESC_STATE  EQU 0F022H          ; Escape lead in state
-ZCUR_STATE  EQU 0F023H          ;Bit 7 high if cursor on screen
+ZCUR_STATE  EQU 0F023H          ; Bit 7 high if cursor on screen
 ZACC_6502   EQU 0F045H          ; 6502 Acc
 ZX_6502     EQU 0F046H          ; 6502 X reg
 ZY_6502     EQU 0F047H          ; 6502 Y reg
@@ -94,12 +94,15 @@ WBOOTJP     EQU  00000H
 BDOSJP      EQU  00005H
 CCP         EQU  00100H         ; CCP entry
 WARMCOPYLEN EQU  05CFFH         ; Warm copy length
+LDRDPBTBL   EQU  5DBCH          ; four DPB created by LDRBIOS
 DRVTBL      EQU  5E00H          ; Table of DPH entries for drives
 DRVMAP      EQU  5E20H          ; Map of CPM drives to apple drives
+DIRBCB      EQU  5E2CH          ; Start of Directory BCB chain.
+DTABCB      EQU  6A88H          ; Start of Data deblocking BCB chain.
+FREEMEM     EQU  6EA8H          ; FREEMEM for Disk 0
 DPBL        EQU  0CH            ; DPH low offset of drive parameter block
 DPBH        EQU  0DH            ; DPH high offset of drive parameter block
 DPBLEN      EQU  11H            ; Length of a drive parameter block
-LDRDPBTBL   EQU  5DBCH          ; four DPB created by LDRBIOS
 DPB_SPT     EQU  00H            ; SPT number of 128 records per track
 DPB_BLS     EQU  02H            ; BLS Block shift factor 
 DPB_BLM     EQU  03H            ; BLM Block mask 
@@ -112,6 +115,10 @@ DPB_CKS     EQU  0BH            ; CKS size of directory check vector
 DPB_OFF     EQU  0DH            ; OFF 3 reserved tracks
 DPB_PSH     EQU  0FH            ; PSH Physical Shift 
 DPB_PHM     EQU  10H            ; PHM Physical Mask  
+; Constants from the DPH stuff
+DPHLEN      EQU  19H 
+DPH_DIRBCB  EQU  12H            ; DIRBCB - Directory Buffer Control Blocks
+DPH_DTABCB  EQU  14H            ; DTABCB - Data Buffer Control Blocks
 ;
 ; Messages for the toolkey popup (see src\boot\toolkey.mac)
 ;
@@ -492,8 +499,8 @@ WBOOT:      ld   (WRCARDRAM),a      ; Write to aux ram
             ldir                    ; Do the copy
             xor  a                  ; Reset multi io flag?
             ld   (@MLTIO),a         
-            ld   hl,(@MXTPA)        ;Top of TPA (aka BDOS)
-            ld   (BDOSJP+1),hl      ;set BDOS jump
+            ld   hl,(@MXTPA)        ; Top of TPA (aka BDOS)
+            ld   (BDOSJP+1),hl      ; set BDOS jump
             ld   a,0C3H             ; JP OpCode
             ld   (WBOOTJP),a        ; Set up jump at 0000
             ld   (BDOSJP),a         ; Set up jump at 0005
@@ -624,10 +631,10 @@ B_COLD:     ld   (KBDSTRB),a    ; Clear keyboard
             ld   hl,LDRDPBTBL   ; Into our shared address space (resident/banked)
             ld   bc,DPBLEN * 4  ; Only four entries.
             ldir                ; Do the copy
-            ld   hl,05E2CH      ; Not certain here.... Copying something over
-            ld   (06EBAH),hl
-            ld   hl,06A88H
-            ld   (06EBCH),hl
+            ld   hl,DIRBCB      ; Reset back the DIRBCB for the first DPH
+            ld   (FREEMEM+DPH_DIRBCB),hl    
+            ld   hl,DTABCB      ; Same for DTABCB after CPMLDR has used them.
+            ld   (FREEMEM+DPH_DTABCB),hl ; To boot from drive A:
 ; Copy the drive parameter blocks in shared memory (we allow 4)
 ; Adjust the drive parameter headers in the DRVTBL (5E00H)
 ; So they point to our in memory ones.
