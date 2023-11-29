@@ -104,7 +104,7 @@ DPBL        EQU  0CH            ; DPH low offset of drive parameter block
 DPBH        EQU  0DH            ; DPH high offset of drive parameter block
 DPBLEN      EQU  11H            ; Length of a drive parameter block
 DPB_SPT     EQU  00H            ; SPT number of 128 records per track
-DPB_BLS     EQU  02H            ; BLS Block shift factor 
+DPB_BSH     EQU  02H            ; BSH Block shift factor 
 DPB_BLM     EQU  03H            ; BLM Block mask 
 DPB_EXM     EQU  04H            ; EXM extant mask
 DPB_DSM     EQU  05H            ; DSM Blocks on drive
@@ -1637,7 +1637,7 @@ FORMAT:     ld   hl,MSG_FORMAT  ; Prompt user for drive to format
             ld   (DISK_DRV),a   ; Save drive
             ; Figure out how many sectors of directory
             call GETDPB       
-            ld   a,(iy+DPB_BLS)
+            ld   a,(iy+DPB_BSH)
             ld   hl,0008H
             sub  5
             jr   c,FMTINSDISK   ; It's going to be a disk II so don't bother
@@ -1961,7 +1961,7 @@ DP_PROMPT:  ld   hl,DUPDSTDRV  ; check destination drive flag
 ; GETDPB
 ; c = drive letter 0=A,1=B,2=C ....
 ; iy= DPB drive parameter block
-; hl= number of 4096 byte blocks on the drive (not valid if BLS<5)
+; hl= number of 4096 byte blocks on the drive (not valid if BSH<5)
 ;     Equivalent to number of tracks
 ;
 ;==================================================================
@@ -1973,7 +1973,7 @@ GETDPB:     sla  c           ; Multiply by 2
             call GETHLPLUSE  ; hl=(DPH + DPBL)
             push hl          ; hl=DPB for this drive
             pop  iy
-            ld   a,(iy+DPB_BLS)  ; BLS Block shift factor
+            ld   a,(iy+DPB_BSH)  ; BSH Block shift factor
             ld   l,(iy+DPB_DSM)  ; DSM Blocks on drive
             ld   h,(iy+DPB_DSM+1)
             sub  5

@@ -54,7 +54,7 @@ WRCARDRAM       EQU 0E005H              ; Write to 80 col card ram ($200-$BFFF)
 ; DPB constants
 ;
 DPB_SPT         EQU 00H                 ; SPT number of 128 records per track
-DPB_BLS         EQU 02H                 ; BLS Block shift factor 
+DPB_BSH         EQU 02H                 ; BSH Block shift factor 
 DPB_BLM         EQU 03H                 ; BLM Block mask 
 DPB_EXM         EQU 04H                 ; EXM extant mask
 DPB_DSM         EQU 05H                 ; DSM Blocks on drive
@@ -327,7 +327,7 @@ CHKSLDRIVE:     ld   c,07H              ; Check for a drive
                 call SETUPDRVCODE
                 ld   iy,LDRDPBTBL       ; Set iy to our DPBs
                 ld   l,04H              ; We have four of them
-D2DPBLOOP:      ld   a,(iy+DPB_BLS)     ; Get block shift
+D2DPBLOOP:      ld   a,(iy+DPB_BSH)     ; Get block shift
                 or   a                  ; blank DPB entry?
                 jr   z,CPYD2DPB         ; Copy Disk II DPB into DPB Table
                 cp   03H                ; Disk II DPB?
@@ -367,9 +367,9 @@ NOTDISKII:      cp   0FAH               ; Jump out of range
                 jr   nz,L1CFE
                 inc  c                  ; Set c to 8 PDISK
                 bit  7,b                ; Test removable bit
-                jp   nz,L1D5B
+                jp   nz,PRODOSDSK
                 inc  c                  ; set c to 9 FDISK
-                jp   L1D5B
+                jp   PRODOSDSK
 L1CFE:          ld   l,07H
                 ld   a,(hl)
                 or   a
@@ -415,7 +415,11 @@ L1D4D:          ld   hl,(01FA9H)
                 call call6502
                 call L1EFA
 L1D5A:          exx
-L1D5B:          ld   l,c
+;
+; Come here with
+; C = Device code.
+;
+PRODOSDSK:      ld   l,c
                 push hl
                 ld   a,c
                 ld   (CHKREMDRV+1),a
@@ -425,41 +429,44 @@ L1D5B:          ld   l,c
                 ld   hl,APPDRV+1
                 set  7,(hl)
                 call PDSIZE
-DRIVEDONE:      pop  hl                  ; h=Slot Ex l=card type
-                ld   c,l                 ; copy card type to c
-                jp   SAVECARD            ; And save card.
-PDSIZE:         ld   h,000H              ; Overwritten by card find routine
-                ld   l,0FFH              ; Get prodos entry point
+DRIVEDONE:      pop  hl                 ; h=Slot Ex l=card type
+                ld   c,l                ; copy card type to c
+                jp   SAVECARD           ; And save card.
+;
+; Get the disk size from ProDOS driver
+;
+PDSIZE:         ld   h,000H             ; Overwritten by card find routine
+                ld   l,0FFH             ; Get prodos entry point
                 ld   l,(hl)
-                res  5,h                 ; Convert $ExFF to $CxFF
-                ld   (ROUT_6502),hl      ; put the ROM address into 6502 call
-                ld   a,(APPDRV+1)        ; Save disk drive ($6x pr $Ex etc)
+                res  5,h                ; Convert $ExFF to $CxFF
+                ld   (ROUT_6502),hl     ; put the ROM address into 6502 call
+                ld   a,(APPDRV+1)       ; Save disk drive ($6x pr $Ex etc)
                 ld   (ZPRODOS_UNITNUM),a ; For prodos status
                 xor  a                   
-                ld   (ZPRODOS_CMD),a     ; Prodos Status command
-                ld   hl,(CARD_Z80)       ; Lets go to 6502 land
+                ld   (ZPRODOS_CMD),a   ; Prodos Status command
+                ld   hl,(CARD_Z80)     ; Lets go to 6502 land
                 ld   (hl),a
-                ld   a,(ZACC_6502)       ; Get error code
-                cp   028H                ; No drive?
-                ld   hl,(ZX_6502)        ; hl=number of blocks
-                scf                      ; Set carry flag to show error
-                ret  z                   ; Go home.
-                ld   de,00018H           ; subtract boot tracks
-                or   a                   ; clear carry
+                ld   a,(ZACC_6502)      ; Get error code
+                cp   028H               ; No drive?
+                ld   hl,(ZX_6502)       ; hl=number of blocks
+                scf                     ; Set carry flag to show error
+                ret  z                  ; Go home.
+                ld   de,00018H          ; subtract boot tracks
+                or   a                  ; clear carry
                 sbc  hl,de
-                ex   de,hl
+                ex   de,hl              ; de = total disk size, hl=disk-boot tracks        
+                srl  d      
+                rr   e                  ; de = disk size in 1K blocks
                 srl  d
-                rr   e
-                srl  d
-                rr   e
+                rr   e                  ; de = disk size in 2K blocks
                 ld   a,d
-                cp   010H
-                jr   c,L1DB5
-                bit  5,a
+                cp   010H               ; Number of blocks < 4000H 
+                jr   c,L1DB5            ; We have a winner
+                bit  5,a                ; Number of blocks < 8000H ?
                 ld   a,010H
-                jr   z,L1DB5
-                set  2,a
-L1DB5:          srl  a
+                jr   z,L1DB5            ; Yes it is
+                set  2,a                ; a=18H
+L1DB5:          srl  a                  ; 
                 srl  a
                 srl  a
                 push af
@@ -469,10 +476,10 @@ L1DBE:          srl  d
                 rr   e
                 djnz L1DBE
                 dec  de
-                ld   (L1E1B+1),de
+                ld   (ST_DBPDSM+1),de
                 ld   l,a
                 add  a,004H
-                ld   (L1E1E+1),a
+                ld   (ST_DPBBSH+1),a
                 ld   b,a
                 ld   a,001H
 L1DD2:          sla  a
@@ -496,8 +503,8 @@ L1DE3:          scf
                 add  hl,hl
                 scf
                 rr   b
-L1DF5:          dec  hl
-                ld   (ST_DPBDRM+1),hl
+L1DF5:          dec  hl                 ; hl is number of directory entries
+                ld   (ST_DPBDRM+1),hl   ; save into store routine
                 ld   a,b
                 ld   (ST_DPBAL0+1),a
                 inc  hl
@@ -507,10 +514,10 @@ L1DF5:          dec  hl
                 rr   l
 CHKREMDRV:      ld   a,000H             ; Drive type over written by earlier code
                 cp   008H               ; Removable drive?
-                jr   z,L1E0F            ;
-                ld   hl,08000H
-L1E0F:          ld   a,l
-                ld   (ST_DPBCKSL+1),a
+                jr   z,PDNOTREM         ; Yes
+                ld   hl,08000H          ; Save away vector size
+PDNOTREM:       ld   a,l                ; Update code that does write
+                ld   (ST_DPBCKSL+1),a   ; to a DPB
                 ld   a,h
                 ld   (ST_DPBCKSH+1),a
 ;====================================================
@@ -519,46 +526,46 @@ L1E0F:          ld   a,l
 ;
 ;====================================================
                 ld   iy,LDRDPBTBL
-L1E1B:          ld   hl,00000H
-L1E1E:          ld   c,000H
-                ld   b,004H
-FINDDPBLOOP:    ld   a,(iy+DPB_BLS)
-                or   a
-                jr   z,NEWDPB
-                cp   c
-                jr   nz,CHKNXTDPB
-                ld   a,(iy+DPB_DSM)
+ST_DBPDSM:      ld   hl,00000H          ; Number of blocks on the drive
+ST_DPBBSH:      ld   c,000H             ; Block shift factor
+                ld   b,004H             ; Number of DPH entries
+FINDDPBLOOP:    ld   a,(iy+DPB_BSH)     ; Look at this entry
+                or   a                  ; Block shift is empty
+                jr   z,NEWDPB           ; Yes it is, we can create a NEWDPB
+                cp   c                  ; Does the block shift match?
+                jr   nz,CHKNXTDPB       ; Nope try the next one
+                ld   a,(iy+DPB_DSM)     ; Check low byte of block count
                 cp   l
                 jr   nz,CHKNXTDPB
-                ld   a,(iy+DPB_DSM+1)
+                ld   a,(iy+DPB_DSM+1)   ; Check high byte of block count
                 cp   h
-                jr   nz,CHKNXTDPB
-                ld   a,(ST_DPBCKSH+1)
-                cp   (iy+DPB_CKS+1)
-                jr   z,CREATEDPH
-CHKNXTDPB:      ld   de,DPBLEN
-                add  iy,de
-                djnz FINDDPBLOOP
-                scf
+                jr   nz,CHKNXTDPB       ; Only need to check high byte
+                ld   a,(ST_DPBCKSH+1)   ; of directory check vector
+                cp   (iy+DPB_CKS+1)     ; for the permenant / removable
+                jr   z,CREATEDPH        ; drive flag.
+CHKNXTDPB:      ld   de,DPBLEN          ; Bounce iy along
+                add  iy,de              
+                djnz FINDDPBLOOP        ; Run out of DPH entries...
+                scf                     ; Sadly yes, flag and go home
                 ret
 ;====================================================
 ;
 ; Create a new DPB 
 ; Entry
-; c  = BLS Block shift factor
+; c  = BSH Block shift factor
 ; hl = DSM Blocks on drive
 ; iy = Pointer to DPB to create
 ;
 ; Falls through into create DPH and DRVTBL entry
 ;
 ;====================================================
-NEWDPB:         push hl
+NEWDPB:         push hl                 ; Save DSM for later
                 push iy
                 pop  hl                 ; hl= DPB
                 ld   (hl),020H          ; SPT = 32 128 byte records per track (4K)
                 inc  hl
                 inc  hl
-                ld   (hl),c             ; BLS = Block shift factor
+                ld   (hl),c             ; BSH = Block shift factor
                 inc  hl
 ST_DPBBLM:      ld   (hl),000H          ; BLM = block mask
                 inc  hl
@@ -644,7 +651,7 @@ STDRVMAP:       ld   hl,DRVMAP          ; into the drive map
                 or   a                  ; Set flags based on acc
                 ret
 DISKIIDPB:      DW 0020H                ; SPT number of 128 records per track
-                DB 03                   ; BLS Block shift factor (1K blocks)
+                DB 03                   ; BSH Block shift factor (1K blocks)
                 DB 07                   ; BLM Block mask (1K blocks)
                 DB 0                    ; EXM extant mask
                 DW (35*4)-1             ; DSM Blocks on drive
