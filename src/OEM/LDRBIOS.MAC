@@ -62,7 +62,7 @@ DPB_DRM         EQU 07H                 ; DRM Number of directory entries
 DPB_AL0         EQU 09H                 ; AL0 reserved blocks for directory
 DPB_AL1         EQU 0AH                 ; AL1
 DPB_CKS         EQU 0BH                 ; CKS size of directory check vector
-DPB_OFF         EQU 0DH                 ; OFF 3 reserved tracks
+DPB_OFF         EQU 0DH                 ; OFF reserved tracks
 DPB_PSH         EQU 0FH                 ; PSH Physical Shift 
 DPB_PHM         EQU 10H                 ; PHM Physical Mask  
 DPBLEN          EQU 11H                 ; Length of Disk parameter block
@@ -396,7 +396,7 @@ L1D23:          ld   a,(de)
                 djnz L1D23
                 jr   L1D5A
 L1D2D:          call L1EFA
-                ld   a,0E5H
+                ld   a,0E5H         ; CPM empty directory entry
                 ld   hl,02200H
                 ld   (hl),a
                 ld   de,02201H
@@ -418,7 +418,7 @@ L1D5A:          exx
 L1D5B:          ld   l,c
                 push hl
                 ld   a,c
-                ld   (01E07H),a
+                ld   (CHKREMDRV+1),a
                 call SETUPDRVCODE
                 call PDSIZE
                 jp   c,DSKUNKNOWN
@@ -469,16 +469,16 @@ L1DBE:          srl  d
                 rr   e
                 djnz L1DBE
                 dec  de
-                ld   (01E1CH),de
+                ld   (L1E1B+1),de
                 ld   l,a
                 add  a,004H
-                ld   (01E1FH),a
+                ld   (L1E1E+1),a
                 ld   b,a
                 ld   a,001H
 L1DD2:          sla  a
                 djnz L1DD2
                 dec  a
-                ld   (01E53H),a
+                ld   (ST_DPBBLM+1),a
                 xor  a
                 cp   d
                 jr   nz,L1DDF
@@ -489,7 +489,7 @@ L1DE3:          scf
                 rl   a
                 add  hl,hl
                 djnz L1DE3
-                ld   (01E56H),a
+                ld   (ST_DPBEXM+1),a
                 ld   b,080H
                 pop  af
                 jr   nc,L1DF5
@@ -497,74 +497,90 @@ L1DE3:          scf
                 scf
                 rr   b
 L1DF5:          dec  hl
-                ld   (01E5DH),hl
+                ld   (ST_DPBDRM+1),hl
                 ld   a,b
-                ld   (01E63H),a
+                ld   (ST_DPBAL0+1),a
                 inc  hl
                 srl  h
                 rr   l
                 srl  h
                 rr   l
-                ld   a,000H
-                cp   008H
-                jr   z,L1E0F
+CHKREMDRV:      ld   a,000H             ; Drive type over written by earlier code
+                cp   008H               ; Removable drive?
+                jr   z,L1E0F            ;
                 ld   hl,08000H
 L1E0F:          ld   a,l
-                ld   (01E67H),a
+                ld   (ST_DPBCKSL+1),a
                 ld   a,h
-                ld   (01E6AH),a
+                ld   (ST_DPBCKSH+1),a
+;====================================================
+; 
+; Does our DPB exist already?
+;
+;====================================================
                 ld   iy,LDRDPBTBL
-                ld   hl,00000H
-                ld   c,000H
+L1E1B:          ld   hl,00000H
+L1E1E:          ld   c,000H
                 ld   b,004H
-L1E22:          ld   a,(iy+002H)
+FINDDPBLOOP:    ld   a,(iy+DPB_BLS)
                 or   a
-                jr   z,L1E48
+                jr   z,NEWDPB
                 cp   c
-                jr   nz,L1E3F
-                ld   a,(iy+005H)
+                jr   nz,CHKNXTDPB
+                ld   a,(iy+DPB_DSM)
                 cp   l
-                jr   nz,L1E3F
-                ld   a,(iy+006H)
+                jr   nz,CHKNXTDPB
+                ld   a,(iy+DPB_DSM+1)
                 cp   h
-                jr   nz,L1E3F
-                ld   a,(01E6AH)
-                cp   (iy+00cH)
+                jr   nz,CHKNXTDPB
+                ld   a,(ST_DPBCKSH+1)
+                cp   (iy+DPB_CKS+1)
                 jr   z,CREATEDPH
-L1E3F:          ld   de,00011H
+CHKNXTDPB:      ld   de,DPBLEN
                 add  iy,de
-                djnz L1E22
+                djnz FINDDPBLOOP
                 scf
                 ret
-L1E48:          push hl
+;====================================================
+;
+; Create a new DPB 
+; Entry
+; c  = BLS Block shift factor
+; hl = DSM Blocks on drive
+; iy = Pointer to DPB to create
+;
+; Falls through into create DPH and DRVTBL entry
+;
+;====================================================
+NEWDPB:         push hl
                 push iy
-                pop  hl
-                ld   (hl),020H
+                pop  hl                 ; hl= DPB
+                ld   (hl),020H          ; SPT = 32 128 byte records per track (4K)
                 inc  hl
                 inc  hl
-                ld   (hl),c
+                ld   (hl),c             ; BLS = Block shift factor
                 inc  hl
-                ld   (hl),000H
+ST_DPBBLM:      ld   (hl),000H          ; BLM = block mask
                 inc  hl
-                ld   (hl),000H
+ST_DPBEXM:      ld   (hl),000H          ; EXM = extent mask
                 inc  hl
-                pop  de
-                call ST_DE_TO_HL
-                ld   de,00000H
-                call ST_DE_TO_HL
-                ld   (hl),000H
+                pop  de                 
+                call ST_DE_TO_HL        ; DSM = Blocks on drive
+ST_DPBDRM:      ld   de,00000H          
+                call ST_DE_TO_HL        ; DRM = Number of directory entries
+ST_DPBAL0:      ld   (hl),000H          ; AL0 = reserved blocks for directory
                 inc  hl
+                inc  hl                 ; AL1 = reserved blocks for directory
+ST_DPBCKSL:     ld   (hl),000H          ; CKS = size of directory check vector low
                 inc  hl
-                ld   (hl),000H
+ST_DPBCKSH:     ld   (hl),000H          ; CKS = size of directory check vector high
                 inc  hl
-                ld   (hl),000H
+                ld   (hl),003H          ; OFF - Reserved tracks low    
+                inc  hl             
+                inc  hl                 ; OFF - Reserved tracks high
+                ld   (hl),002H          ; PSH - Pysical shift
                 inc  hl
-                ld   (hl),003H
-                inc  hl
-                inc  hl
-                ld   (hl),002H
-                inc  hl
-                ld   (hl),003H
+                ld   (hl),003H          ; PSM - Pysical mask
 ;=======================================================
 ; Create DPH
 ; Allocate a DPH and write into the drive table
