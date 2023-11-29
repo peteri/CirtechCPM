@@ -51,16 +51,6 @@ CARD_Z80        EQU 0F3DEH              ; Card address from Z80 0E401H
 WRMAINRAM       EQU 0E004H              ; Write to main ram ($200-$BFFF)
 WRCARDRAM       EQU 0E005H              ; Write to 80 col card ram ($200-$BFFF)
 ;
-; Memory constants
-;
-LDRDPBTBL       EQU 05DBCH              ; four DPB created by LDRBIOS
-DRVTBL          EQU 05E00H              ; Table of DPH for drives
-DRVMAP          EQU 05E20H              ; Map of CPM drives to apple drives
-DIRBCB          EQU 05E2CH              ; Start of Directory BCB chain.
-DTABCB          EQU 06A88H              ; Start of Data deblocking BCB chain.
-FREEMEM         EQU 06EA8H              ; FREEMEM for Disk 0
-BDOSSTART       EQU 07400H              ; BDOS start address
-;
 ; DPB constants
 ;
 DPB_SPT         EQU 00H                 ; SPT number of 128 records per track
@@ -103,6 +93,16 @@ BCB_SECTOR      EQU 08H                 ; Disk sector - 8,9
 BCB_BUFADDR     EQU 0AH                 ; Buffer address - 10,11
 BCB_BANK        EQU 0CH                 ; Buffer bank - 12
 BCB_LINK        EQU 0DH                 ; Link to next BCB - 13,14
+;
+; Memory constants
+;
+DRVTBL          EQU 05E00H                      ; 05E00H - Table of DPH for drives
+LDRDPBTBL       EQU DRVTBL-(4*DPBLEN)           ; 05DBCH - four DPB created by LDRBIOS
+DRVMAP          EQU DRVTBL+(2*10H)              ; 05E20H - Map of CPM drives to apple drives
+DIRBCB          EQU DRVMAP+(2*6)                ; 05E2CH - Start of Directory BCB chain.
+DTABCB          EQU DIRBCB+2+6*(BCBLEN+0200H)   ; 06A88H - Start of Data deblocking BCB chain.
+FREEMEM         EQU DTABCB+2+2*(BCBLEN+0200H)   ; 06EA8H - FREEMEM for Disk ALV / CKS
+BDOSSTART       EQU 07400H                      ; BDOS start address
                 cseg
                 org 0
 ;==========================================================
@@ -163,7 +163,7 @@ BCB_LINK        EQU 0DH                 ; Link to next BCB - 13,14
 ; Entry
 ; Exit
 ;==================================================================
-boot:           ld   (01C73H),sp
+boot:           ld   (SAVSTK+1),sp
                 ld   sp,topofstack
                 ld   hl,0E00H           ; Copy message for the Cirtech
                 ld   de,0FC00H          ; toolkeys into $C00
@@ -295,11 +295,11 @@ BOOTEXIT:       ld   (WRCARDRAM),a      ; Write to aux memory (48K)
                 ld   (0F4FEH),a
                 ld   a,(0E30DH)         ; 80 column card init
                 call call80col
-                ld   hl,06EBAH
-                ld   de,05E2EH
+                ld   hl,FREEMEM+DPH_DIRBCB
+                ld   de,DIRBCB+2
                 call ST_DE_TO_HL
-                ld   de,06A8AH
-                ld   sp,00000
+                ld   de,DTABCB+2
+SAVSTK:         ld   sp,00000
 ST_DE_TO_HL:    ld   (hl),e
                 inc  hl
                 ld   (hl),d
@@ -358,17 +358,17 @@ NOTDISKII:      cp   0FAH               ; Jump out of range
                 ld   (JSR6502+2),a
                 dec  l                  ; get byte at $cnFE
                 ld   a,(hl)             
-                ld   b,a                ;
+                ld   b,a                ; Save prodos status bits
                 and  07H                ; Mask off Prodos status bits
                 cp   07H                ; Check for Status/Read/Write
                 jr   nz,CARDUNK         ; Can't read / write not for us
                 ld   l,0FBH             ; Load smart port ID byte at $CnFB
-                bit  0,(hl)             ; 
+                bit  0,(hl)             ; RAM card?
                 jr   nz,L1CFE
-                inc  c                  ; Set c to 8
-                bit  7,b
+                inc  c                  ; Set c to 8 PDISK
+                bit  7,b                ; Test removable bit
                 jp   nz,L1D5B
-                inc  c
+                inc  c                  ; set c to 9 FDISK
                 jp   L1D5B
 L1CFE:          ld   l,07H
                 ld   a,(hl)
