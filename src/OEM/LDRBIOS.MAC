@@ -352,10 +352,10 @@ FNDD2DPB:       call CREATEDPH          ; Found a Disk II DPB, creat DPH
 NOTDISKII:      cp   0FAH               ; Jump out of range
                 jr   nc,CARDUNK         ; Yeah unknown card
                 add  a,03H              ; Add three to get Smart port
-                ld   (JSR6502+1),a      ; Save it away
+                ld   (JSRSMARTDRV+1),a  ; Save it away
                 ld   a,h                ; Convert 0En00H to $Cn00
                 sub  20H
-                ld   (JSR6502+2),a
+                ld   (JSRSMARTDRV+2),a
                 dec  l                  ; get byte at $cnFE
                 ld   a,(hl)             
                 ld   b,a                ; Save prodos status bits
@@ -408,7 +408,7 @@ L1D2D:          call L1EFA
                 ld   c,050H
                 call L1F91
                 jr   L1D5A
-L1D4D:          ld   hl,(01FA9H)
+L1D4D:          ld   hl,(JSRSMARTDRV+1)
                 ld   a,l
                 sub  00DH
                 ld   l,a
@@ -515,7 +515,7 @@ COMPBLM:        sla  a                  ; Shift left until
                 cp   d                  ; DSM<256 ?
                 jr   nz,DSMLT256        ; Nope no need to inc EXM
                 inc  a                  ; Yes need to tweak EXM (see table 3-5 in CPM sys guide)
-DSMLT256        ld   b,l                ; Get back saved acc
+DSMLT256:       ld   b,l                ; Get back saved acc
                 ld   hl,00040H          ; Going to be number of directory entries
 L1DE3:          scf
                 rl   a                  ; Shift a 1 into EXM
@@ -834,14 +834,14 @@ CHECKCARDSIG:   ld   l,5H
 CPHLTOE:        ld   a,(hl)
                 cp   e
                 ret
-L1F86:          ld   (01FABH),a
+L1F86:          ld   (SMTDRV_CMD),a
 L1F89:          ld   a,h
-                ld   (01FB2H),a
+                ld   (SMTDRV_BUFPTR+1),a
                 ld   a,l
-                ld   (01FB4H),a
+                ld   (SMTDRV_NMBYTES+1),a
 L1F91:          ld   a,c
-                ld   (01FB6H),a
-                ld   hl,XXX6502+01000H
+                ld   (SMTDRV_BLKNUM+1),a
+                ld   hl,CALLSMARTDRV+01000H
 ;==================================================================
 ; Call 6502 helper routine
 ; Entry
@@ -854,21 +854,22 @@ call6502:       ld   a,04H              ; Set 6502 flags
                 ld   hl,(CARD_Z80)      ; Bounce off to
                 ld   (hl),a             ; 6502 land
                 ret
-; Looks like 6502 code at 2FA5
-XXX6502:        DB   0ADH,088H,0C0H     ; LDA 0C088 ?
-JSR6502:        DB   020H,000H,000H     ; JSR 00000
+                .6502
+; Smart drive code
+CALLSMARTDRV:   LDA $C088               ; Readonly language card  bank 1
+JSRSMARTDRV:    JSR $0000
 ; Possibly back to Z80 code
-                add hl,bc               ; $1FAB?
-                xor a
-                cpl
-                ld h,b
-                inc b
-                ld bc,0
-                nop
-                nop
-                nop
-                nop
-                nop
+SMTDRV_CMD:     DB   $09                ; Smart drive command
+                DW   SMTDRV_PARAM+$1000 ; 
+                RTS
+SMTDRV_PARAM:   DB   $04                ; 1FAF
+SMTDRV_UNITNUM: DB   $01                ; 1FB0
+SMTDRV_BUFPTR:  DW   $0000              ; 1FB1
+SMTDRV_NMBYTES: DW   $0000              ; 1FB3
+SMTDRV_BLKNUM:  DB   $00                ; 1FB5
+                DB   $00                ; 1FB6
+                DB   $00                ; 1FB7
+                .z80
 ;==================================================================
 ; BIOS Func 4 - CONOUT
 ; Write character in to screen.
