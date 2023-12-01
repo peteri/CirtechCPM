@@ -379,42 +379,42 @@ CARDUNK:        ld   c,01H              ; Unkown card type
 L1D09:          ld   l,0FBH
                 ld   a,(hl)
                 cp   0A5H
-                exx
+                exx                     ; Save registers for later
                 jr   z,L1D4D
-                ld   a,008H
-                ld   hl,03202H
-                ld   c,000H
-                call L1F86
-                ld   hl,0F800H
-                ld   de,02200H
-                ld   b,010H
-L1D23:          ld   a,(de)
-                cp   (hl)
+                ld   a,008H             ; Read operation
+                ld   hl,03202H          ; Buffer address=$3200, length=$200
+                ld   c,000H             ; Block number 0
+                call SMARTCALLFULL
+                ld   hl,0F800H          ; Setup to compare
+                ld   de,02200H          ; first 16 bytes with the
+                ld   b,010H             ; boot sector
+BOOTSECTCMP:    ld   a,(de)
+                cp   (hl)               ; boot sector matches?
                 jr   nz,L1D2D
-                inc  l
+                inc  l                  ; bounce pointers
                 inc  e
-                djnz L1D23
-                jr   L1D5A
-L1D2D:          call L1EFA
-                ld   a,0E5H         ; CPM empty directory entry
-                ld   hl,02200H
+                djnz BOOTSECTCMP
+                jr   RAMFMTDONE         ; Full match skip format
+L1D2D:          call WRITEBOOTTRKS      ; Write out boot tracks
+                ld   a,0E5H             ; CPM empty directory entry
+                ld   hl,02200H          ; Fill 2200H-41FFH with E5
                 ld   (hl),a
                 ld   de,02201H
                 ld   bc,01FFFH
                 ldir
-                ld   hl,03220H
-                ld   c,030H
-                call L1F89
-                ld   c,050H
-                call L1F91
-                jr   L1D5A
+                ld   hl,03220H          ; Buffer address=$3200, length=$2000
+                ld   c,030H             ; Start at track 3
+                call SMBUFNUMCALL       ; Fill first half of directory
+                ld   c,050H         
+                call SMBLKCALL          ; Do tracks 5 & 6
+                jr   RAMFMTDONE
 L1D4D:          ld   hl,(JSRSMARTDRV+1)
                 ld   a,l
                 sub  00DH
                 ld   l,a
-                call call6502
-                call L1EFA
-L1D5A:          exx
+                call CALL6502
+                call WRITEBOOTTRKS
+RAMFMTDONE:     exx                     ; Bring back other registers
 ;=========================================================
 ;
 ; Prodos disk stuff
@@ -707,16 +707,19 @@ DISKIIDPB:      DW 0020H                ; SPT number of 128 records per track
                 DW 0003H                ; OFF 3 reserved tracks
                 DB 01H                  ; PSH Physical Shift (256 byte sectors)
                 DB 01H                  ; PHM Physical Mask  (256 byte sectors) 
-L1EFA:          ld   a,09H
-                ld   c,000H
-                ld   hl,00802H
-                call L1F86
-                ld   c,002H
-                ld   hl,0D00EH
-                call L1F89
-                ld   c,010H
-                ld   hl,01120H
-                jp   L1F89
+;==================================================================
+; Write out the in memory boot tracks to the ram disk
+;==================================================================
+WRITEBOOTTRKS:  ld   a,09H              ; Write operation
+                ld   c,000H             ; Block number
+                ld   hl,00802H          ; Buffer at $800, Number of bytes = $200
+                call SMARTCALLFULL
+                ld   c,002H             ; Block number $200
+                ld   hl,0D00EH          ; Buffer at $D000, Number of bytes = $E00
+                call SMBUFNUMCALL
+                ld   c,010H             ; Block number $1000
+                ld   hl,01120H          ; Buffer at $1100, Number of bytes = $2000
+                jp   SMBUFNUMCALL
 ;=====================================================
 ;  Create some buffer control blocks
 ;  entry 
@@ -800,6 +803,7 @@ SPACECHECK:     ex   de,hl              ;
                 sbc  hl,de              ; Do subtract
                 ex   de,hl              ; Put back into hl
                 ret
+;===============================================               
 ; Reads the ROM from a slot and sum it up. 
 ; Does the read twice to check for randomness. 
 ; Entry       
@@ -807,6 +811,7 @@ SPACECHECK:     ex   de,hl              ;
 ; Exit de = sum of bytes between 0En00H an 0EnFFH
 ;      bc = sum of bytes between 0En00H an 0EnFFH
 ;      b  = 0 Card slot all read as $FF
+;===============================================               
 SUMSLROMX2:     call SUMSLROM           ; Do the read twice
                 ld   d,b                ; Save result from first time
                 ld   e,c                ; and fall through
@@ -820,12 +825,14 @@ SUMSLTOVL:      inc  l                  ; next byte please
                 jr   nz,SUMSLLOOP
                 ld   c,a                ; return back low byte
                 ret
+;===============================================               
 ; Check card signature
 ; Entry
 ;      de=signature
 ;      hl=base address of card in slot
 ; Exit
 ;      z clear if d=0E705H, e=0E707H
+;===============================================               
 CHECKCARDSIG:   ld   l,5H
                 ld   a,(hl)             ; Check first byte
                 cp   d
@@ -834,12 +841,20 @@ CHECKCARDSIG:   ld   l,5H
 CPHLTOE:        ld   a,(hl)
                 cp   e
                 ret
-L1F86:          ld   (SMTDRV_CMD),a
-L1F89:          ld   a,h
+;==================================================================
+; Call smart drive
+; Entry
+; A = command
+; H = high byte of buffer address
+; L = high byte of number of bytes to transfer
+; C = block number
+;==================================================================
+SMARTCALLFULL:  ld   (SMTDRV_CMD),a
+SMBUFNUMCALL:   ld   a,h
                 ld   (SMTDRV_BUFPTR+1),a
                 ld   a,l
                 ld   (SMTDRV_NMBYTES+1),a
-L1F91:          ld   a,c
+SMBLKCALL:      ld   a,c
                 ld   (SMTDRV_BLKNUM+1),a
                 ld   hl,CALLSMARTDRV+01000H
 ;==================================================================
@@ -848,7 +863,7 @@ L1F91:          ld   a,c
 ; HL=address to call
 ; Exit
 ;==================================================================
-call6502:       ld   a,04H              ; Set 6502 flags
+CALL6502:       ld   a,04H              ; Set 6502 flags
                 ld   (ZFLAG_6502),a     ; Just Interrupts disabled
                 ld   (ROUT_6502),hl     ; Set our destination
                 ld   hl,(CARD_Z80)      ; Bounce off to
@@ -882,7 +897,7 @@ conout:         ld   a,c                ; character to output
 call80col:      ld   hl,0C330H          ; Set X=030
                 ld   (0F046H),hl        ; Set Y=0C3
                 ld   l,a                ; HL=0C3XX
-                jr   call6502
+                jr   CALL6502
 ;==================================================================
 ; BIOS Func 16  - SECTRAN
 ; Translate sector
@@ -951,7 +966,7 @@ setdma:         ld   (readdest+1),bc    ; Save address into read func
 read:           ld   a,1
                 ld   (DISK_OP),a
                 ld   hl,DISK_ROUT
-                call call6502
+                call CALL6502
 readdest:       ld   de,0000H           ; Setup to copy result back
                 ld   hl,0F800H
                 ld   bc,0200H
