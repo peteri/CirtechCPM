@@ -296,11 +296,11 @@ BOOTEXIT:       ld   (WRCARDRAM),a      ; Write to aux memory (48K)
                 ld   a,(0E30DH)         ; 80 column card init
                 call call80col
                 ld   hl,FREEMEM+DPH_DIRBCB
-                ld   de,DIRBCB+2
+                ld   de,DIRBCB+2        ; Tel loader about DIRBCB
                 call ST_DE_TO_HL
-                ld   de,DTABCB+2
-SAVSTK:         ld   sp,00000
-ST_DE_TO_HL:    ld   (hl),e
+                ld   de,DTABCB+2        ; and DTABCB
+SAVSTK:         ld   sp,00000           ; Restore stack
+ST_DE_TO_HL:    ld   (hl),e             ; Called from all over the place
                 inc  hl
                 ld   (hl),d
                 inc  hl
@@ -364,23 +364,23 @@ NOTDISKII:      cp   0FAH               ; Jump out of range
                 jr   nz,CARDUNK         ; Can't read / write not for us
                 ld   l,0FBH             ; Load smart port ID byte at $CnFB
                 bit  0,(hl)             ; RAM card?
-                jr   nz,L1CFE
+                jr   nz,CHKSMARTCARD
                 inc  c                  ; Set c to 8 PDISK
                 bit  7,b                ; Test removable bit
                 jp   nz,PRODOSDSK
                 inc  c                  ; set c to 9 FDISK
                 jp   PRODOSDSK
-L1CFE:          ld   l,07H
+CHKSMARTCARD:   ld   l,07H              ; Check $Cn07
                 ld   a,(hl)
-                or   a
-                jr   z,L1D09
+                or   a                  ; Better be zero
+                jr   z,RAMCARD           
 CARDUNK:        ld   c,01H              ; Unkown card type
                 jp   SAVECARD           ; Save it
-L1D09:          ld   l,0FBH
+RAMCARD:        ld   l,0FBH             ; Get the smart port id byte again
                 ld   a,(hl)
-                cp   0A5H
+                cp   0A5H               ; No idea what this means....
                 exx                     ; Save registers for later
-                jr   z,L1D4D
+                jr   z,SPECIALRAM       ; Ok some sort of ram card?
                 ld   a,008H             ; Read operation
                 ld   hl,03202H          ; Buffer address=$3200, length=$200
                 ld   c,000H             ; Block number 0
@@ -390,12 +390,12 @@ L1D09:          ld   l,0FBH
                 ld   b,010H             ; boot sector
 BOOTSECTCMP:    ld   a,(de)
                 cp   (hl)               ; boot sector matches?
-                jr   nz,L1D2D
+                jr   nz,FORMATRAM
                 inc  l                  ; bounce pointers
                 inc  e
                 djnz BOOTSECTCMP
                 jr   RAMFMTDONE         ; Full match skip format
-L1D2D:          call WRITEBOOTTRKS      ; Write out boot tracks
+FORMATRAM:      call WRITEBOOTTRKS      ; Write out boot tracks
                 ld   a,0E5H             ; CPM empty directory entry
                 ld   hl,02200H          ; Fill 2200H-41FFH with E5
                 ld   (hl),a
@@ -408,12 +408,16 @@ L1D2D:          call WRITEBOOTTRKS      ; Write out boot tracks
                 ld   c,050H         
                 call SMBLKCALL          ; Do tracks 5 & 6
                 jr   RAMFMTDONE
-L1D4D:          ld   hl,(JSRSMARTDRV+1)
-                ld   a,l
-                sub  00DH
+;
+; Suspect this is a special routine for a Cirtech
+; card (flippy?)
+;                
+SPECIALRAM:     ld   hl,(JSRSMARTDRV+1) ; Get the smart drive entry point
+                ld   a,l               
+                sub  00DH               ; Subtract 13?
                 ld   l,a
-                call CALL6502
-                call WRITEBOOTTRKS
+                call CALL6502           ; Call a routine on the card
+                call WRITEBOOTTRKS      ; Write boot tracks
 RAMFMTDONE:     exx                     ; Bring back other registers
 ;=========================================================
 ;
