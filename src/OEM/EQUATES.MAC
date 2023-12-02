@@ -38,20 +38,29 @@ X_6502		EQU  $46		; 6502 X reg
 Y_6502		EQU  $47		; 6502 Y reg
 FLAG_6502	EQU  $48		; 6502 flag
 		; Hardware addresses
+KBD		EQU  $c000
 SET80COL	EQU  $c001		; W use PAGE2 for aux mem (80STOREON)
+RDMAINRAM	EQU  $c002
+RDCARDRAM	EQU  $c003
+WRMAINRAM	EQU  $c004
+WRCARDRAM	EQU  $c005
+SETSTDZP	EQU  $c008		; Set standard zero page
+SETALTZP	EQU  $c009		; Set alternate zero page
 SET80VID	EQU  $c00d		; W enable 80-column display mode
 SETALTCHAR	EQU  $c00f		; W use alternate char set
+KBDSTRB		EQU  $c010
 PARA_DATAOUT	EQU  $c080		; Apple parallel card data out
 SPKR		EQU  $c030		; RW toggle speaker
 TXTPAGE1	EQU  $c054		; RW display page 1
 TXTPAGE2	EQU  $c055		; RW display page 2 (or read/write aux mem)
+BUTN1		EQU  $c062		; Joystick Button 1 aka Closed Apple
 ROMIN		EQU  $c081		; 6502 bring back roms
 LCBANK2		EQU  $c083		; RWx2 read/write RAM bank 2
 LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
 STATUS6510	EQU  $c08e		; Status port for 6510 cards
 DATA6510	EQU  $c08f		; Data port for 6510 cards
 PARA_ACKIN	EQU  $c0c1		; Apple parallel port ack in
-Z80CARD		EQU  $C400		; Address of Z80 card
+Z80CARD		EQU  $c400		; Address of Z80 card
 CLRROM		EQU  $cfff		; disable slot C8 ROM
 		; IWM hardware addresses
 IWM_PH0_OFF	equ  $c080		; IWM phase 0 off
@@ -173,6 +182,24 @@ DTABCB		EQU  DIRBCB+2+6*(BCBLEN+0200H) ; 06A88H - Start of Data deblocking BCB c
 FREEMEM		EQU  DTABCB+2+2*(BCBLEN+0200H) ; 06EA8H - FREEMEM for Disk ALV / CKS
 BDOSSTART	EQU  07400H		; BDOS start address		
 ;
+; 6502 soft switches as seen from Z80
+;
+ZC0		EQU  0E000H-0C000H	; Z80 -> 6502 hardware offset
+ZKBD		EQU  ZC0 + KBD
+ZRDMAINRAM	EQU  ZC0 + RDMAINRAM
+ZRDCARDRAM	EQU  ZC0 + RDCARDRAM
+ZWRMAINRAM	EQU  ZC0 + WRMAINRAM	; Write to main ram ($200-$BFFF)
+ZWRCARDRAM	EQU  ZC0 + WRCARDRAM	; Write to 80 col card ram ($200-$BFFF)
+ZSETSTDZP	EQU  ZC0 + SETSTDZP	; Set standard zero page
+ZSETALTZP	EQU  ZC0 + SETALTZP	; Set alternate zero page
+ZKBDSTRB	EQU  ZC0 + KBDSTRB
+ZTXTPAGE1	EQU  ZC0 + TXTPAGE1	; RW display page 1
+ZTXTPAGE2	EQU  ZC0 + TXTPAGE2	; RW display page 2 (or read/write aux mem)
+ZBUTN1		EQU  ZC0 + BUTN1	; Joystick Button 1 aka Closed Apple
+ZLCBANK2	EQU  ZC0 + LCBANK2	; Language card bank 2
+ZLCBANK1	EQU  ZC0 + LCBANK1	; Language card bank 1
+
+;
 ; 6502 Zero page stuff seen from Z80
 ;
 Z80OFFS		EQU  0F000H
@@ -189,8 +216,10 @@ ZFLAG_6502	EQU  0F048H		; 6502 flag
 ; 6502 stuff in 0300 range as seen from Z80
 ;
 PAGE300Z80	EQU  0F300H		; Page 300
+SCRLINES	EQU  0F312H		; Screen lines table going up
 ZDISK_TRKL	EQU  0F380H		; Disk track low
 ZDISK_SECT	EQU  0F381H		; Disk sector
+ZDISK_TRK_ADDR  EQU  0F382H
 ZDISK_DRV	EQU  0F384H		; Disk drive slot (060)
 ZDISK_ACTD	EQU  0F385H		; Disk active drive
 ZDISK_TRKH	EQU  0F386H		; Disk track high
@@ -199,11 +228,17 @@ ZDISK_ERR	EQU  0F389H		; Disk Result
 ZSLOT_INFO	EQU  0F3B8H		; Slot info
 ZROUT_6502	EQU  0F3D0H		; 6502 routine to call
 ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
+ZIO_STATUS	EQU  0F3EBH		; Io status, bit 2=key press ready
+ZDISK_BUFF	EQU  0F800H		; Disk buffer for BIOS
 ;
-; 6502 soft switches
+; Constants for TOOLKEY pop up
 ;
-ZWRMAINRAM	EQU  0E004H		; Write to main ram ($200-$BFFF)
-ZWRCARDRAM	EQU  0E005H		; Write to 80 col card ram ($200-$BFFF)
+LEFTEDGE	EQU  9			; Left edge of window
+SCRL8		EQU  0428H + LEFTEDGE + Z80OFFS
+SCRL9		EQU  04A8H + LEFTEDGE + Z80OFFS
+SCRL10		EQU  0528H + LEFTEDGE + Z80OFFS
+SCRL11		EQU  05A8H + LEFTEDGE + Z80OFFS
+SCRL12		EQU  0628H + LEFTEDGE + Z80OFFS
 ;
 ; Messages for the toolkey popup (see src\boot\toolkey.mac)
 ;
@@ -225,7 +260,10 @@ MSG_WRNGDSK	EQU  0FEC0H		; Incompatible drives
 ;
 ; Misc constants
 ;
-WBOOTJP		EQU  00000H
-BDOSJP		EQU  00005H
+WBOOTJP		EQU  00000H		; CP/M warm boot
+BDOSJP		EQU  00005H		; CP/M BDOS call
 CCP		EQU  00100H		; CCP entry
 WARMCOPYLEN	EQU  05CFFH		; Warm copy length
+ISRBUFFST	EQU  0B000H		; Both ISR buffers start at same address
+LSTBUFEND	EQU  0E000H		; LST buffer is 12K
+AUXBUFEND	EQU  0C000H		; Aux buffer is 4K

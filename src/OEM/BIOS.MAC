@@ -16,67 +16,6 @@ HIBYTE		MACRO MSG
 		ENDIF
 		ENDM
 		ENDM
-;
-; Apple //e hardware addresses as seen from the Z80
-;
-KBD		EQU  0E000H
-KBDSTRB		EQU  0E010H
-RDMAINRAM	EQU  0E002H
-RDCARDRAM	EQU  0E003H
-WRMAINRAM	EQU  0E004H
-WRCARDRAM	EQU  0E005H
-SETSTDZP	EQU  0E008H		; Set standard zero page
-SETALTZP	EQU  0E009H		; Set alternate zero page
-TXTPAGE1	EQU  0E054H		; RW display page 1
-TXTPAGE2	EQU  0E055H		; RW display page 2 (or read/write aux mem)
-BUTN1		EQU  0E062H		; Joystick Button 1 aka Closed Apple
-LCBANK2		EQU  0E083H		; Language card bank 2
-LCBANK1		EQU  0E08BH		; Language card bank 1
-ISRBUFFST	EQU  0B000H		; Both ISR buffers start at same address
-LSTBUFEND	EQU  0E000H		; LST buffer is 12K
-AUXBUFEND	EQU  0C000H		; Aux buffer is 4K
-;
-; Misc constants
-;
-CHAR_OP_INI	EQU  0DH		; Character IO Init (same as pascal offset)
-CHAR_OP_RD	EQU  0EH		; Character IO Read (same as pascal offset)
-CHAR_OP_WR	EQU  0FH		; Character IO Write (same as pascal offset)
-CHAR_OP_ST	EQU  10H		; Character IO Status (same as pascal offset)
-;
-; 6502 Zero page stuff seen from Z80
-;
-ZSLOTX		EQU  0F004H		; Boot slot 1..7
-
-ZACC_6502	EQU  0F045H		; 6502 Acc
-ZX_6502		EQU  0F046H		; 6502 X reg
-ZY_6502		EQU  0F047H		; 6502 Y reg
-ZFLAG_6502	EQU  0F048H		; 6502 flag
-;
-; 6502 stuff in 0300 range as seen from Z80
-;
-PAGE300Z80	EQU  0F300H		; Page 300
-SCRLINES	EQU  0F312H		; Screen lines table going up
-DISK_TRKL	EQU  0F380H		; Disk track low
-DISK_SECT	EQU  0F381H		; Disk sector
-TRACK_ADDR	EQU  0F382H		; Duplicate track address
-DISK_DRV	EQU  0F384H		; Disk drive slot (060)
-DISK_ACTD	EQU  0F385H		; Disk active drive
-DISK_TRKH	EQU  0F386H		; Disk track high
-DISK_OP		EQU  0F388H		; Disk operation
-DISK_ERR	EQU  0F389H		; Disk Result
-SLOT_INFO	EQU  0F3B8H		; Slot info
-ROUT_6502	EQU  0F3D0H		; 6502 routine to call
-DISK_ROUT	EQU  003DCH		; Disk routine to call
-CARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
-IO_STATUS	EQU  0F3EBH		; Io status, bit 2=key press ready
-; Constants for TOOLKEY popbuf
-LEFTEDGE	EQU  9			; Left edge of window
-SCRL8		EQU  0428H + LEFTEDGE + Z80OFFS
-SCRL9		EQU  04A8H + LEFTEDGE + Z80OFFS
-SCRL10		EQU  0528H + LEFTEDGE + Z80OFFS
-SCRL11		EQU  05A8H + LEFTEDGE + Z80OFFS
-SCRL12		EQU  0628H + LEFTEDGE + Z80OFFS
-DISK_BUFF	EQU  0F800H		; Disk buffer for BIOS
 ;******************************************************************
 ;*                                                                *
 ;*  Set the common memory segment, code from here on in lives     *
@@ -158,8 +97,8 @@ DEVTBL:					; DEAE
 ; Reset the world, called from 6502 code at $300
 ;
 ;============================================================
-RESETVECT:	ld   (RDMAINRAM),a	; Setup RAM
-		ld   (WRMAINRAM),a	; Go reset SCB IO vectors and
+RESETVECT:	ld   (ZRDMAINRAM),a	; Setup RAM
+		ld   (ZWRMAINRAM),a	; Go reset SCB IO vectors and
 		jp   FINDIODEVS		; do last half of cold boot
 ;============================================================
 ; BIOS Func 1 - WBOOT
@@ -167,9 +106,9 @@ RESETVECT:	ld   (RDMAINRAM),a	; Setup RAM
 ; Entry
 ; Nothing
 ;============================================================
-B_WBOOT:	ld   (RDMAINRAM),a	; Read from BIOS / BDOS memory
+B_WBOOT:	ld   (ZRDMAINRAM),a	; Read from BIOS / BDOS memory
 		jp   WBOOT
-WBOOT_EXIT:	ld   (RDCARDRAM),a	; Read from aux ram
+WBOOT_EXIT:	ld   (ZRDCARDRAM),a	; Read from aux ram
 		jp   CCP		; Exit to CCP
 ;============================================================
 ; BIOS Func 4 - CONOUT
@@ -223,7 +162,7 @@ B_AUXOST:	ld   hl,(@AOVEC)
 ;============================================================
 B_LISTST:	ld   hl,(@LOVEC)
 JPOST:		ld   de,VECOST		; Output status A910
-JPIOFUNC:	ld   (RDMAINRAM),a
+JPIOFUNC:	ld   (ZRDMAINRAM),a
 		jp   IOFUNC
 ; IO Bios routines come back to here
 ; Assumption is memory is in main
@@ -296,15 +235,15 @@ B_MOVE:		ld   a,00H		; 0 if there is XMOVE settings
 		inc  a			; if it's xmove this time assume normal
 		ld   (B_MOVE+1),a	; move next time we get called.
 XMOVE_CREG:	ld   a,00H		; XMOVE sets this value to read bank
-		ld   (RDMAINRAM),a	; Assume main memory BIOS/BDOS
+		ld   (ZRDMAINRAM),a	; Assume main memory BIOS/BDOS
 		or   a			; for read bank
 		jr   z,XMOVE_BREG	; Not zero so reading from
-		ld   (RDCARDRAM),a	; Aux card ram
+		ld   (ZRDCARDRAM),a	; Aux card ram
 XMOVE_BREG:	ld   a,00H		; XMOVE sets this value for write bank
-		ld   (WRMAINRAM),a	; Assume main memory BIOS/BDOS
+		ld   (ZWRMAINRAM),a	; Assume main memory BIOS/BDOS
 		or   a			; for write bank
 		jr   z,MOVEMEM		; Not zero so writing to aux ram
-		ld   (WRCARDRAM),a
+		ld   (ZWRCARDRAM),a
 MOVEMEM:	ex   de,hl		; Swap de,hl for CP/M MOVE
 		ldir			; Do the copy
 		ex   de,hl		; swap back and fall thru, to sort out bank.
@@ -319,11 +258,11 @@ MOVEMEM:	ex   de,hl		; Swap de,hl for CP/M MOVE
 B_SELMEM:	ld   (CURBANK),a	; Save away the bank requested
 B_SELMEM2:	or   a			; set flag for jumps
 		jr   nz,B_MEMCARD	; Not zero use aux card for the user stuff
-		ld   (RDMAINRAM),a	; Nope we're in BIOS / BDOS land
-		ld   (WRMAINRAM),a
+		ld   (ZRDMAINRAM),a	; Nope we're in BIOS / BDOS land
+		ld   (ZWRMAINRAM),a
 		ret
-B_MEMCARD:	ld   (RDCARDRAM),a	; Time for the Users code
-		ld   (WRCARDRAM),a
+B_MEMCARD:	ld   (ZRDCARDRAM),a	; Time for the Users code
+		ld   (ZWRCARDRAM),a
 		ret
 ;============================================================
 ; Copy DMA buffer to disk buffer, if zero flag
@@ -331,13 +270,13 @@ B_MEMCARD:	ld   (RDCARDRAM),a	; Time for the Users code
 ; it's the auxiliary bank.
 ;============================================================
 DMA2BUF:	jr   z,DMANOTAUX	; DMA is from aux bank
-		ld   (RDCARDRAM),a	; set it up.
-DMANOTAUX:	ld   de,DISK_BUFF	; Dest is disk buffer
+		ld   (ZRDCARDRAM),a	; set it up.
+DMANOTAUX:	ld   de,ZDISK_BUFF	; Dest is disk buffer
 		ld   hl,(DMAADDR)	; Source is DMA address
 		jr   DMADOCOPY
-CPFROMCARD:	ld   (RDCARDRAM),a	; DF9B -
+CPFROMCARD:	ld   (ZRDCARDRAM),a	; DF9B -
 DMADOCOPY:	ldir			; Do the copy
-		ld   (RDMAINRAM),a	; back to main memory
+		ld   (ZRDMAINRAM),a	; back to main memory
 		ret			; Helps with return addresses
 ;============================================================
 ; BIOS Func 20 - DEVTBL
@@ -375,8 +314,8 @@ SIGNONMSG:	DB   ESC,'*',CR,LF
 CARDCHECK2:	ld   hl,0787BH		; Code at A47D check if we're on a Cirtech card
 		ld   c,(hl)		; Save byte for later
 		ld   de,CC6502_2+1000H	; 6502 routine
-		ld   (ROUT_6502),de
-		ld   de,(CARD_Z80)	; de=E401
+		ld   (ZROUT_6502),de
+		ld   de,(ZCARD_Z80)	; de=E401
 		inc  de
 		inc  de			; de=E403
 		ld   (de),a		; Off to 6502 land with odd address mapping
@@ -384,7 +323,7 @@ CARDCHECK2:	ld   hl,0787BH		; Code at A47D check if we're on a Cirtech card
 		ld   (hl),c		; Put back original byte
 		cp   076H		; Go home if our byte was overwritten
 		ret  z
-		ld   (ROUT_6502),hl	; Byte not overwritten
+		ld   (ZROUT_6502),hl	; Byte not overwritten
 		lddr			; Trash the world
 		lddr
 BIOSTK:		DS   05AH		; Slightly odd size for the stack
@@ -398,7 +337,7 @@ BIOSTOS:
 ; DE = Routine to call
 ; HL = Vector for devices for character IO
 ;============================================================
-IOFUNC:		ld   (WRMAINRAM),a	; Write to main memory
+IOFUNC:		ld   (ZWRMAINRAM),a	; Write to main memory
 		ld   (IORESSTK+1),sp	; Save stack pointer for restore
 		ld   sp,BIOSTOS		; End of BIOSSTK
 		push af			; Save acc
@@ -418,7 +357,7 @@ IORESSTK:	ld   sp,0000H		; Bring back the stack
 ; Exit
 ; Runs CCP
 ;============================================================
-WBOOT:		ld   (WRCARDRAM),a	; Write to aux ram
+WBOOT:		ld   (ZWRCARDRAM),a	; Write to aux ram
 		ld   hl,CCP		; Copy CCP into aux ram
 		ld   d,h
 		ld   e,l
@@ -452,11 +391,11 @@ B_READ:		ld   (DISKEXIT+1),sp	; Save stack pointer
 		ld   a,(DMABANK)	; Get the DMA bank
 		or   a
 		jr   z,READTOMAIN	; We're in the right one?
-		ld   (WRCARDRAM),a	; Copy into aux card instead
+		ld   (ZWRCARDRAM),a	; Copy into aux card instead
 READTOMAIN:	ld   de,(DMAADDR)	; Start the copy into
-		ld   hl,DISK_BUFF	; DMA address from DISK_BUFF
+		ld   hl,ZDISK_BUFF	; DMA address from ZDISK_BUFF
 		ldir
-		ld   (WRMAINRAM),a	; Set us back to main ram
+		ld   (ZWRMAINRAM),a	; Set us back to main ram
 		pop  af			; Get back error code
 DISKEXIT:	ld   sp,0000H		; Restore stack and home
 		ret
@@ -487,7 +426,7 @@ B_WRITE:	ld   (DISKEXIT+1),sp	; Save stack pointer
 ; returns sector size in bc
 ;============================================================
 GETSECTSZ:	ld   bc,0100H		; Assume it's a Disk ][
-		ld   a,(DISK_DRV)	; Get the drive
+		ld   a,(ZDISK_DRV)	; Get the drive
 		call DRVISDISK2
 		ret  z			; Go home if it was a Disk II
 		ld   bc,0200H		; Other sector size is 512 bytes
@@ -496,24 +435,24 @@ GETSECTSZ:	ld   bc,0100H		; Assume it's a Disk ][
 ; Perform a disk operation
 ;============================================================
 DISKOPER:	call PSUEDOISR
-		ld   (DISK_OP),a	; Set the disk operation
+		ld   (ZDISK_OP),a	; Set the disk operation
 DISKRETRY:	ld   hl,DISK_ROUT	; Tell the 6502 code
-		ld   (ROUT_6502),hl	; to call the disk BIOS
-		ld   hl,(CARD_Z80)	; Get the Z80 address
+		ld   (ZROUT_6502),hl	; to call the disk BIOS
+		ld   hl,(ZCARD_Z80)	; Get the Z80 address
 		ld   (hl),a		; Off to 6502 land
-		ld   a,(DISK_ERR)	; We're back did we get an error
+		ld   a,(ZDISK_ERR)	; We're back did we get an error
 		or   a			; Set the flag
 		ret  z			; Return back if there wasn't error
 		ld   c,07H		; Ring the bell
 		call C_TO_CONS		; Character in C to console
 		di
 		call DRWTOOLKEY		; Draw toolkey box
-		ld   a,(DISK_ERR)	; Get the error message
+		ld   a,(ZDISK_ERR)	; Get the error message
 		cp   010H		; Write only?
 		jr   nz,NOTWRPRO	; Nah fix message for read / write
 		ld   hl,ERR_WRPRO	; Write protected error
 		jr   DISPDSKERR		; Display error message
-NOTWRPRO:	ld   a,(DISK_OP)	; Read or write operation
+NOTWRPRO:	ld   a,(ZDISK_OP)	; Read or write operation
 		cp   DSKOP_WR
 		ld   hl,MSG_WRERR	; Assume write
 		jr   z,OPNOTWR		; Yes it was
@@ -535,7 +474,7 @@ ER_NOT_ESC:	cp   'y'		; User wanted a retry
 		call TK_RESTSCR		; Put back the screen
 		pop  af			; Get back the flag to see if user
 		jr   z,DISKRETRY	; wanted us to retry, loop back again.
-		ld   a,(DISK_ERR)	; Get disk error code
+		ld   a,(ZDISK_ERR)	; Get disk error code
 		cp   10H		; Write protect error?
 		ret  nz			; Nope, go home
 		ld   a,02		; Convert to CP/M error
@@ -553,7 +492,7 @@ MSG_WRERR:	HIBYTE "Write"
 ; Entry
 ; Exit
 ;============================================================
-B_COLD:		ld   (KBDSTRB),a	; Clear keyboard
+B_COLD:		ld   (ZKBDSTRB),a	; Clear keyboard
 		ld   de,DPBTBL		; Copy DPH table from Loader
 		ld   hl,LDRDPBTBL	; Into our shared address space (resident/banked)
 		ld   bc,DPBLEN * 4	; Only four entries.
@@ -576,16 +515,16 @@ NXTDRV:		ld   l,(ix+00)		; Get an entry from drive tables
 		inc  ix			; bounce pointer to next
 		push hl			; iy=hl
 		pop  iy
-		ld   l,(iy+DPBL)	; hl= Drive Parameter Block
-		ld   h,(iy+DPBH)
+		ld   l,(iy+DPH_DPB)	; hl= Drive Parameter Block
+		ld   h,(iy+DPH_DPB+1)
 		ld   de,LDRDPBTBL	; Subtract ldr bios offset
 		or   a
 		sbc  hl,de
 		ex   de,hl		; Add shared memory offset
 		ld   hl,DPBTBL		; So DPB are in shared memory
 		add  hl,de
-		ld   (iy+DPBL),l	; put hl into DPB for this drive
-		ld   (iy+DPBH),h
+		ld   (iy+DPH_DPB),l	; put hl into DPB for this drive
+		ld   (iy+DPH_DPB+1),h
 		jr   NXTDRV
 COPY_IOVEC:	ld   de,@CIVEC		; Copy in default IO vectors
 		ld   hl,DEFIOVEC
@@ -594,7 +533,7 @@ COPY_IOVEC:	ld   de,@CIVEC		; Copy in default IO vectors
 ;
 ; Setup DEVTBL to match cards in slots
 ;
-		ld   ix,SLOT_INFO+7	; Get the slot info
+		ld   ix,ZSLOT_INFO+7	; Get the slot info
 		ld   b,07		; Count down
 DEVCPYLOOP:	ld   a,(ix+00)		; Get card type
 		dec  ix
@@ -640,7 +579,7 @@ CARD_KNOWN:	ld   d,0		; Get card info
 FINDIODEVS:	ld   sp,BIOSTOS		; Reset stack (again)
 		ld   d,0		; Slot number
 		ld   b,080h		; walk this bit down
-		ld   hl,SLOT_INFO+1	; Start at slot 1
+		ld   hl,ZSLOT_INFO+1	; Start at slot 1
 FNDLSTLOOP:	inc  d			; Next slot number
 		srl  b			; Walk bit mask down
 		jr   c,INITDEVS		; fell of end? check for aux
@@ -706,9 +645,9 @@ DEVININEXT:	push bc			; Save counter
 		ld   a,d		; 6502 code puts this into the
 		ld   (0F30BH),a		; Z80 reset vector
 		xor  a			; Zero accumulator
-		ld   (WRCARDRAM),a
+		ld   (ZWRCARDRAM),a
 		ld   (ZESC_STATE),a	; Reset Console escape state
-		ld   (WRMAINRAM),a
+		ld   (ZWRMAINRAM),a
 		di			; turn off interrupts
 		ld   hl,SIGNONMSG	; Display sign on message
 		ld   a,(hl)
@@ -821,7 +760,7 @@ B_SELDSK:	ld   a,c
 		ld   hl,DRVMAP
 		add  hl,bc
 		ld   a,(hl)
-		ld   (DISK_DRV),A
+		ld   (ZDISK_DRV),A
 		ld   hl,DRVTBL		; Get DPH for drive
 		sla  c			; Mult by two
 		ld   e,c
@@ -844,7 +783,7 @@ DRVISDISK2:	and  07FH		; Mask off the unit
 		rrca
 		rrca
 		rrca
-		ld   hl,SLOT_INFO	; Look up drive type
+		ld   hl,ZSLOT_INFO	; Look up drive type
 		ld   e,a
 		ld   d,0
 		add  hl,de
@@ -877,16 +816,16 @@ B_HOME:		ld   c,0H		; Set track to zero and fall thru
 ;============================================================
 B_SETTRK:	ld   (SETTRKEX+1),sp	; Save away stack pointer
 		ld   sp,BIOSTOS		; Set bios stack
-		ld   a,(DISK_DRV)	; Get the drive
+		ld   a,(ZDISK_DRV)	; Get the drive
 		call DRVISDISK2		; See if it's a disk II
 		ld   a,c		; Set acc to low track bytes
 		jr   nz,NOTRKADJ	; Not disk II so no need to adjust
 		cp   35			; Do we need to wrap track number?
 		jr   c,NOTRKADJ		; Nope so don't adjust
 		sub  35			; Yes we do adjust track
-NOTRKADJ:	ld   (DISK_TRKL),a	; Save away low track
+NOTRKADJ:	ld   (ZDISK_TRKL),a	; Save away low track
 		ld   a,b
-		ld   (DISK_TRKH),a	; And do the high byte
+		ld   (ZDISK_TRKH),a	; And do the high byte
 SETTRKEX:	ld   sp,0000H		; Restore stack pointer
 		ret
 ;============================================================
@@ -898,7 +837,7 @@ SETTRKEX:	ld   sp,0000H		; Restore stack pointer
 ; Exit
 ;============================================================
 B_SETSEC:	ld   a,c
-		ld   (DISK_SECT),a
+		ld   (ZDISK_SECT),a
 		ret
 ;============================================================
 ; BIOS Func 12 - SETDMA
@@ -927,7 +866,7 @@ B_MULTIO:	xor  a
 ; Unknown
 ;============================================================
 USERF:		ld   de,(SAVEDE)	; Pull back de
-		ld   (WRMAINRAM),a	; swap the memory back to main
+		ld   (ZWRMAINRAM),a	; swap the memory back to main
 		cp   10H		; off the end of the table?
 		ret  nc			; yep, go home
 		sla  a			; double function to get index
@@ -997,9 +936,9 @@ USERF_0A:	push hl
 		cp   h
 		pop  hl
 		ret  c
-		ld   (WRCARDRAM),a
+		ld   (ZWRCARDRAM),a
 		ldir
-		ld   (WRMAINRAM),a
+		ld   (ZWRMAINRAM),a
 		ret
 ;
 ; Called from A47D
@@ -1189,13 +1128,13 @@ TOG_CURSOR:	ld   b,80H		; Toggle the cusor
 ;
 ;============================================================
 CON_BIOS:	ld   hl,0A00H		; Character device BIOS call
-		ld   (ROUT_6502),hl	; put into 6502 region
+		ld   (ZROUT_6502),hl	; put into 6502 region
 		ld   (ZY_6502),a	; Y reg = a
 		ld   a,b		; X reg = b
 		ld   (ZX_6502),a
 		ld   a,c		; Acc = c
 		ld   (ZACC_6502),a
-		ld   hl,(CARD_Z80)	; Get the card address
+		ld   hl,(ZCARD_Z80)	; Get the card address
 		ld   (hl),a		; Goto 6502 land
 		ld   a,(ZACC_6502)	; Get acc back
 		ret
@@ -1205,20 +1144,20 @@ CON_BIOS:	ld   hl,0A00H		; Character device BIOS call
 ;  Read a key if available and save for later.
 ;
 ;============================================================
-GET_KBD_ST:	ld   hl,IO_STATUS	; Check if we have a key press already
+GET_KBD_ST:	ld   hl,ZIO_STATUS	; Check if we have a key press already
 		bit  2,(hl)
 		jr   nz,KBDREADY	; We do tell the world
-		ld   a,(KBD)		; Check the keyboard
+		ld   a,(ZKBD)		; Check the keyboard
 		bit  7,a		; Set the zero flag
 		res  7,a		; Clear the high bit
 		jr   z,FLSHCURSOR	; Flash the cursor while we wait
-		ld   (KBDSTRB),a	; Clear our key press
-		ld   hl,BUTN1		; Check if closed apple down
+		ld   (ZKBDSTRB),a	; Clear our key press
+		ld   hl,ZBUTN1		; Check if closed apple down
 		bit  7,(hl)
 		call nz,TOOLKEY		; Go check for toolkey keys
 		or   a			; set the zero flags
 		ret  z			; go home if it's zero
-		ld   hl,IO_STATUS	; flag our status
+		ld   hl,ZIO_STATUS	; flag our status
 		ld   (LASTKEY),a	; Save last key
 		set  2,(hl)		; set our bit flag
 KBDREADY:	ld   a,0FFH		; Say we're ready
@@ -1243,7 +1182,7 @@ LASTKEY:	DB   0			; Last key read from keyboard
 ; Get a keyboard character from the buffer and reset status
 ;
 ;============================================================
-GET_KBD_CH:	ld   hl,IO_STATUS	; Clear the flag
+GET_KBD_CH:	ld   hl,ZIO_STATUS	; Clear the flag
 		res  2,(hl)
 		ld   a,(LASTKEY)	; return the key
 		ret
@@ -1286,13 +1225,13 @@ PUT_AUX_BF:	ld   a,(AUXSLOT)	; Aux slot  set?
 		cp   0FFH		; Nope go home early
 		ret  z
 		ld   hl,(AUXBUFIN)	; get buf pointer
-		ld   (SETALTZP),a	; Off to LCBANK1 on the aux card
-		ld   a,(LCBANK1)
-		ld   a,(LCBANK1)
+		ld   (ZSETALTZP),a	; Off to LCBANK1 on the aux card
+		ld   a,(ZLCBANK1)
+		ld   a,(ZLCBANK1)
 		ld   (hl),c		; Store the character
-		ld   a,(LCBANK2)	; Back to normal memeory
-		ld   a,(LCBANK2)
-		ld   (SETSTDZP),a
+		ld   a,(ZLCBANK2)	; Back to normal memeory
+		ld   a,(ZLCBANK2)
+		ld   (ZSETSTDZP),a
 		inc  hl			; Increment the pointer
 		ld   a,HIGH AUXBUFEND
 		cp   h			; wrapped around?
@@ -1311,9 +1250,9 @@ PUT_LST_BF:	ld   a,(LSTSLOT)	; LST slot set
 		cp   0FFH		; Nope go home early
 		ret  z
 		ld   hl,(LSTBUFIN)	; get buffer pointer
-		ld   (SETALTZP),a	; We're using aux language card LCBANK2
+		ld   (ZSETALTZP),a	; We're using aux language card LCBANK2
 		ld   (hl),c		; Store it
-		ld   (SETSTDZP),a	; Back to main memeory
+		ld   (ZSETSTDZP),a	; Back to main memeory
 		inc  hl			; Increment pointer
 		ld   a,HIGH LSTBUFEND
 		cp   h			; Wrapped around?
@@ -1359,9 +1298,9 @@ ISRLSTMORE:	ld   a,(LSTSLOT)	; Get the list slot
 		jr   z,ISRCHKAUX	; Busy go check aux
 		call CARDCHECK2
 		ld   hl,(LSTBFOUT)	; Get our output byte
-		ld   (SETALTZP),a	; Swap to AUX language card
+		ld   (ZSETALTZP),a	; Swap to AUX language card
 		ld   c,(hl)		; Get character
-		ld   (SETSTDZP),a	; Back to MAIN for language card
+		ld   (ZSETSTDZP),a	; Back to MAIN for language card
 		inc  hl			; Increment our pointer
 		ld   a,HIGH LSTBUFEND
 		cp   h			; Off the end?
@@ -1391,13 +1330,13 @@ AUXHASDATA:	ld   a,(AUXSLOT)	; Get the slot for aux
 		jr   z,PISR_EXIT
 		call CARDCHECK2
 		ld   hl,(AUXBFOUT)
-		ld   (SETALTZP),a	; Language card to AUX banks
-		ld   a,(LCBANK1)	; Swap to other bank
-		ld   a,(LCBANK1)
+		ld   (ZSETALTZP),a	; Language card to AUX banks
+		ld   a,(ZLCBANK1)	; Swap to other bank
+		ld   a,(ZLCBANK1)
 		ld   c,(hl)		; Get our character
-		ld   a,(LCBANK2)	; Language card back to normal
-		ld   a,(LCBANK2)
-		ld   (SETSTDZP),a	; Language card back to main
+		ld   a,(ZLCBANK2)	; Language card back to normal
+		ld   a,(ZLCBANK2)
+		ld   (ZSETSTDZP),a	; Language card back to main
 		inc  hl
 		ld   a,HIGH AUXBUFEND
 		cp   h
@@ -1482,7 +1421,7 @@ SETCURSOR:	ld   a,b
 ;============================================================
 ; Draw the toolkey window
 ;============================================================
-DRWTOOLKEY:	ld   a,(DISK_DRV)	; Save current disk drive before we
+DRWTOOLKEY:	ld   a,(ZDISK_DRV)	; Save current disk drive before we
 		ld   (TK_SAVEDRV),a	; Draw toolkey box
 		ld   de,0FF00H		; Save screen space to
 		res  7,c		; FF00H
@@ -1507,9 +1446,9 @@ PRNXTLINE:	ld   e,(hl)
 		ret
 PRLINE:		push hl			; Save current line pointer
 		ld   b,40		; 40 characters
-PRNXTCHAR:	ld   (TXTPAGE2),a	; Odd page
+PRNXTCHAR:	ld   (ZTXTPAGE2),a	; Odd page
 		ld   a,(de)
-		ld   (TXTPAGE1),a
+		ld   (ZTXTPAGE1),a
 		call SCRTOPRINT		; Print odd column character
 		ld   a,(de)		; Get even column
 		call SCRTOPRINT		; Print even column character
@@ -1551,7 +1490,7 @@ REDRAWTK:	ld   de,MSG_TOOLKEY
 ;============================================================
 FORMAT:		ld   hl,MSG_FORMAT	; Prompt user for drive to format
 		call TK_WRLINE
-		ld   hl,DISK_BUFF	; Set disk buffer with E5
+		ld   hl,ZDISK_BUFF	; Set disk buffer with E5
 		ld   (hl),0E5H		; CP/M empty directory
 		ld   d,h
 		ld   e,l
@@ -1561,7 +1500,7 @@ FORMAT:		ld   hl,MSG_FORMAT	; Prompt user for drive to format
 		call KEYORESC		; Get drive or exit if user hits ESC
 		call TK_CHKDRVL		; Valid drive letter?
 		jr   nc,FORMAT		; Loop if not
-		ld   (DISK_DRV),a	; Save drive
+		ld   (ZDISK_DRV),a	; Save drive
 		; Figure out how many sectors of directory
 		call GETDPB
 		ld   a,(iy+DPB_BSH)
@@ -1576,14 +1515,14 @@ FMTCHKBLKS:	bit  6,(iy+DPB_AL0)	; Reserved blocks for directory
 		jr   z,FMTFNDSECT	;
 		add  hl,hl
 FMTFNDSECT:	ld   a,l
-		ld   (DISK_TRKL),a
+		ld   (ZDISK_TRKL),a
 FMTINSDISK:	ld   hl,MSG_INSDISK	; Tell user to insert a disk
 		call TK_WRLINE
 		call KEYORESC		; Last chance to get out
 		ld   hl,MSG_FMTING	; Tell 'em we're formatting
 		call TK_WRLINE
 		ld   a,DSKOP_FMT	; Do the deed
-		ld   (DISK_OP),a
+		ld   (ZDISK_OP),a
 		call CALLDISK
 		ld   hl,MSG_FORMOK	; Assume it went ok
 		jr   z,FMTDISPRES	; Tell user if so
@@ -1687,7 +1626,7 @@ DP_WRDST:	ld   a,(DUPDSTDRV)	; Get destination drive
 		set  0,(hl)		; Set flag in variable
 		jr   nz,DP_ERR_CHK	; may tell the user
 		ld   a,DSKOP_FMT	; Set up for format
-		ld   (DISK_OP),a
+		ld   (ZDISK_OP),a
 		ld   hl,MSG_FMTING	; Tell the user we're formatting
 		call TK_WRLINE
 		call CALLDISK		; Do the operation
@@ -1726,19 +1665,19 @@ DP_EXIT:	xor  a
 ;============================================================
 DP_TRKOP:	ld   b,5		; Do 5 tracks
 		res  0,a
-		ld   (DISK_DRV),a	; which drive
+		ld   (ZDISK_DRV),a	; which drive
 		ld   a,d		; operation to do
-		ld   (DISK_OP),a
+		ld   (ZDISK_OP),a
 		ld   a,01EH		; Destination for track data
-		ld   (TRACK_ADDR),a	; $1E00 or 0E00H from z80
+		ld   (ZDISK_TRK_ADDR),a	; $1E00 or 0E00H from z80
 DP_TRKLOOP:	ld   a,(hl)		; hl is track
 		dec  a			; decrement it
-		ld   (DISK_TRKL),a
+		ld   (ZDISK_TRKL),a
 		call CALLDISK		; Read in a whole track (4K)
 		ret  nz
 		dec  (hl)		; Done all the tracks?
 		ret  z			; Go home
-		ld   a,(KBD)		; User hit a key?
+		ld   a,(ZKBD)		; User hit a key?
 		or   a
 		pop  de			; Get rid our ret address
 		call m,KEYORESC		; If key is escape this aborts us
@@ -1750,10 +1689,10 @@ DP_TRKLOOP:	ld   a,(hl)		; hl is track
 ; Call a disk routine
 ;============================================================
 CALLDISK:	ld   de,DISK_ROUT
-		ld   (ROUT_6502),de
-		ld   de,(CARD_Z80)
+		ld   (ZROUT_6502),de
+		ld   de,(ZCARD_Z80)
 		ld   (de),a
-		ld   a,(DISK_ERR)
+		ld   a,(ZDISK_ERR)
 		or   a
 		ret
 ;============================================================
@@ -1770,10 +1709,10 @@ KEYORESC:	call GETUSERKEY
 ; User function B - Get keyboard lower case and compare against ESC
 ;============================================================
 GETUSERKEY:	call PSUEDOISR
-		ld   a,(KBD)
+		ld   a,(ZKBD)
 		or   a
 		jp   p,GETUSERKEY
-		ld   (KBDSTRB),a
+		ld   (ZKBDSTRB),a
 		res  7,a
 		or   020H		; Force lower case
 		cp   ESC+020H		; Was it escape?
@@ -1807,22 +1746,22 @@ TK_WRLINE:	ld   b,38
 		ld   de,SCRL10+1
 UF7_NXTCHR:	ld   a,b
 		rra
-		ld   (TXTPAGE2),a
+		ld   (ZTXTPAGE2),a
 		jr   c,UF7_ODD
-		ld   (TXTPAGE1),a
+		ld   (ZTXTPAGE1),a
 UF7_ODD:	ld   a,(hl)
 		ld   (de),a
 		inc  hl
 		jr   c,UF7_ODD2
 		inc  de
 UF7_ODD2:	djnz UF7_NXTCHR
-		ld   (TXTPAGE1),a
+		ld   (ZTXTPAGE1),a
 		ret
 ;============================================================
 ; User function 6 - Restore screen after drawing toolkey
 ;============================================================
 TK_RESTSCR:	ld   a,(TK_SAVEDRV)	; restore saved disk drive
-		ld   (DISK_DRV),a	; put it into regular bios
+		ld   (ZDISK_DRV),a	; put it into regular bios
 		ld   de,0FF00H
 		set  7,c
 ;============================================================
@@ -1841,7 +1780,7 @@ SCRMOVE:	ld   hl,SCRL8
 		call LINEMOVE
 		ld   hl,SCRL12
 		call LINEMOVE
-		ld   (TXTPAGE1),a
+		ld   (ZTXTPAGE1),a
 		xor  a
 		ret
 ;============================================================
@@ -1850,9 +1789,9 @@ SCRMOVE:	ld   hl,SCRL8
 LINEMOVE:	ld   b,42		; Copy 42 characters
 LMV_LOOP:	ld   a,b		; get our column
 		rra			; Shuffle it in carry
-		ld   (TXTPAGE2),a	; Use txt page 2
+		ld   (ZTXTPAGE2),a	; Use txt page 2
 		jr   c,LMV_TSTDIR	; Even column
-		ld   (TXTPAGE1),a	; So use page 1
+		ld   (ZTXTPAGE1),a	; So use page 1
 LMV_TSTDIR:	bit  7,c		; Check for direction
 		jr   z,LMV_NOSWP	; Clear so save area to screen
 		ex   de,hl		; swap so screen to save area
@@ -1896,8 +1835,8 @@ GETDPB:		sla  c			; Multiply by 2
 		ld   e,c
 		ld   hl,DRVTBL		; Drive table
 		call GETHLPLUSE		; HL=(HL + E) aka DPH
-		ld   e,DPBL
-		call GETHLPLUSE		; hl=(DPH + DPBL)
+		ld   e,DPH_DPB
+		call GETHLPLUSE		; hl=(DPH + DPB)
 		push hl			; hl=DPB for this drive
 		pop  iy
 		ld   a,(iy+DPB_BSH)	; BSH Block shift factor
@@ -1965,8 +1904,8 @@ CARDCHECK:	ld   hl,07800H		; two pages into the BDOS (contains 00)
 		ld   c,0
 		ld   (hl),c		; put a zero back into location
 		ld   de,CC6502+01000H	; Tell the 6502 to jump to code that decrements A800
-		ld   (ROUT_6502),de
-		ld   de,(CARD_Z80)	; Get card address (0E401H)
+		ld   (ZROUT_6502),de
+		ld   de,(ZCARD_Z80)	; Get card address (0E401H)
 		inc  de			; Add one to it 0E402H
 		ld   (de),a		; On a softcard, jump to 6502, not sure for Cirtech
 					; Strong suspicion it changes the mapping from
@@ -1975,7 +1914,7 @@ CARDCHECK:	ld   hl,07800H		; two pages into the BDOS (contains 00)
 		ld   (hl),b		; put back saved value
 		inc  c			; if right value decremented c=0 after increment
 		ret  z			; Go home
-		ld   (ROUT_6502),hl	; Trash 6502 routine
+		ld   (ZROUT_6502),hl	; Trash 6502 routine
 		ldir			; DE=E402,HL=7800,BC=0000
 		ldir
 ; Default IO vectors at AF45
