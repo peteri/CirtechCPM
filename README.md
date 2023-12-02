@@ -15,6 +15,8 @@ this feels like an achievable aim.
 As an initial host system I'd like to use the Cirtech CP/M plus system running in an emulator to act as a build environment.
 This should mean once completed the build process can be self hosted on a RC2014 system.
 
+Post disassembly, this doesn't seem like a good idea, cross assembly seems to be a better idea. However I would like to try to get the Version 2.0 of the Cirtech CP/M plus system running running on my hardware.
+
 ## Folders
 
 [Disassembly](Disassembly/README.md) contains notes and various chunks of  disassembled code used to create the source code.

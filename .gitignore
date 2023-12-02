@@ -294,13 +294,15 @@ Tools/NibReader/CPM3.SYS
 *.BAK
 *.PRN
 *.SYM
-# Ignore the loader BIOS output from assembly
+# Ignore the BIOS output from assembly
 src/OEM/BOOTSECT.REL
 src/OEM/BIOSDISK.REL
 src/OEM/BIOSCHAR.REL
 src/OEM/BIOSVID.REL
 src/OEM/LDRBIOS.REL
 src/OEM/TOOLKEY.REL
+src/OEM/BIOS.REL
+src/OEM/SCB.REL
 src/OEM/*.COM
 src/OEM/*.BIN
 src/OEM/*.$$$

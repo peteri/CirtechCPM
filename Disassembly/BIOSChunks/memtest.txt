@@ -1,0 +1,41 @@
+save:		ld a,0FFH
+		ld bc,0F000H
+		ld de,0F0DFH
+		ld hl,0F6E9H
+saveloop:	ld a,(hl)
+		ld (de),a
+		dec de
+		add hl,bc
+		sub a,11
+		jr nz saveloop
+		ret
+restore:	ld a,0FFH
+		ld bc,0FF00H
+		ld de,0F0DFH
+		ld hl,0F6E9H
+restoreloop:	ld a,(de)
+		ld (hl),a
+		dec de
+		add hl,bc
+		sub a,11
+		jr nz restoreloop
+		ret
+		.6502
+test:		lda #$e9
+		sta $10
+		lda #$06
+		sta $11
+		lda #$00
+		tay
+		tax
+		clc
+testloop:	lda ($10),y
+		sta $e0,x
+		inx
+		clc
+		lda $11
+		adc #$10
+		sta $11
+		bcc testloop
+		ret
+		
