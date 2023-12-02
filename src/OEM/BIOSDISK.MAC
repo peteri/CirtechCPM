@@ -5,366 +5,366 @@
 ; Code status
 ; D400-DBFF requires more work
 ;
-         cseg 
-         .6502
-SCRLINEL EQU       $20        ;Address of current line in $400
-SCRLINEH EQU       $21        ;Screen address high
-ESCAPE_STATE EQU   $22        ;State for ESCAPE leadin
-CURSOR_STATE EQU   $23        ;Bit 7 high if cursor on screen
-CURSORX  EQU       $25        ;Cursor X (80 col)
-ZP_TEMP1 EQU       $26        ;Zero page temporary
-D2_CHECK_SUM EQU   $27        ;Checksum for disk routines
-CURSORY  EQU       $29        ;Cursor Y (80 col)
-HEADER_CHECKSUM EQU $2c       ;Checksum for the sector header
-HEADER_SECTOR EQU  $2d
-HEADER_TRACK EQU   $2e        ;Track from sector header
-HEADER_VOLUME EQU  $2f
-MON_INVFLAG EQU    $32        ;text mask (255=normal, 127=flash, 63=inv)
-MON_A1H  EQU       $3d        ;general purpose
-MON_A2L  EQU       $3e        ;general purpose
-MON_A2H  EQU       $3f        ;general purpose
-MON_A3H  EQU       $41        ;general purpose
-PRODOS_CMD EQU     $42
-PRODOS_UNITNUM EQU $43
-PRDOOS_BUFPTRL EQU $44
-PRODOS_BUFPTRH EQU $45        ;Prodos buffer pointer high
-PRODOS_BLKNUM EQU  $46
-DISK_TRKL EQU      $0380      ;Disk track low (From Z80)
-DISK_SECT EQU      $0381      ;Disk sector (from Z80)
-DISK_TRK_ADDR EQU  $0382      ;While track read/write page
-DISK_DRV EQU       $0384      ;Drive to use from CPM (Slot)
-DISK_ACTD EQU      $0385      ;Current active disk ][ drive
-DISK_TRKH EQU      $0386      ;Disk track high (from Z80)
-DISK_VOL EQU       $0387      ;Disk volume
-DISK_OP  EQU       $0388      ;Disk operation
-DISK_ERR EQU       $0389      ;Disk Error back
-SLOT_INFO EQU      $03b8
-SCRNHOLE0 EQU      $0478      ;text page 1 screen holes
-SCRNHOLE1 EQU      $04f8      ;text page 1 screen holes
-SCRNHOLE2 EQU      $0578      ;text page 1 screen holes
-DISKSLOTCX EQU     $05f8      ;Disk slot $60
-SCRNHOLE4 EQU      $0678      ;text page 1 screen holes
-SCRNHOLE5 EQU      $06f8      ;text page 1 screen holes
-SET80COL EQU       $c001      ;W use PAGE2 for aux mem (80STOREON)
-SET80VID EQU       $c00d      ;W enable 80-column display mode
-SETALTCHAR EQU     $c00f      ;W use alternate char set
-SPKR     EQU       $c030      ;RW toggle speaker
-TXTPAGE1 EQU       $c054      ;RW display page 1
-TXTPAGE2 EQU       $c055      ;RW display page 2 (or read/write aux mem)
-IWM_PH0_OFF EQU    $c080      ;IWM phase 0 off
-IWM_MOTOR_OFF EQU  $c088      ;IWM motor off
-IWM_MOTOR_ON EQU   $c089      ;IWM motor on
-IWM_DRIVE_1 EQU    $c08a      ;IWM select drive 1
-IWM_DRIVE_2 EQU    $c08b      ;IWM select drive 2
-LCBANK1  EQU       $c08b      ;RWx2 read/write RAM bank 1
-IWM_Q6_OFF EQU     $c08c      ;IWM read
-IWM_Q6_ON EQU      $c08d      ;IWM WP-sense
-IWM_Q7_OFF EQU     $c08e      ;IWM WP-sense/read
-IWM_Q7_ON EQU      $c08f      ;IWM write
-CLRROM   EQU       $cfff      ;disable slot C8 ROM
-SIX_BIT_DATA EQU   $de00      ;Six bit data bytes
-TWO_BIT_DATA EQU   $df00      ;56 bytes of 2 bit data
+		cseg
+		.6502
+SCRLINEL	EQU  $20		; Address of current line in $400
+SCRLINEH	EQU  $21		; Screen address high
+ESCAPE_STATE	EQU  $22		; State for ESCAPE leadin
+CURSOR_STATE	EQU  $23		; Bit 7 high if cursor on screen
+CURSORX		EQU  $25		; Cursor X (80 col)
+ZP_TEMP1	EQU  $26		; Zero page temporary
+D2_CHECK_SUM	EQU  $27		; Checksum for disk routines
+CURSORY		EQU  $29		; Cursor Y (80 col)
+HEADER_CHECKSUM	EQU  $2c		; Checksum for the sector header
+HEADER_SECTOR	EQU  $2d
+HEADER_TRACK	EQU  $2e		; Track from sector header
+HEADER_VOLUME	EQU  $2f
+MON_INVFLAG	EQU  $32		; text mask (255=normal, 127=flash, 63=inv)
+MON_A1H		EQU  $3d		; general purpose
+MON_A2L		EQU  $3e		; general purpose
+MON_A2H		EQU  $3f		; general purpose
+MON_A3H		EQU  $41		; general purpose
+PRODOS_CMD	EQU  $42
+PRODOS_UNITNUM	EQU  $43
+PRDOOS_BUFPTRL	EQU  $44
+PRODOS_BUFPTRH	EQU  $45		; Prodos buffer pointer high
+PRODOS_BLKNUM	EQU  $46
+DISK_TRKL	EQU  $0380		; Disk track low (From Z80)
+DISK_SECT	EQU  $0381		; Disk sector (from Z80)
+DISK_TRK_ADDR	EQU  $0382		; While track read/write page
+DISK_DRV	EQU  $0384		; Drive to use from CPM (Slot)
+DISK_ACTD	EQU  $0385		; Current active disk ][ drive
+DISK_TRKH	EQU  $0386		; Disk track high (from Z80)
+DISK_VOL	EQU  $0387		; Disk volume
+DISK_OP		EQU  $0388		; Disk operation
+DISK_ERR	EQU  $0389		; Disk Error back
+SLOT_INFO	EQU  $03b8
+SCRNHOLE0	EQU  $0478		; text page 1 screen holes
+SCRNHOLE1	EQU  $04f8		; text page 1 screen holes
+SCRNHOLE2	EQU  $0578		; text page 1 screen holes
+DISKSLOTCX	EQU  $05f8		; Disk slot $60
+SCRNHOLE4	EQU  $0678		; text page 1 screen holes
+SCRNHOLE5	EQU  $06f8		; text page 1 screen holes
+SET80COL	EQU  $c001		; W use PAGE2 for aux mem (80STOREON)
+SET80VID	EQU  $c00d		; W enable 80-column display mode
+SETALTCHAR	EQU  $c00f		; W use alternate char set
+SPKR		EQU  $c030		; RW toggle speaker
+TXTPAGE1	EQU  $c054		; RW display page 1
+TXTPAGE2	EQU  $c055		; RW display page 2 (or read/write aux mem)
+IWM_PH0_OFF	EQU  $c080		; IWM phase 0 off
+IWM_MOTOR_OFF	EQU  $c088		; IWM motor off
+IWM_MOTOR_ON	EQU  $c089		; IWM motor on
+IWM_DRIVE_1	EQU  $c08a		; IWM select drive 1
+IWM_DRIVE_2	EQU  $c08b		; IWM select drive 2
+LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
+IWM_Q6_OFF	EQU  $c08c		; IWM read
+IWM_Q6_ON	EQU  $c08d		; IWM WP-sense
+IWM_Q7_OFF	EQU  $c08e		; IWM WP-sense/read
+IWM_Q7_ON	EQU  $c08f		; IWM write
+CLRROM		EQU  $cfff		; disable slot C8 ROM
+SIX_BIT_DATA	EQU  $de00		; Six bit data bytes
+TWO_BIT_DATA	EQU  $df00		; 56 bytes of 2 bit data
 ;*******************************************************************************
 ;*                                                                             *
 ;* Routines to handle Disk drives                                              *
 ;*                                                                             *
 ;*******************************************************************************
-         lda     DISK_DRV   ;Get the drive ($60 for S6,D1)
-         and     #$7f       ;Mask off drive (ProDOS style)
-         sta     DISKSLOTCX
-         lsr     A
-         lsr     A
-         lsr     A
-         lsr     A
-         tax
-         lda     SLOT_INFO,x ;Get Disk type? Might be card in slot
-         cmp     #$02       ;DISK ][ ?
-         beq     DISKII
-         cmp     #$07
-         bcc     BAD_SLOT_ERR
-         jmp     IDC_CHECK
+		lda  DISK_DRV		; Get the drive ($60 for S6,D1)
+		and  #$7f		; Mask off drive (ProDOS style)
+		sta  DISKSLOTCX
+		lsr  A
+		lsr  A
+		lsr  A
+		lsr  A
+		tax
+		lda  SLOT_INFO,x	; Get Disk type? Might be card in slot
+		cmp  #$02		; DISK ][ ?
+		beq  DISKII
+		cmp  #$07
+		bcc  BAD_SLOT_ERR
+		jmp  IDC_CHECK
 
 BAD_SLOT_ERR:
-         lda     #$01
-         sta     DISK_ERR
-         rts
+		lda  #$01
+		sta  DISK_ERR
+		rts
 
 ;*******************************************************************************
 ;*                                                                             *
 ;* Disk II driver code                                                         *
 ;*                                                                             *
 ;*******************************************************************************
-DISKII:  ldy     #$02
-         sty     SCRNHOLE5
-         ldy     #$04
-         sty     SCRNHOLE1
-         ldx     DISKSLOTCX
-         lda     IWM_Q7_OFF,x ;Into read mode
-         lda     IWM_Q6_OFF,x
-         ldy     #$08
+DISKII:		ldy  #$02
+		sty  SCRNHOLE5
+		ldy  #$04
+		sty  SCRNHOLE1
+		ldx  DISKSLOTCX
+		lda  IWM_Q7_OFF,x	; Into read mode
+		lda  IWM_Q6_OFF,x
+		ldy  #$08
 CHECK_FOR_DATA:
-         lda     IWM_Q6_OFF,x ;Read some data
-         pha                ;Waste 3+4 cycles
-         pla
-         pha                ;Waste 3+4 cycles
-         pla
-         cmp     IWM_Q6_OFF,x ;Read some data
-         bne     DATA_INCOMING
-         dey
-         bne     CHECK_FOR_DATA
+		lda  IWM_Q6_OFF,x	; Read some data
+		pha			; Waste 3+4 cycles
+		pla
+		pha			; Waste 3+4 cycles
+		pla
+		cmp  IWM_Q6_OFF,x	; Read some data
+		bne  DATA_INCOMING
+		dey
+		bne  CHECK_FOR_DATA
 DATA_INCOMING:
-         php                ;Zero flag set means data incoming
-         lda     IWM_MOTOR_ON,x
-         lda     #$ef
-         sta     PRODOS_BLKNUM
-         lda     #$d8
-         sta     PRODOS_BLKNUM+1
-         lda     DISK_DRV   ;Get selected drive
-         cmp     DISK_ACTD  ;Same as active drive
-         beq     SELECT_DRIVE
-         sta     DISK_ACTD  ;Update the drive
-         plp
-         ldy     #$00       ;Clear zero flag
-         php
+		php			; Zero flag set means data incoming
+		lda  IWM_MOTOR_ON,x
+		lda  #$ef
+		sta  PRODOS_BLKNUM
+		lda  #$d8
+		sta  PRODOS_BLKNUM+1
+		lda  DISK_DRV		; Get selected drive
+		cmp  DISK_ACTD		; Same as active drive
+		beq  SELECT_DRIVE
+		sta  DISK_ACTD		; Update the drive
+		plp
+		ldy  #$00		; Clear zero flag
+		php
 SELECT_DRIVE:
-         rol     A
-         bcs     SELECT_DRIVE2
-         lda     IWM_DRIVE_1,x
-         bcc     LD46B
+		rol  A
+		bcs  SELECT_DRIVE2
+		lda  IWM_DRIVE_1,x
+		bcc  LD46B
 
 SELECT_DRIVE2:
-         lda     IWM_DRIVE_2,x
-LD46B:   ror     $35
-         plp
-         php
-         bne     XLD47C
-         ldy     #$07
-XLD473:  jsr     LD6D9
-         dey
-         bne     XLD473
-         ldx     DISKSLOTCX
-XLD47C:  lda     DISK_OP
-         cmp     #$03
-         bne     XLD487
-         plp
-         jmp     LD9B3
+		lda  IWM_DRIVE_2,x
+LD46B:		ror  $35
+		plp
+		php
+		bne  XLD47C
+		ldy  #$07
+XLD473:		jsr  LD6D9
+		dey
+		bne  XLD473
+		ldx  DISKSLOTCX
+XLD47C:		lda  DISK_OP
+		cmp  #$03
+		bne  XLD487
+		plp
+		jmp  LD9B3
 
-XLD487:  lda     DISK_TRKL
-         jsr     MOVE_TO_TRACK
-         lda     DISK_OP
-         plp
-         bne     XLD49A
-         cmp     #$01       ;Read?
-         beq     XLD49A
-         jsr     LD8C4
-XLD49A:  cmp     #$04       ;Read multiple sectors
-         bne     XLD4A1
-         jmp     LDA1A
+XLD487:		lda  DISK_TRKL
+		jsr  MOVE_TO_TRACK
+		lda  DISK_OP
+		plp
+		bne  XLD49A
+		cmp  #$01		; Read?
+		beq  XLD49A
+		jsr  LD8C4
+XLD49A:		cmp  #$04		; Read multiple sectors
+		bne  XLD4A1
+		jmp  LDA1A
 
-XLD4A1:  cmp     #$05
-         bne     LD4A8
-         jmp     LDA1A
+XLD4A1:		cmp  #$05
+		bne  LD4A8
+		jmp  LDA1A
 
-LD4A8:   ror     A
-         php
-         bcs     LD4AF
-         jsr     NIBBLIZE62
-LD4AF:   ldy     #$30
-         sty     SCRNHOLE2
-LD4B4:   ldx     DISKSLOTCX
-         jsr     D2_READ_HEADER
-         bcc     LD4DE
-LD4BC:   dec     SCRNHOLE2
-         bpl     LD4B4
-LD4C1:   lda     #$2a
-         jsr     LD6EE
-         dec     SCRNHOLE5
-         beq     LD4FC
-         lda     #$04
-         sta     SCRNHOLE1
-         lda     #$00
-         jsr     MOVE_TO_TRACK
-         lda     DISK_TRKL
-LD4D8:   jsr     MOVE_TO_TRACK
-         jmp     LD4AF
+LD4A8:		ror  A
+		php
+		bcs  LD4AF
+		jsr  NIBBLIZE62
+LD4AF:		ldy  #$30
+		sty  SCRNHOLE2
+LD4B4:		ldx  DISKSLOTCX
+		jsr  D2_READ_HEADER
+		bcc  LD4DE
+LD4BC:		dec  SCRNHOLE2
+		bpl  LD4B4
+LD4C1:		lda  #$2a
+		jsr  LD6EE
+		dec  SCRNHOLE5
+		beq  LD4FC
+		lda  #$04
+		sta  SCRNHOLE1
+		lda  #$00
+		jsr  MOVE_TO_TRACK
+		lda  DISK_TRKL
+LD4D8:		jsr  MOVE_TO_TRACK
+		jmp  LD4AF
 
-LD4DE:   lda     HEADER_VOLUME
-         sta     DISK_VOL
-         pha
-         pla
-         ldy     HEADER_TRACK
-         cpy     DISK_TRKL
-         beq     LD502
-         lda     SCRNHOLE0
-         pha
-         tya
-         jsr     LD6EE
-         pla
-         dec     SCRNHOLE1
-         bne     LD4D8
-         beq     LD4C1
+LD4DE:		lda  HEADER_VOLUME
+		sta  DISK_VOL
+		pha
+		pla
+		ldy  HEADER_TRACK
+		cpy  DISK_TRKL
+		beq  LD502
+		lda  SCRNHOLE0
+		pha
+		tya
+		jsr  LD6EE
+		pla
+		dec  SCRNHOLE1
+		bne  LD4D8
+		beq  LD4C1
 
-LD4FC:   lda     #$01
-         plp
-         sec
-LD500:   bcs     DISKII_ERR
+LD4FC:		lda  #$01
+		plp
+		sec
+LD500:		bcs  DISKII_ERR
 
-LD502:   lda     DISK_SECT
-         tay
-LD506:   lda     CPM_TRAN_SECT,y
-         cmp     HEADER_SECTOR
-         bne     LD4BC
-         plp
-         bcc     LD52B
-         jsr     D2_READ_SECTOR_DATA
-         php
-         bcs     LD4BC
-         plp
-         ldx     #$00
-         stx     ZP_TEMP1
-         jsr     MERGE62
-         ldx     DISKSLOTCX
+LD502:		lda  DISK_SECT
+		tay
+LD506:		lda  CPM_TRAN_SECT,y
+		cmp  HEADER_SECTOR
+		bne  LD4BC
+		plp
+		bcc  LD52B
+		jsr  D2_READ_SECTOR_DATA
+		php
+		bcs  LD4BC
+		plp
+		ldx  #$00
+		stx  ZP_TEMP1
+		jsr  MERGE62
+		ldx  DISKSLOTCX
 DISKII_OK:
-         lda     #$00       ;Clear error
-         clc
+		lda  #$00		; Clear error
+		clc
 DISKII_ERR:
-         sta     DISK_ERR   ;Setup disk error
-         lda     IWM_MOTOR_OFF,x ;Turn off motor
-         rts
+		sta  DISK_ERR		; Setup disk error
+		lda  IWM_MOTOR_OFF,x	; Turn off motor
+		rts
 
-LD52B:   jsr     D2_WRITE_SECTOR_DATA
-         bcc     DISKII_OK
-         lda     #$10
-         sec
-         bcs     DISKII_ERR
+LD52B:		jsr  D2_WRITE_SECTOR_DATA
+		bcc  DISKII_OK
+		lda  #$10
+		sec
+		bcs  DISKII_ERR
 
 CPM_TRAN_SECT:
-         DB   $00,$03,$06,$09,$0c,$0f,$02,$05
-         DB   $08,$0b,$0e,$01,$04,$07,$0a,$0d
-LD545:   DB   $70
-         DB   $2c
-         DB   $26
-         DB   $22
-         DB   $1f
-         DB   $1e
-         DB   $1d
-         DS    6,$1c
-TRANS62: DB   $96,$97,$9a,$9b,$9d,$9e,$9f,$a6
-         DB   $a7,$ab,$ac,$ad,$ae,$af,$b2,$b3
-         DB   $b4,$b5,$b6,$b7,$b9,$ba,$bb,$bc
-         DB   $bd,$be,$bf,$cb,$cd,$ce,$cf,$d3
-         DB   $d6,$d7,$d9,$da,$db,$dc,$dd,$de
-         DB   $df,$e5,$e6,$e7,$e9,$ea,$eb,$ec
-         DB   $ed,$ee,$ef,$f2,$f3,$f4,$f5,$f6
-         DB   $f7,$f9,$fa,$fb,$fc,$fd,$fe,$ff
-         DB   $00,$00,$00,$00,$00,$01
-         DB   $98,$99,$02,$03,$9c,$04,$05,$06
-         DB   $a0,$a1,$a2,$a3,$a4,$a5,$07,$08
-         DB   $a8,$a9,$aa,$09,$0a,$0b,$0c,$0d
-         DB   $b0,$b1,$0e,$0f,$10,$11,$12,$13
-         DB   $b8,$14,$15,$16,$17,$18,$19,$1a
-         DB   $c0,$c1,$c2,$c3,$c4,$c5,$c6,$c7
-         DB   $c8,$c9,$ca,$1b,$cc,$1c,$1d,$1e
-         DB   $d0,$d1,$d2,$1f,$d4,$d5,$20,$21
-         DB   $d8,$22,$23,$24,$25,$26,$27,$28
-         DB   $e0,$e1,$e2,$e3,$e4,$29,$2a,$2b
-         DB   $e8,$2c,$2d,$2e,$2f,$30,$31,$32
-         DB   $f0,$f1,$33,$34,$35,$36,$37,$38
-         DB   $f8,$39,$3a,$3b,$3c,$3d,$3e,$3f
+		DB   $00,$03,$06,$09,$0c,$0f,$02,$05
+		DB   $08,$0b,$0e,$01,$04,$07,$0a,$0d
+LD545:		DB   $70
+		DB   $2c
+		DB   $26
+		DB   $22
+		DB   $1f
+		DB   $1e
+		DB   $1d
+		DS   6,$1c
+TRANS62:	DB   $96,$97,$9a,$9b,$9d,$9e,$9f,$a6
+		DB   $a7,$ab,$ac,$ad,$ae,$af,$b2,$b3
+		DB   $b4,$b5,$b6,$b7,$b9,$ba,$bb,$bc
+		DB   $bd,$be,$bf,$cb,$cd,$ce,$cf,$d3
+		DB   $d6,$d7,$d9,$da,$db,$dc,$dd,$de
+		DB   $df,$e5,$e6,$e7,$e9,$ea,$eb,$ec
+		DB   $ed,$ee,$ef,$f2,$f3,$f4,$f5,$f6
+		DB   $f7,$f9,$fa,$fb,$fc,$fd,$fe,$ff
+		DB   $00,$00,$00,$00,$00,$01
+		DB   $98,$99,$02,$03,$9c,$04,$05,$06
+		DB   $a0,$a1,$a2,$a3,$a4,$a5,$07,$08
+		DB   $a8,$a9,$aa,$09,$0a,$0b,$0c,$0d
+		DB   $b0,$b1,$0e,$0f,$10,$11,$12,$13
+		DB   $b8,$14,$15,$16,$17,$18,$19,$1a
+		DB   $c0,$c1,$c2,$c3,$c4,$c5,$c6,$c7
+		DB   $c8,$c9,$ca,$1b,$cc,$1c,$1d,$1e
+		DB   $d0,$d1,$d2,$1f,$d4,$d5,$20,$21
+		DB   $d8,$22,$23,$24,$25,$26,$27,$28
+		DB   $e0,$e1,$e2,$e3,$e4,$29,$2a,$2b
+		DB   $e8,$2c,$2d,$2e,$2f,$30,$31,$32
+		DB   $f0,$f1,$33,$34,$35,$36,$37,$38
+		DB   $f8,$39,$3a,$3b,$3c,$3d,$3e,$3f
 D2_WRITE_SECTOR_DATA:
-         sec
-         stx     D2_CHECK_SUM
-         stx     SCRNHOLE4
-         lda     IWM_Q6_ON,x
-         lda     IWM_Q7_OFF,x
-         bmi     XLD68A
-         lda     TWO_BIT_DATA
-         sta     ZP_TEMP1
-         lda     #$ff       ;Write sync bytes
-         sta     IWM_Q7_ON,x
-         ora     IWM_Q6_OFF,x
-         pha
-         pla
-         nop
-         ldy     #$04
-XLD620:  pha
-         pla
-         jsr     WRITE7
-         dey
-         bne     XLD620
+		sec
+		stx  D2_CHECK_SUM
+		stx  SCRNHOLE4
+		lda  IWM_Q6_ON,x
+		lda  IWM_Q7_OFF,x
+		bmi  XLD68A
+		lda  TWO_BIT_DATA
+		sta  ZP_TEMP1
+		lda  #$ff		; Write sync bytes
+		sta  IWM_Q7_ON,x
+		ora  IWM_Q6_OFF,x
+		pha
+		pla
+		nop
+		ldy  #$04
+XLD620:		pha
+		pla
+		jsr  WRITE7
+		dey
+		bne  XLD620
 ; data header
-         lda     #$d5       ;Write data header bytes
-         jsr     WRITE9
-         lda     #$aa
-         jsr     WRITE9
-         lda     #$ad
-         jsr     WRITE9
-         tya
-         ldy     #$56
-         bne     XLD63F
+		lda  #$d5		; Write data header bytes
+		jsr  WRITE9
+		lda  #$aa
+		jsr  WRITE9
+		lda  #$ad
+		jsr  WRITE9
+		tya
+		ldy  #$56
+		bne  XLD63F
 
-XLD63C:  lda     TWO_BIT_DATA,y
-XLD63F:  eor     TWO_BIT_DATA-1,y
-         tax
-         lda     TRANS62,x
-         ldx     D2_CHECK_SUM
-         sta     IWM_Q6_ON,x
-         lda     IWM_Q6_OFF,x
-         dey
-         bne     XLD63C
-         lda     ZP_TEMP1
-         nop
-XLD654:  eor     SIX_BIT_DATA,y
-         tax
-         lda     TRANS62,x
-         ldx     SCRNHOLE4
-         sta     IWM_Q6_ON,x
-         lda     IWM_Q6_OFF,x
-         lda     SIX_BIT_DATA,y
-         iny
-         bne     XLD654
-         tax
-         lda     TRANS62,x
-         ldx     D2_CHECK_SUM
-         jsr     WRITE      ;Write checksum
-         lda     #$de       ;Write trailer bytes
-         jsr     WRITE9
-         lda     #$aa
-         jsr     WRITE9
-         lda     #$eb
-         jsr     WRITE9
-         lda     #$ff
-         jsr     WRITE9
-         lda     IWM_Q7_OFF,x
-XLD68A:  lda     IWM_Q6_OFF,x
-         rts
+XLD63C:		lda  TWO_BIT_DATA,y
+XLD63F:		eor  TWO_BIT_DATA-1,y
+		tax
+		lda  TRANS62,x
+		ldx  D2_CHECK_SUM
+		sta  IWM_Q6_ON,x
+		lda  IWM_Q6_OFF,x
+		dey
+		bne  XLD63C
+		lda  ZP_TEMP1
+		nop
+XLD654:		eor  SIX_BIT_DATA,y
+		tax
+		lda  TRANS62,x
+		ldx  SCRNHOLE4
+		sta  IWM_Q6_ON,x
+		lda  IWM_Q6_OFF,x
+		lda  SIX_BIT_DATA,y
+		iny
+		bne  XLD654
+		tax
+		lda  TRANS62,x
+		ldx  D2_CHECK_SUM
+		jsr  WRITE		; Write checksum
+		lda  #$de		; Write trailer bytes
+		jsr  WRITE9
+		lda  #$aa
+		jsr  WRITE9
+		lda  #$eb
+		jsr  WRITE9
+		lda  #$ff
+		jsr  WRITE9
+		lda  IWM_Q7_OFF,x
+XLD68A:		lda  IWM_Q6_OFF,x
+		rts
 
 NIBBLIZE62:
-         ldx     #$55
-         lda     #$00
-XLD692:  sta     TWO_BIT_DATA,x
-         dex
-         bpl     XLD692
-         tay
-         ldx     #$ac
-         DB   $2c
+		ldx  #$55
+		lda  #$00
+XLD692:		sta  TWO_BIT_DATA,x
+		dex
+		bpl  XLD692
+		tay
+		ldx  #$ac
+		DB   $2c
 
-LD69C:   ldx     #$aa
-LD69E:   dey
-LD69F:   lda     $0800,y
-         lsr     A
-         rol     $de56,x
-         lsr     A
-         rol     $de56,x
-         sta     SIX_BIT_DATA,y
-         inx
-         bne     LD69E
-         tya
-         bne     LD69C
-         rts
+LD69C:		ldx  #$aa
+LD69E:		dey
+LD69F:		lda  $0800,y
+		lsr  A
+		rol  $de56,x
+		lsr  A
+		rol  $de56,x
+		sta  SIX_BIT_DATA,y
+		inx
+		bne  LD69E
+		tya
+		bne  LD69C
+		rts
 
 ; Write data every 32 cycles
-; 
+;
 ; Typical call sequence
 ;   2 2 cycles - LDA #D5
 ;   8 6 cycles - JSR WRITE9
@@ -374,646 +374,646 @@ LD69F:   lda     $0800,y
 ;  22 5 cycles - STA $C08B,x
 ;  26 4 cycles - ORA $C08C,X
 ;  32 6 cycles - RTS
-WRITE9:  clc                ;2 Cycles - Provide different delays
-WRITE7:  pha                ;3 cycles - delays to produce
-         pla                ;4 cycles correct timeing
-WRITE:   sta     IWM_Q6_ON,x ;5 cycles - Write load
-         ora     IWM_Q6_OFF,x ;5 cycles - write byte
-         rts                ;6 cycles - return to caller 
+WRITE9:		clc			; 2 Cycles - Provide different delays
+WRITE7:		pha			; 3 cycles - delays to produce
+		pla			; 4 cycles correct timeing
+WRITE:		sta  IWM_Q6_ON,x	; 5 cycles - Write load
+		ora  IWM_Q6_OFF,x	; 5 cycles - write byte
+		rts			; 6 cycles - return to caller
 
-MERGE62: ldy     #$00       ;Merge together 6 and 2 bits
+MERGE62:	ldy  #$00		; Merge together 6 and 2 bits
 RESET2PTR:
-         ldx     #$56
+		ldx  #$56
 MERGE_NXTBYTE:
-         dex
-         bmi     RESET2PTR
-         lda     SIX_BIT_DATA,y
-         lsr     TWO_BIT_DATA,x
-         rol     A
-         lsr     TWO_BIT_DATA,x
-         rol     A
-LD6D0:   sta     $0800,y
-         iny
-         cpy     ZP_TEMP1
-         bne     MERGE_NXTBYTE
-         rts
+		dex
+		bmi  RESET2PTR
+		lda  SIX_BIT_DATA,y
+		lsr  TWO_BIT_DATA,x
+		rol  A
+		lsr  TWO_BIT_DATA,x
+		rol  A
+LD6D0:		sta  $0800,y
+		iny
+		cpy  ZP_TEMP1
+		bne  MERGE_NXTBYTE
+		rts
 
-LD6D9:   ldx     #$11
-XLD6DB:  dex
-         bne     XLD6DB
-         inc     PRODOS_BLKNUM
-         bne     XLD6E8
-         inc     $47
-         bne     XLD6E8
-         dec     $47
-XLD6E8:  sec
-         sbc     #$01
-         bne     LD6D9
-         rts
+LD6D9:		ldx  #$11
+XLD6DB:		dex
+		bne  XLD6DB
+		inc  PRODOS_BLKNUM
+		bne  XLD6E8
+		inc  $47
+		bne  XLD6E8
+		dec  $47
+XLD6E8:		sec
+		sbc  #$01
+		bne  LD6D9
+		rts
 
-LD6EE:   pha
-         lda     DISK_DRV
-         rol     A
-         ror     $35
-         jsr     SLOT_TO_Y
-         pla
-         asl     A
-         bit     $35
-         bmi     XLD703
-         sta     SCRNHOLE1,y
-         bpl     XLD706
+LD6EE:		pha
+		lda  DISK_DRV
+		rol  A
+		ror  $35
+		jsr  SLOT_TO_Y
+		pla
+		asl  A
+		bit  $35
+		bmi  XLD703
+		sta  SCRNHOLE1,y
+		bpl  XLD706
 
-XLD703:  sta     SCRNHOLE0,y
-XLD706:  rts
+XLD703:		sta  SCRNHOLE0,y
+XLD706:		rts
 
 D2_READ_SECTOR_DATA:
-         ldy     #$20       ;Try to find a D5 32 times (we've seen a sector header)
+		ldy  #$20		; Try to find a D5 32 times (we've seen a sector header)
 D2_READ_SECT_RETRY:
-         dey
-         beq     SEC_AND_RET
+		dey
+		beq  SEC_AND_RET
 D2_READ_SECT_D5:
-         lda     IWM_Q6_OFF,x
-         bpl     D2_READ_SECT_D5
+		lda  IWM_Q6_OFF,x
+		bpl  D2_READ_SECT_D5
 D2_WAIT_SECT_D5:
-         eor     #$d5       ;Look for D5 (and zero ACC)
-         bne     D2_READ_SECT_RETRY ;Not yet try again
-         nop
+		eor  #$d5		; Look for D5 (and zero ACC)
+		bne  D2_READ_SECT_RETRY	; Not yet try again
+		nop
 D2_READ_SECT_AA:
-         lda     IWM_Q6_OFF,x ;Try and read AA
-         bpl     D2_READ_SECT_AA
-         cmp     #$aa       ;Not AA, wait for a D5
-         bne     D2_WAIT_SECT_D5
-         ldy     #$56       ;Setup to read in 56 bytes of twos
+		lda  IWM_Q6_OFF,x	; Try and read AA
+		bpl  D2_READ_SECT_AA
+		cmp  #$aa		; Not AA, wait for a D5
+		bne  D2_WAIT_SECT_D5
+		ldy  #$56		; Setup to read in 56 bytes of twos
 D2_READ_SECT_AD:
-         lda     IWM_Q6_OFF,x
-         bpl     D2_READ_SECT_AD
-         cmp     #$ad       ;End of header?
-         bne     D2_WAIT_SECT_D5 ;Nope, lets start again
-         lda     #$00
+		lda  IWM_Q6_OFF,x
+		bpl  D2_READ_SECT_AD
+		cmp  #$ad		; End of header?
+		bne  D2_WAIT_SECT_D5	; Nope, lets start again
+		lda  #$00
 D2_READ_2BYTES:
-         dey
-         sty     ZP_TEMP1   ;Save away counter
+		dey
+		sty  ZP_TEMP1		; Save away counter
 D2_WAIT_2BYTES:
-         ldy     IWM_Q6_OFF,x ;Read a data byte for our 2 bits
-         bpl     D2_WAIT_2BYTES
-         eor     LD500,y
-         ldy     ZP_TEMP1   ;Restore counter
-         sta     TWO_BIT_DATA,y
-         bne     D2_READ_2BYTES
+		ldy  IWM_Q6_OFF,x	; Read a data byte for our 2 bits
+		bpl  D2_WAIT_2BYTES
+		eor  LD500,y
+		ldy  ZP_TEMP1		; Restore counter
+		sta  TWO_BIT_DATA,y
+		bne  D2_READ_2BYTES
 D2_READ_6BYTES:
-         sty     ZP_TEMP1   ;Save counter
+		sty  ZP_TEMP1		; Save counter
 D2_WAIT_6BYES:
-         ldy     IWM_Q6_OFF,x
-         bpl     D2_WAIT_6BYES
-         eor     LD500,y
-         ldy     ZP_TEMP1
-         sta     SIX_BIT_DATA,y
-         iny
-         bne     D2_READ_6BYTES
-XLD750:  ldy     IWM_Q6_OFF,x
-         bpl     XLD750
-         cmp     LD500,y
-         bne     SEC_AND_RET
-XLD75A:  lda     IWM_Q6_OFF,x
-         bpl     XLD75A
-         cmp     #$de
-         bne     SEC_AND_RET
-         nop
-XLD764:  lda     IWM_Q6_OFF,x
-         bpl     XLD764
-         cmp     #$aa
-         beq     LD7C9
+		ldy  IWM_Q6_OFF,x
+		bpl  D2_WAIT_6BYES
+		eor  LD500,y
+		ldy  ZP_TEMP1
+		sta  SIX_BIT_DATA,y
+		iny
+		bne  D2_READ_6BYTES
+XLD750:		ldy  IWM_Q6_OFF,x
+		bpl  XLD750
+		cmp  LD500,y
+		bne  SEC_AND_RET
+XLD75A:		lda  IWM_Q6_OFF,x
+		bpl  XLD75A
+		cmp  #$de
+		bne  SEC_AND_RET
+		nop
+XLD764:		lda  IWM_Q6_OFF,x
+		bpl  XLD764
+		cmp  #$aa
+		beq  LD7C9
 SEC_AND_RET:
-         sec                ;Set carry flag and return
-         rts
+		sec			; Set carry flag and return
+		rts
 
 D2_READ_HEADER:
-         ldy     #$fc
-         sty     ZP_TEMP1
+		ldy  #$fc
+		sty  ZP_TEMP1
 D2_WAIT_HEADER:
-         iny
-         bne     D2_READ_HEAD_D5
-         inc     ZP_TEMP1
-         beq     SEC_AND_RET
+		iny
+		bne  D2_READ_HEAD_D5
+		inc  ZP_TEMP1
+		beq  SEC_AND_RET
 D2_READ_HEAD_D5:
-         lda     IWM_Q6_OFF,x
-         bpl     D2_READ_HEAD_D5
+		lda  IWM_Q6_OFF,x
+		bpl  D2_READ_HEAD_D5
 D2_WAIT_FOR_D5:
-         cmp     #$d5
-         bne     D2_WAIT_HEADER
-         nop
+		cmp  #$d5
+		bne  D2_WAIT_HEADER
+		nop
 D2_READ_HEAD_AA:
-         lda     IWM_Q6_OFF,x
-         bpl     D2_READ_HEAD_AA
-         cmp     #$aa
-         bne     D2_WAIT_FOR_D5
-         ldy     #$03       ;Setup counter for header bytes
+		lda  IWM_Q6_OFF,x
+		bpl  D2_READ_HEAD_AA
+		cmp  #$aa
+		bne  D2_WAIT_FOR_D5
+		ldy  #$03		; Setup counter for header bytes
 D2_READ_HEAD_96:
-         lda     IWM_Q6_OFF,x
-         bpl     D2_READ_HEAD_96
-         cmp     #$96       ;Last byte of header?
-         bne     D2_WAIT_FOR_D5 ;Nope loop back to beginning
-         lda     #$00       ;Reset checksum byte
+		lda  IWM_Q6_OFF,x
+		bpl  D2_READ_HEAD_96
+		cmp  #$96		; Last byte of header?
+		bne  D2_WAIT_FOR_D5	; Nope loop back to beginning
+		lda  #$00		; Reset checksum byte
 READ_NXT_HDR_BYTE:
-         sta     D2_CHECK_SUM
+		sta  D2_CHECK_SUM
 WAIT_44_BYTE1:
-         lda     IWM_Q6_OFF,x ;Read first byte of our 44 encoding
-         bpl     WAIT_44_BYTE1 ;Read in 1A1C1E1G
-         rol     A          ;A1C1E1G1 (Carry is set by CMP #96)
-         sta     ZP_TEMP1   ;Save for later
+		lda  IWM_Q6_OFF,x	; Read first byte of our 44 encoding
+		bpl  WAIT_44_BYTE1	; Read in 1A1C1E1G
+		rol  A			; A1C1E1G1 (Carry is set by CMP #96)
+		sta  ZP_TEMP1		; Save for later
 WAIT_44_BYTE2:
-         lda     IWM_Q6_OFF,x
-         bpl     WAIT_44_BYTE2 ;Read in  1B1D1F1H
-         and     ZP_TEMP1   ;And with A1C1E1G1
-         sta     HEADER_CHECKSUM,y ;Store away the data
-         eor     D2_CHECK_SUM
-         dey                ;Count backwards
-         bpl     READ_NXT_HDR_BYTE ;Done all four bytes
-         tay
-         bne     SEC_AND_RET
-XLD7B6:  lda     IWM_Q6_OFF,x
-         bpl     XLD7B6
-         cmp     #$de
-         bne     SEC_AND_RET
-         nop
-XLD7C0:  lda     IWM_Q6_OFF,x
-         bpl     XLD7C0
-         cmp     #$aa
-         bne     SEC_AND_RET
-LD7C9:   clc
-         rts
+		lda  IWM_Q6_OFF,x
+		bpl  WAIT_44_BYTE2	; Read in  1B1D1F1H
+		and  ZP_TEMP1		; And with A1C1E1G1
+		sta  HEADER_CHECKSUM,y	; Store away the data
+		eor  D2_CHECK_SUM
+		dey			; Count backwards
+		bpl  READ_NXT_HDR_BYTE	; Done all four bytes
+		tay
+		bne  SEC_AND_RET
+XLD7B6:		lda  IWM_Q6_OFF,x
+		bpl  XLD7B6
+		cmp  #$de
+		bne  SEC_AND_RET
+		nop
+XLD7C0:		lda  IWM_Q6_OFF,x
+		bpl  XLD7C0
+		cmp  #$aa
+		bne  SEC_AND_RET
+LD7C9:		clc
+		rts
 
 MOVE_TO_TRACK:
-         asl     A          ;MOVE_TO_TRACK
-         jsr     XLD7D3
-         lsr     SCRNHOLE0
-         rts
+		asl  A			; MOVE_TO_TRACK
+		jsr  XLD7D3
+		lsr  SCRNHOLE0
+		rts
 
-XLD7D3:  sta     $2a
-         jsr     SLOT_TO_Y
-         lda     SCRNHOLE0,y
-         bit     $35
-         bmi     XLD7E2
-         lda     SCRNHOLE1,y
-XLD7E2:  sta     SCRNHOLE0
-         lda     $2a
-         bit     $35
-         bmi     XLD7F0
-         sta     SCRNHOLE1,y
-         bpl     XLD7F3
+XLD7D3:		sta  $2a
+		jsr  SLOT_TO_Y
+		lda  SCRNHOLE0,y
+		bit  $35
+		bmi  XLD7E2
+		lda  SCRNHOLE1,y
+XLD7E2:		sta  SCRNHOLE0
+		lda  $2a
+		bit  $35
+		bmi  XLD7F0
+		sta  SCRNHOLE1,y
+		bpl  XLD7F3
 
-XLD7F0:  sta     SCRNHOLE0,y
-XLD7F3:  stx     $2b
-         sta     $2a
-         cmp     SCRNHOLE0
-         beq     XLD84F
-         lda     #$00
-         sta     ZP_TEMP1
-XLD800:  lda     SCRNHOLE0
-         sta     D2_CHECK_SUM
-         sec
-         sbc     $2a
-         beq     XLD83D
-         bcs     XLD813
-         eor     #$ff
-         inc     SCRNHOLE0
-         bcc     XLD818
+XLD7F0:		sta  SCRNHOLE0,y
+XLD7F3:		stx  $2b
+		sta  $2a
+		cmp  SCRNHOLE0
+		beq  XLD84F
+		lda  #$00
+		sta  ZP_TEMP1
+XLD800:		lda  SCRNHOLE0
+		sta  D2_CHECK_SUM
+		sec
+		sbc  $2a
+		beq  XLD83D
+		bcs  XLD813
+		eor  #$ff
+		inc  SCRNHOLE0
+		bcc  XLD818
 
-XLD813:  adc     #$fe
-         dec     SCRNHOLE0
-XLD818:  cmp     ZP_TEMP1
-         bcc     XLD81E
-         lda     ZP_TEMP1
-XLD81E:  cmp     #$0c
-         bcs     XLD823
-         tay
-XLD823:  sec
-         jsr     XLD841
-         lda     LDA8E,y
-         jsr     LD6D9
-         lda     D2_CHECK_SUM
-         clc
-         jsr     XLD844
-         lda     LD545,y
-         jsr     LD6D9
-         inc     ZP_TEMP1
-         bne     XLD800
-XLD83D:  jsr     LD6D9
-         clc
-XLD841:  lda     SCRNHOLE0
-XLD844:  and     #$03
-         rol     A
-         ora     $2b
-         tax
-         lda     IWM_PH0_OFF,x
-         ldx     $2b
-XLD84F:  rts
+XLD813:		adc  #$fe
+		dec  SCRNHOLE0
+XLD818:		cmp  ZP_TEMP1
+		bcc  XLD81E
+		lda  ZP_TEMP1
+XLD81E:		cmp  #$0c
+		bcs  XLD823
+		tay
+XLD823:		sec
+		jsr  XLD841
+		lda  LDA8E,y
+		jsr  LD6D9
+		lda  D2_CHECK_SUM
+		clc
+		jsr  XLD844
+		lda  LD545,y
+		jsr  LD6D9
+		inc  ZP_TEMP1
+		bne  XLD800
+XLD83D:		jsr  LD6D9
+		clc
+XLD841:		lda  SCRNHOLE0
+XLD844:		and  #$03
+		rol  A
+		ora  $2b
+		tax
+		lda  IWM_PH0_OFF,x
+		ldx  $2b
+XLD84F:		rts
 
-LD850:   lda     IWM_Q6_OFF,x
-         lda     #$10
-         sec
-         rts
+LD850:		lda  IWM_Q6_OFF,x
+		lda  #$10
+		sec
+		rts
 
-LD857:   lda     IWM_Q6_ON,x
-         lda     IWM_Q7_OFF,x
-         bmi     LD850
-         lda     #$ff
-         sta     IWM_Q7_ON,x
-         cmp     IWM_Q6_OFF,x
-         pha
-         pla
-XLD869:  jsr     XLD8C3
-         jsr     XLD8C3
-         sta     IWM_Q6_ON,x
-         cmp     IWM_Q6_OFF,x
-         nop
-         dey
-         bne     XLD869
-         lda     #$d5
-         jsr     LD8E3
-         lda     #$aa
-         jsr     LD8E3
-         lda     #$96
-         jsr     LD8E3
-         lda     MON_A3H
-         jsr     LD8D2
-         lda     PRDOOS_BUFPTRL
-         jsr     LD8D2
-         lda     MON_A2H
-         jsr     LD8D2
-         lda     MON_A3H
-         eor     PRDOOS_BUFPTRL
-         eor     MON_A2H
-         pha
-         lsr     A
-         ora     MON_A2L
-         sta     IWM_Q6_ON,x
-         lda     IWM_Q6_OFF,x
-         pla
-         ora     #$aa
-         jsr     LD8E2
-         lda     #$de
-         jsr     LD8E3
-         lda     #$aa
-         jsr     LD8E3
-         lda     #$eb
-         jsr     LD8E3
-         clc
-         lda     IWM_Q7_OFF,x
-         lda     IWM_Q6_OFF,x
-XLD8C3:  rts
+LD857:		lda  IWM_Q6_ON,x
+		lda  IWM_Q7_OFF,x
+		bmi  LD850
+		lda  #$ff
+		sta  IWM_Q7_ON,x
+		cmp  IWM_Q6_OFF,x
+		pha
+		pla
+XLD869:		jsr  XLD8C3
+		jsr  XLD8C3
+		sta  IWM_Q6_ON,x
+		cmp  IWM_Q6_OFF,x
+		nop
+		dey
+		bne  XLD869
+		lda  #$d5
+		jsr  LD8E3
+		lda  #$aa
+		jsr  LD8E3
+		lda  #$96
+		jsr  LD8E3
+		lda  MON_A3H
+		jsr  LD8D2
+		lda  PRDOOS_BUFPTRL
+		jsr  LD8D2
+		lda  MON_A2H
+		jsr  LD8D2
+		lda  MON_A3H
+		eor  PRDOOS_BUFPTRL
+		eor  MON_A2H
+		pha
+		lsr  A
+		ora  MON_A2L
+		sta  IWM_Q6_ON,x
+		lda  IWM_Q6_OFF,x
+		pla
+		ora  #$aa
+		jsr  LD8E2
+		lda  #$de
+		jsr  LD8E3
+		lda  #$aa
+		jsr  LD8E3
+		lda  #$eb
+		jsr  LD8E3
+		clc
+		lda  IWM_Q7_OFF,x
+		lda  IWM_Q6_OFF,x
+XLD8C3:		rts
 
-LD8C4:   ldy     #$12
-XLD8C6:  dey
-         bne     XLD8C6
-         inc     PRODOS_BLKNUM
-         bne     LD8C4
-         inc     $47
-         bne     LD8C4
-         rts
+LD8C4:		ldy  #$12
+XLD8C6:		dey
+		bne  XLD8C6
+		inc  PRODOS_BLKNUM
+		bne  LD8C4
+		inc  $47
+		bne  LD8C4
+		rts
 
-LD8D2:   pha
-         lsr     A
-         ora     MON_A2L
-         sta     IWM_Q6_ON,x
-         cmp     IWM_Q6_OFF,x
-         pla
-         nop
-         nop
-         nop
-         ora     #$aa
-LD8E2:   nop
-LD8E3:   nop
-         pha
-         pla
-         sta     IWM_Q6_ON,x
-         cmp     IWM_Q6_OFF,x
-LD8EC:   rts
+LD8D2:		pha
+		lsr  A
+		ora  MON_A2L
+		sta  IWM_Q6_ON,x
+		cmp  IWM_Q6_OFF,x
+		pla
+		nop
+		nop
+		nop
+		ora  #$aa
+LD8E2:		nop
+LD8E3:		nop
+		pha
+		pla
+		sta  IWM_Q6_ON,x
+		cmp  IWM_Q6_OFF,x
+LD8EC:		rts
 
-         ldx     #$07
-XLD8EF:  cpx     #$06
-         beq     XLD8F8
-         cmp     SLOT_INFO,x
-         beq     XLD900
-XLD8F8:  dex
-         bne     XLD8EF
-         pla
-         pla
-         jmp     SET_DISK_ERR1
+		ldx  #$07
+XLD8EF:		cpx  #$06
+		beq  XLD8F8
+		cmp  SLOT_INFO,x
+		beq  XLD900
+XLD8F8:		dex
+		bne  XLD8EF
+		pla
+		pla
+		jmp  SET_DISK_ERR1
 
-XLD900:  txa
-         asl     A
-         asl     A
-         asl     A
-         asl     A
-         rts
+XLD900:		txa
+		asl  A
+		asl  A
+		asl  A
+		asl  A
+		rts
 
-         DB   $00,$02,$04,$06,$08,$0a,$0c,$0e
-         DB   $01,$03,$05,$07,$09,$0b,$0d,$0f
+		DB   $00,$02,$04,$06,$08,$0a,$0c,$0e
+		DB   $01,$03,$05,$07,$09,$0b,$0d,$0f
 
-LD916:   lda     #$00
-         sta     MON_A2H
-         ldy     #$80
-         bne     XLD920
+LD916:		lda  #$00
+		sta  MON_A2H
+		ldy  #$80
+		bne  XLD920
 
-XLD91E:  ldy     PRODOS_BUFPTRH
-XLD920:  jsr     LD857
-         bcs     LD8EC
-         jsr     D2_WRITE_SECTOR_DATA
-         nop
-         nop
-         inc     MON_A2H
-         lda     MON_A2H
-         cmp     #$10
-         bcc     XLD91E
-         ldy     #$0f
-         sty     MON_A2H
-         lda     #$30
-         sta     SCRNHOLE2
-XLD93B:  sta     $df57,y
-         dey
-         bpl     XLD93B
-         ldy     PRODOS_BUFPTRH
-XLD943:  jsr     XLD991
-         jsr     XLD991
-         jsr     XLD991
-         pha
-         pla
-         nop
-         dey
-         bne     XLD943
-         jsr     D2_READ_HEADER
-         bcs     XLD97A
-         lda     HEADER_SECTOR
-         beq     XLD970
-         lda     #$10
-         cmp     PRODOS_BUFPTRH
-         lda     PRODOS_BUFPTRH
-         sbc     #$01
-         sta     PRODOS_BUFPTRH
-         cmp     #$05
-         bcs     XLD97A
-         bcc     XLD98F
+XLD91E:		ldy  PRODOS_BUFPTRH
+XLD920:		jsr  LD857
+		bcs  LD8EC
+		jsr  D2_WRITE_SECTOR_DATA
+		nop
+		nop
+		inc  MON_A2H
+		lda  MON_A2H
+		cmp  #$10
+		bcc  XLD91E
+		ldy  #$0f
+		sty  MON_A2H
+		lda  #$30
+		sta  SCRNHOLE2
+XLD93B:		sta  $df57,y
+		dey
+		bpl  XLD93B
+		ldy  PRODOS_BUFPTRH
+XLD943:		jsr  XLD991
+		jsr  XLD991
+		jsr  XLD991
+		pha
+		pla
+		nop
+		dey
+		bne  XLD943
+		jsr  D2_READ_HEADER
+		bcs  XLD97A
+		lda  HEADER_SECTOR
+		beq  XLD970
+		lda  #$10
+		cmp  PRODOS_BUFPTRH
+		lda  PRODOS_BUFPTRH
+		sbc  #$01
+		sta  PRODOS_BUFPTRH
+		cmp  #$05
+		bcs  XLD97A
+		bcc  XLD98F
 
-XLD96B:  jsr     D2_READ_HEADER
-         bcs     XLD975
-XLD970:  jsr     D2_READ_SECTOR_DATA
-         bcc     XLD993
-XLD975:  dec     SCRNHOLE2
-         bne     XLD96B
-XLD97A:  jsr     D2_READ_HEADER
-         bcs     XLD98A
-         lda     HEADER_SECTOR
-         cmp     #$0f
-         bne     XLD98A
-         jsr     D2_READ_SECTOR_DATA
-         bcc     LD916
-XLD98A:  dec     SCRNHOLE2
-         bne     XLD97A
-XLD98F:  lda     #$01
-XLD991:  sec
-XLD992:  rts
+XLD96B:		jsr  D2_READ_HEADER
+		bcs  XLD975
+XLD970:		jsr  D2_READ_SECTOR_DATA
+		bcc  XLD993
+XLD975:		dec  SCRNHOLE2
+		bne  XLD96B
+XLD97A:		jsr  D2_READ_HEADER
+		bcs  XLD98A
+		lda  HEADER_SECTOR
+		cmp  #$0f
+		bne  XLD98A
+		jsr  D2_READ_SECTOR_DATA
+		bcc  LD916
+XLD98A:		dec  SCRNHOLE2
+		bne  XLD97A
+XLD98F:		lda  #$01
+XLD991:		sec
+XLD992:		rts
 
-XLD993:  ldy     HEADER_SECTOR
-         lda     $df57,y
-         bmi     XLD975
-         lda     #$ff
-         sta     $df57,y
-         dec     MON_A2H
-         bpl     XLD96B
-         lda     PRDOOS_BUFPTRL
-         bne     XLD9B1
-         lda     PRODOS_BUFPTRH
-         cmp     #$10
-         bcc     XLD992
-         dec     PRODOS_BUFPTRH
-         dec     PRODOS_BUFPTRH
-XLD9B1:  clc
-         rts
+XLD993:		ldy  HEADER_SECTOR
+		lda  $df57,y
+		bmi  XLD975
+		lda  #$ff
+		sta  $df57,y
+		dec  MON_A2H
+		bpl  XLD96B
+		lda  PRDOOS_BUFPTRL
+		bne  XLD9B1
+		lda  PRODOS_BUFPTRH
+		cmp  #$10
+		bcc  XLD992
+		dec  PRODOS_BUFPTRH
+		dec  PRODOS_BUFPTRH
+XLD9B1:		clc
+		rts
 
-LD9B3:   jsr     LD8C4
-         lda     DISK_VOL
-         sta     MON_A3H
-         lda     #$aa
-         sta     MON_A2L
-         ldy     #$56
-         lda     #$00
-         sta     PRDOOS_BUFPTRL
-         lda     #$2a
-XLD9C7:  sta     TWO_BIT_DATA-1,y
-         dey
-         bne     XLD9C7
-         lda     #$39
-XLD9CF:  sta     SIX_BIT_DATA,y
-         dey
-         bne     XLD9CF
-         lda     #$23
-         sta     MON_A1H
-         lda     #$2a
-         jsr     LD6EE
-         lda     #$28
-         sta     PRODOS_BUFPTRH
-XLD9E2:  lda     PRDOOS_BUFPTRL
-         jsr     MOVE_TO_TRACK
-         jsr     LD916
-         bcs     XLDA13
-         lda     #$30
-         sta     SCRNHOLE2
-XLD9F1:  sec
-         dec     SCRNHOLE2
-         beq     XLDA11
-         jsr     D2_READ_HEADER
-         bcs     XLD9F1
-         lda     HEADER_SECTOR
-         bne     XLD9F1
-         jsr     D2_READ_SECTOR_DATA
-         bcs     XLD9F1
-         inc     PRDOOS_BUFPTRL
-         lda     MON_A1H
-         cmp     PRDOOS_BUFPTRL
-         bne     XLD9E2
-         lda     #$00
-         beq     XLDA13
+LD9B3:		jsr  LD8C4
+		lda  DISK_VOL
+		sta  MON_A3H
+		lda  #$aa
+		sta  MON_A2L
+		ldy  #$56
+		lda  #$00
+		sta  PRDOOS_BUFPTRL
+		lda  #$2a
+XLD9C7:		sta  TWO_BIT_DATA-1,y
+		dey
+		bne  XLD9C7
+		lda  #$39
+XLD9CF:		sta  SIX_BIT_DATA,y
+		dey
+		bne  XLD9CF
+		lda  #$23
+		sta  MON_A1H
+		lda  #$2a
+		jsr  LD6EE
+		lda  #$28
+		sta  PRODOS_BUFPTRH
+XLD9E2:		lda  PRDOOS_BUFPTRL
+		jsr  MOVE_TO_TRACK
+		jsr  LD916
+		bcs  XLDA13
+		lda  #$30
+		sta  SCRNHOLE2
+XLD9F1:		sec
+		dec  SCRNHOLE2
+		beq  XLDA11
+		jsr  D2_READ_HEADER
+		bcs  XLD9F1
+		lda  HEADER_SECTOR
+		bne  XLD9F1
+		jsr  D2_READ_SECTOR_DATA
+		bcs  XLD9F1
+		inc  PRDOOS_BUFPTRL
+		lda  MON_A1H
+		cmp  PRDOOS_BUFPTRL
+		bne  XLD9E2
+		lda  #$00
+		beq  XLDA13
 
-XLDA11:  lda     #$01
-XLDA13:  sta     DISK_ERR
-         lda     IWM_MOTOR_OFF,x
-         rts
+XLDA11:		lda  #$01
+XLDA13:		sta  DISK_ERR
+		lda  IWM_MOTOR_OFF,x
+		rts
 
-LDA1A:   lda     #$00
-         sta     DISK_SECT
-         lda     LD69F+2
-         sta     $df67
-         lda     LD6D0+2
-         sta     $df68
-         lda     LD506+1
-         sta     $df69
-         lda     LD506+2
-         sta     $df6a
-         lda     #$d9
-         sta     LD506+2
-         lda     #$06
-         sta     LD506+1
-         lda     DISK_TRK_ADDR
-         sta     LD69F+2
-         sta     LD6D0+2
-XLDA4A:  lda     #$02
-         sta     SCRNHOLE5
-         lda     #$04
-         sta     SCRNHOLE1
-         lda     DISK_OP
-         jsr     LD4A8
-         bcs     XLDA75
-         lda     IWM_MOTOR_ON,x
-         inc     LD69F+2
-         inc     LD6D0+2
-         inc     DISK_SECT
-         inc     DISK_TRK_ADDR
-         lda     #$10
-         cmp     DISK_SECT
-         bne     XLDA4A
-         lda     IWM_MOTOR_OFF,x
-XLDA75:  lda     $df67
-         sta     LD69F+2
-         lda     $df68
-         sta     LD6D0+2
-         lda     $df69
-         sta     LD506+1
-         lda     $df6a
-         sta     LD506+2
-         rts
+LDA1A:		lda  #$00
+		sta  DISK_SECT
+		lda  LD69F+2
+		sta  $df67
+		lda  LD6D0+2
+		sta  $df68
+		lda  LD506+1
+		sta  $df69
+		lda  LD506+2
+		sta  $df6a
+		lda  #$d9
+		sta  LD506+2
+		lda  #$06
+		sta  LD506+1
+		lda  DISK_TRK_ADDR
+		sta  LD69F+2
+		sta  LD6D0+2
+XLDA4A:		lda  #$02
+		sta  SCRNHOLE5
+		lda  #$04
+		sta  SCRNHOLE1
+		lda  DISK_OP
+		jsr  LD4A8
+		bcs  XLDA75
+		lda  IWM_MOTOR_ON,x
+		inc  LD69F+2
+		inc  LD6D0+2
+		inc  DISK_SECT
+		inc  DISK_TRK_ADDR
+		lda  #$10
+		cmp  DISK_SECT
+		bne  XLDA4A
+		lda  IWM_MOTOR_OFF,x
+XLDA75:		lda  $df67
+		sta  LD69F+2
+		lda  $df68
+		sta  LD6D0+2
+		lda  $df69
+		sta  LD506+1
+		lda  $df6a
+		sta  LD506+2
+		rts
 
-LDA8E:   DB   $01
-         DB   $30
-         DB   $28
-         DB   $24
-         DB   $20
-         DB   $1e
-         DB   $1d
-         DB   $1c
-         DB   $1c
-         DB   $1c
-         DB   $1c
-         DB   $1c
+LDA8E:		DB   $01
+		DB   $30
+		DB   $28
+		DB   $24
+		DB   $20
+		DB   $1e
+		DB   $1d
+		DB   $1c
+		DB   $1c
+		DB   $1c
+		DB   $1c
+		DB   $1c
 SLOT_TO_Y:
-         lda     DISKSLOTCX ;Get slot number *16
-         lsr     A          ;Divide by 16
-         lsr     A
-         lsr     A
-         lsr     A
-         tay                ;Put Acc into Y
-         rts
+		lda  DISKSLOTCX		; Get slot number *16
+		lsr  A			; Divide by 16
+		lsr  A
+		lsr  A
+		lsr  A
+		tay			; Put Acc into Y
+		rts
 
 ; What sort of not Disk ][ is it?
 IDC_CHECK:
-         cmp     #$07       ;What sort of drive?
-         beq     SMARTDRV_FOUND
-         jmp     PRODOS
+		cmp  #$07		; What sort of drive?
+		beq  SMARTDRV_FOUND
+		jmp  PRODOS
 
 ;*******************************************************************************
 ;* SmartDrive code                                                             *
 ;*******************************************************************************
 SMARTDRV_FOUND:
-         txa                ;Convert to CX
-         ora     #$c0
-         sta     SMARTDRV_CALL+2 ;Save slot rom into call high
-         sta     GET_SMARTDRV_ADDR+2 ;Save slot rom to get entry point
+		txa			; Convert to CX
+		ora  #$c0
+		sta  SMARTDRV_CALL+2	; Save slot rom into call high
+		sta  GET_SMARTDRV_ADDR+2 ; Save slot rom to get entry point
 GET_SMARTDRV_ADDR:
-         lda     $c7ff      ;Get the entry point
-         clc
-         adc     #$03       ;Add 3 to get smartdrive point
-         sta     SMARTDRV_CALL+1 ;Update the call low byte
-         lda     DISK_OP
-         beq     SET_DISK_ERR1 ;Status returns error $01
-         cmp     #$03       ;Read or write
-         bcc     SMART_CMDOK ;Yep carry on
+		lda  $c7ff		; Get the entry point
+		clc
+		adc  #$03		; Add 3 to get smartdrive point
+		sta  SMARTDRV_CALL+1	; Update the call low byte
+		lda  DISK_OP
+		beq  SET_DISK_ERR1	; Status returns error $01
+		cmp  #$03		; Read or write
+		bcc  SMART_CMDOK	; Yep carry on
 SET_DISK_ERR1:
-         ldx     #$01       ;Set disk error to 1 (bad cmd)
-         bne     SET_DISK_ERRX
+		ldx  #$01		; Set disk error to 1 (bad cmd)
+		bne  SET_DISK_ERRX
 
 SMART_CMDOK:
-         adc     #$07       ;Change from Block to byte command
-         sta     SMARTDRV_CMD
+		adc  #$07		; Change from Block to byte command
+		sta  SMARTDRV_CMD
 ; For the smart drive address to read is
 ; (TRACKH*$100+TRACKL) * $10 + SECT*2
-         asl     DISK_SECT  ;8 sectors per track
-         lda     DISK_TRKL
-         ldy     #$04       ;Shift left 4 times (aka mult by 16)
+		asl  DISK_SECT		; 8 sectors per track
+		lda  DISK_TRKL
+		ldy  #$04		; Shift left 4 times (aka mult by 16)
 SMART_MUL:
-         asl     A
-         rol     DISK_TRKH
-         dey
-         bne     SMART_MUL
-         ora     DISK_SECT  ;Or in the sector
-         sta     SMARTDRV_BLOCKNUM+1
-         lda     DISK_TRKH
-         sta     SMARTDRV_BLOCKNUM+2
+		asl  A
+		rol  DISK_TRKH
+		dey
+		bne  SMART_MUL
+		ora  DISK_SECT		; Or in the sector
+		sta  SMARTDRV_BLOCKNUM+1
+		lda  DISK_TRKH
+		sta  SMARTDRV_BLOCKNUM+2
 SMARTDRV_CALL:
-         jsr     $0000
+		jsr  $0000
 SMARTDRV_CMD:
-         DB   $08
-         DW   SMARTDRV_PARAM
+		DB   $08
+		DW   SMARTDRV_PARAM
 
 PD_CHECK_ERR:
-         ldx     #$00       ;Everything happy
-         bcc     SET_DISK_ERRX ;Yeah store success and return
-         inx                ;Nope setup for a error
-         cmp     #$2b       ;Write protected error?
-         bne     SET_DISK_ERRX ;Lets say it's generic error
-         ldx     #$10       ;Write protect error
+		ldx  #$00		; Everything happy
+		bcc  SET_DISK_ERRX	; Yeah store success and return
+		inx			; Nope setup for a error
+		cmp  #$2b		; Write protected error?
+		bne  SET_DISK_ERRX	; Lets say it's generic error
+		ldx  #$10		; Write protect error
 SET_DISK_ERRX:
-         stx     DISK_ERR
-         rts
+		stx  DISK_ERR
+		rts
 
 ;*******************************************************************************
 ;* Prodos driver code                                                          *
 ;*******************************************************************************
-PRODOS:  txa
-         ora     #$c0
-         sta     PD_CALL_DRIVER+2 ;Patch up the driver call
-         sta     PD_GET_ENTRY+2 ;Patch the call to find the driver entry
+PRODOS:		txa
+		ora  #$c0
+		sta  PD_CALL_DRIVER+2	; Patch up the driver call
+		sta  PD_GET_ENTRY+2	; Patch the call to find the driver entry
 PD_GET_ENTRY:
-         lda     $c7ff      ;Get the entry point
-         sta     PD_CALL_DRIVER+1 ;Patch the call
-         lda     DISK_DRV
-         sta     PRODOS_UNITNUM
-         lda     DISK_OP    ;Status commmand? Return eror
-         beq     SET_DISK_ERR1
-         cmp     #$04       ;Greater than 3 not simple.
-         bcs     PD_MULT_SECT_OP
-         pha
-         jsr     TRKSEC2PD_BLK ;Convert track / sector to ProDosBloc
-         pla
+		lda  $c7ff		; Get the entry point
+		sta  PD_CALL_DRIVER+1	; Patch the call
+		lda  DISK_DRV
+		sta  PRODOS_UNITNUM
+		lda  DISK_OP		; Status commmand? Return eror
+		beq  SET_DISK_ERR1
+		cmp  #$04		; Greater than 3 not simple.
+		bcs  PD_MULT_SECT_OP
+		pha
+		jsr  TRKSEC2PD_BLK	; Convert track / sector to ProDosBloc
+		pla
 PD_ALT_CALL:
-         sta     PRODOS_CMD ;Copy the command over
-         lda     #$00
-         sta     PRDOOS_BUFPTRL ;Buffer is at $800
-         lda     #$08
-         sta     PRDOOS_BUFPTRL+1
+		sta  PRODOS_CMD		; Copy the command over
+		lda  #$00
+		sta  PRDOOS_BUFPTRL	; Buffer is at $800
+		lda  #$08
+		sta  PRDOOS_BUFPTRL+1
 PD_CALL_DRIVER:
-         jsr     $0000
-         jsr     PD_CHECK_ERR
-         bcs     PD_EXIT    ;Did we have an error?
-         lda     PRODOS_CMD
-         cmp     #$03       ;Was it initialise?
-         beq     PD_INIT_DATA ;Do the rest of the track
-PD_EXIT: rts
+		jsr  $0000
+		jsr  PD_CHECK_ERR
+		bcs  PD_EXIT		; Did we have an error?
+		lda  PRODOS_CMD
+		cmp  #$03		; Was it initialise?
+		beq  PD_INIT_DATA	; Do the rest of the track
+PD_EXIT:	rts
 
 PD_INIT_DATA:
-         lda     #$18       ;Looks like this skips the first three tracks
-         sta     DISK_SECT
+		lda  #$18		; Looks like this skips the first three tracks
+		sta  DISK_SECT
 PD_INIT_WR:
-         lda     #$00       ;Zero the high block
-         sta     PRODOS_BLKNUM+1
-         lda     DISK_SECT  ;Which block to write
-         sta     PRODOS_BLKNUM
-         lda     #$02       ;Setup for a write
-         jsr     PD_ALT_CALL ;Write out sector
-         bcs     PD_EXIT    ;Error go home
-         inc     DISK_SECT  ;Next sector
-         dec     DISK_TRKL  ;Until the counter =0
-         bne     PD_INIT_WR
-         rts
+		lda  #$00		; Zero the high block
+		sta  PRODOS_BLKNUM+1
+		lda  DISK_SECT		; Which block to write
+		sta  PRODOS_BLKNUM
+		lda  #$02		; Setup for a write
+		jsr  PD_ALT_CALL	; Write out sector
+		bcs  PD_EXIT		; Error go home
+		inc  DISK_SECT		; Next sector
+		dec  DISK_TRKL		; Until the counter =0
+		bne  PD_INIT_WR
+		rts
 
 ;*******************************************************************************
 ;* We get here if the command is greater than or equal to four.                *
@@ -1028,61 +1028,61 @@ PD_INIT_WR:
 ;* 6 - gets translated as (6-3)^3 so to a 0 - status                           *
 ;*******************************************************************************
 PD_MULT_SECT_OP:
-         sec                ;Do the conversion
-         sbc     #$03
-         eor     #$03
-         sta     PRODOS_CMD ;Set the command
-         lda     #$08       ;Whole track?
-         sta     PD_TRACK_OP_CNT
-         lda     DISK_TRK_ADDR ;Get disk data pointer
-         sta     PRODOS_BUFPTRH
-         lda     #$00
-         sta     DISK_SECT  ;We're doing the whole track
-         sta     PRDOOS_BUFPTRL
-         jsr     TRKSEC2PD_BLK ;Convert to PD block
+		sec			; Do the conversion
+		sbc  #$03
+		eor  #$03
+		sta  PRODOS_CMD		; Set the command
+		lda  #$08		; Whole track?
+		sta  PD_TRACK_OP_CNT
+		lda  DISK_TRK_ADDR	; Get disk data pointer
+		sta  PRODOS_BUFPTRH
+		lda  #$00
+		sta  DISK_SECT		; We're doing the whole track
+		sta  PRDOOS_BUFPTRL
+		jsr  TRKSEC2PD_BLK	; Convert to PD block
 PD_TRACK_OP_LOOP:
-         jsr     PD_CALL_DRIVER
-         bcs     PD_EXIT    ;Flag we had an error
-         inc     DISK_TRK_ADDR ;Add 512 bytes to destination / source
-         inc     DISK_TRK_ADDR
-         inc     PRODOS_BLKNUM ;Bounce the block number along
-         bne     PD_BLK_NO_WRAP
-         inc     PRODOS_BLKNUM+1
+		jsr  PD_CALL_DRIVER
+		bcs  PD_EXIT		; Flag we had an error
+		inc  DISK_TRK_ADDR	; Add 512 bytes to destination / source
+		inc  DISK_TRK_ADDR
+		inc  PRODOS_BLKNUM	; Bounce the block number along
+		bne  PD_BLK_NO_WRAP
+		inc  PRODOS_BLKNUM+1
 PD_BLK_NO_WRAP:
-         inc     PRODOS_BUFPTRH ;Do the ProDOS address
-         inc     PRODOS_BUFPTRH
-         dec     PD_TRACK_OP_CNT ;Do the loop
-         bne     PD_TRACK_OP_LOOP
-         rts
+		inc  PRODOS_BUFPTRH	; Do the ProDOS address
+		inc  PRODOS_BUFPTRH
+		dec  PD_TRACK_OP_CNT	; Do the loop
+		bne  PD_TRACK_OP_LOOP
+		rts
 
 TRKSEC2PD_BLK:
-         lda     DISK_TRKH  ;Prodos block is TRACK*8 + SECT
-         sta     PRODOS_BLKNUM+1
-         lda     DISK_TRKL
-         ldx     #$03
+		lda  DISK_TRKH		; Prodos block is TRACK*8 + SECT
+		sta  PRODOS_BLKNUM+1
+		lda  DISK_TRKL
+		ldx  #$03
 BLK_MULT_2:
-         asl     A          ;Multiply by two
-         rol     $47
-         dex
-         bne     BLK_MULT_2
-         ora     DISK_SECT  ;Add sector
-         sta     PRODOS_BLKNUM
-         rts
+		asl  A			; Multiply by two
+		rol  $47
+		dex
+		bne  BLK_MULT_2
+		ora  DISK_SECT		; Add sector
+		sta  PRODOS_BLKNUM
+		rts
 
 SMARTDRV_PARAM:
-         DB   $04
+		DB   $04
 SMARTDRV_UNITNUM:
-         DB   $01
+		DB   $01
 SMARTDRV_BUFPTR:
-         DW   $0800
+		DW   $0800
 SMARTDRV_NUMBYTES:
-         DW   $0200
+		DW   $0200
 SMARTDRV_BLOCKNUM:
-         DB   $00
-         DB   $00
-         DB   $00
+		DB   $00
+		DB   $00
+		DB   $00
 PD_TRACK_OP_CNT:
-         DB   $00
-         ds    83,$00
+		DB   $00
+		ds   83,$00
 
-        END
+		END

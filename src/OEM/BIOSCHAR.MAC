@@ -16,199 +16,199 @@
 ;*  $0F = Write character                                                      *
 ;*  $10 = Get status                                                           *
 ;*******************************************************************************
-         cseg 
-         .6502
-CHAR_OP_INI         EQU $0d     ;Character IO Init (same as pascal offset)
-CHAR_OP_RD          EQU $0e     ;Character IO Read (same as pascal offset)
-CHAR_OP_WR          EQU $0f     ;Character IO Write (same as pascal offset)
-CHAR_OP_ST          EQU $10     ;Character IO Status (same as pascal offset)
-SLOT_INFO           EQU $03b8   ;Card slot information
-STSBYTE             EQU $05b8   ;SSC Char
-SCRNHOLE5           EQU $06f8   ;text page 1 screen hole 5
-PARA_DATAOUT        EQU $c080   ;Apple parallel card data out
-LCBANK1             EQU $c08b   ;RWx2 read/write RAM bank 1
-CLRROM              EQU $cfff   ;disable slot C8 ROM
-STATUS6510          EQU $c08e   ; Status port for 6510 cards
-DATA6510            EQU $c08f   ; Data port for 6510 cards
-PARA_ACKIN          EQU $c0c1   ;Apple parallel port ack in
-SCC_INIT            EQU $c800   ;Super serial card init
-SSC_READ            EQU $c84d   ;Super serial card read routine
-SSC_WRITE           EQU $c9aa   ;Super serial card write routine
-CLRROM              EQU $cfff   ;disable slot C8 ROM
-TOG_CURJMP          EQU $D000   ;Address in video BIOS
-PRINT_STACK_CHAR    EQU $D003   ;Address in video BIOS
+		cseg
+		.6502
+CHAR_OP_INI	EQU  $0d		; Character IO Init (same as pascal offset)
+CHAR_OP_RD	EQU  $0e		; Character IO Read (same as pascal offset)
+CHAR_OP_WR	EQU  $0f		; Character IO Write (same as pascal offset)
+CHAR_OP_ST	EQU  $10		; Character IO Status (same as pascal offset)
+SLOT_INFO	EQU  $03b8		; Card slot information
+STSBYTE		EQU  $05b8		; SSC Char
+SCRNHOLE5	EQU  $06f8		; text page 1 screen hole 5
+PARA_DATAOUT	EQU  $c080		; Apple parallel card data out
+LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
+CLRROM		EQU  $cfff		; disable slot C8 ROM
+STATUS6510	EQU  $c08e		; Status port for 6510 cards
+DATA6510	EQU  $c08f		; Data port for 6510 cards
+PARA_ACKIN	EQU  $c0c1		; Apple parallel port ack in
+SCC_INIT	EQU  $c800		; Super serial card init
+SSC_READ	EQU  $c84d		; Super serial card read routine
+SSC_WRITE	EQU  $c9aa		; Super serial card write routine
+CLRROM		EQU  $cfff		; disable slot C8 ROM
+TOG_CURJMP	EQU  $D000		; Address in video BIOS
+PRINT_STACK_CHAR EQU  $D003		; Address in video BIOS
 ; Entry point
-CHAR_IO_OPER:   cld                     ;Clear decimal mode
-                pha                     ;Put acc on stack
-                txa                     ;Which slot / what are doing?
-                bne     CHECK_CUR_TOG   ;Output to console?
-                bit     LCBANK1         ;Yes, page in video BIOS in language card
-                bit     LCBANK1
-                jmp     PRINT_STACK_CHAR ;Put top of stack onto screen
+CHAR_IO_OPER:	cld			; Clear decimal mode
+		pha			; Put acc on stack
+		txa			; Which slot / what are doing?
+		bne  CHECK_CUR_TOG	; Output to console?
+		bit  LCBANK1		; Yes, page in video BIOS in language card
+		bit  LCBANK1
+		jmp  PRINT_STACK_CHAR	; Put top of stack onto screen
 
-CHECK_CUR_TOG:  bpl     DO_SLOT_IO      ;Slot number positive
-                bit     LCBANK1         ;Nope, so page in video BIOS
-                bit     LCBANK1
-                jmp     TOG_CURJMP      ;And toggle the cursor
+CHECK_CUR_TOG:	bpl  DO_SLOT_IO		; Slot number positive
+		bit  LCBANK1		; Nope, so page in video BIOS
+		bit  LCBANK1
+		jmp  TOG_CURJMP		; And toggle the cursor
 
 ; See what sort of card is in the slot
-DO_SLOT_IO:     stx     PAGEINROM2+1    ;Setup for paging in rom
-                lda     SLOT_INFO,x     ;Get the card type
-                and     #$0f            ;Mask to low nybble
-                pha                     ;Save it for later
-                txa                     ;Multiply slot number by 8
-                asl     A
-                asl     A
-                asl     A
-                asl     A
-                tax                     ;X = Slot number * 8
-                pla
-                cmp     #$03            ;Apple Comms or CCS7710A
-                beq     COMMS6550
-                cmp     #$04            ;High speed serial
-                beq     SSC
-                cmp     #$05            ;Parallel printer
-                beq     APPLEPARA
-                cmp     #$06            ;Pascal based card
-                beq     PASCALCARD
-                pla                     ;Remove actual character
-                bne     CHAR_RET_0      ;Go home
-; 
+DO_SLOT_IO:	stx  PAGEINROM2+1	; Setup for paging in rom
+		lda  SLOT_INFO,x	; Get the card type
+		and  #$0f		; Mask to low nybble
+		pha			; Save it for later
+		txa			; Multiply slot number by 8
+		asl  A
+		asl  A
+		asl  A
+		asl  A
+		tax			; X = Slot number * 8
+		pla
+		cmp  #$03		; Apple Comms or CCS7710A
+		beq  COMMS6550
+		cmp  #$04		; High speed serial
+		beq  SSC
+		cmp  #$05		; Parallel printer
+		beq  APPLEPARA
+		cmp  #$06		; Pascal based card
+		beq  PASCALCARD
+		pla			; Remove actual character
+		bne  CHAR_RET_0		; Go home
+;
 ; Pascal card
-;  
-PASCALCARD:     pla                     ;Get back the character
-                cpy     #CHAR_OP_RD     ;Read operation?
-                beq     DOPASCAL_OP     ;Go Do it
-                cpy     #CHAR_OP_WR     ;Write operation
-                beq     DOPASCAL_OP     ;Go Do it
-                cpy     #CHAR_OP_INI    ;Init operation?
-                beq     DOPASCAL_OP     ;Go Do it
-                cpy     #CHAR_OP_ST     ;Status operation?
-                bne     CHAR_RET_0      ;Lie and return OK
-                jsr     DOPASCAL_OP     ;Go do our operation
-                bcs     CARDRETFF       ;Result is No
-                bcc     CHAR_RET_0      ;Result is Yes
+;
+PASCALCARD:	pla			; Get back the character
+		cpy  #CHAR_OP_RD	; Read operation?
+		beq  DOPASCAL_OP	; Go Do it
+		cpy  #CHAR_OP_WR	; Write operation
+		beq  DOPASCAL_OP	; Go Do it
+		cpy  #CHAR_OP_INI	; Init operation?
+		beq  DOPASCAL_OP	; Go Do it
+		cpy  #CHAR_OP_ST	; Status operation?
+		bne  CHAR_RET_0		; Lie and return OK
+		jsr  DOPASCAL_OP	; Go do our operation
+		bcs  CARDRETFF		; Result is No
+		bcc  CHAR_RET_0		; Result is Yes
 
-DOPASCAL_OP:    sty     GETPASENTRY+1   ;Save offset of pascal entry
-                pha                     ;Save Acc
-                jsr     PAGEINROM       ;Page in $C800 ROM 
-                stx     GETPASENTRY+2   ;Save Cx00 into get offset instruction
-                stx     JMPPASENTRY+2   ;Save Cx00 into call to card
-GETPASENTRY:    lda     $c100           ;Get the offset of the operation
-                sta     JMPPASENTRY+1   ;Save it into jump to pascal operation
-                pla                     ;Get back character
-JMPPASENTRY:    jmp     $c100           ;Go call card routine
+DOPASCAL_OP:	sty  GETPASENTRY+1	; Save offset of pascal entry
+		pha			; Save Acc
+		jsr  PAGEINROM		; Page in $C800 ROM
+		stx  GETPASENTRY+2	; Save Cx00 into get offset instruction
+		stx  JMPPASENTRY+2	; Save Cx00 into call to card
+GETPASENTRY:	lda  $c100		; Get the offset of the operation
+		sta  JMPPASENTRY+1	; Save it into jump to pascal operation
+		pla			; Get back character
+JMPPASENTRY:	jmp  $c100		; Go call card routine
 
-; 
+;
 ; Apple Parallel card code
-;  
-APPLEPARA:      pla                     ;Get back the character
-                cpy     #CHAR_OP_INI    ;No initialise routine
-                beq     CARDRETFF       ;So go home
-                cpy     #CHAR_OP_ST     ;Get status
-                beq     PARA_STATUS     ;Go do it
-                cpy     #CHAR_OP_WR     ;CHAR_OP_WR
-                bne     CHAR_RET_0      ;Do the write
-                pha                     ;Save character
-PARASTLOOP:     jsr     PARA_STATUS     ;Check status
-                beq     PARASTLOOP      ;Wait until clear
-                pla                     ;Get back character
-                sta     PARA_DATAOUT,y  ;Output the character to card
-                rts                     ;Go home
+;
+APPLEPARA:	pla			; Get back the character
+		cpy  #CHAR_OP_INI	; No initialise routine
+		beq  CARDRETFF		; So go home
+		cpy  #CHAR_OP_ST	; Get status
+		beq  PARA_STATUS	; Go do it
+		cpy  #CHAR_OP_WR	; CHAR_OP_WR
+		bne  CHAR_RET_0		; Do the write
+		pha			; Save character
+PARASTLOOP:	jsr  PARA_STATUS	; Check status
+		beq  PARASTLOOP		; Wait until clear
+		pla			; Get back character
+		sta  PARA_DATAOUT,y	; Output the character to card
+		rts			; Go home
 
-PARA_STATUS:    jsr     PAGEINROM       ;Page in the rom (sets X)
-                stx     GETPARASTAT+2
-GETPARASTAT:    lda     PARA_ACKIN      ;Get the status
-                bmi     CHAR_RET_0      ;Busy?
-CARDRETFF:      lda     #$ff            ;Nope
-                rts
+PARA_STATUS:	jsr  PAGEINROM		; Page in the rom (sets X)
+		stx  GETPARASTAT+2
+GETPARASTAT:	lda  PARA_ACKIN		; Get the status
+		bmi  CHAR_RET_0		; Busy?
+CARDRETFF:	lda  #$ff		; Nope
+		rts
 
-; 
+;
 ; Super serial card code, calls pascal entry points directly
-;  
-SSC:            pla                     ;Get back character
-                cpy     #CHAR_OP_ST     ;Status
-                beq     CARDRETFF       ;Return good always
-                cpy     #CHAR_OP_INI    ;Init?
-                beq     JSRSCCINIT      ;Go do it
-                cpy     #CHAR_OP_WR     ;Write?
-                beq     JSRSCCWRITE     ;Go do it
-                cpy     #CHAR_OP_RD     ;Read a character
-                beq     JSRSSCREAD      ;Go do it
-CHAR_RET_0:     lda     #$00
-                rts
+;
+SSC:		pla			; Get back character
+		cpy  #CHAR_OP_ST	; Status
+		beq  CARDRETFF		; Return good always
+		cpy  #CHAR_OP_INI	; Init?
+		beq  JSRSCCINIT		; Go do it
+		cpy  #CHAR_OP_WR	; Write?
+		beq  JSRSCCWRITE	; Go do it
+		cpy  #CHAR_OP_RD	; Read a character
+		beq  JSRSSCREAD		; Go do it
+CHAR_RET_0:	lda  #$00
+		rts
 
-; 
+;
 ; 6650 based serial comms card
 ; CCS7710 or Apple Communications
-;  
-COMMS6550:      pla
-                cpy     #CHAR_OP_ST     ;Status operation
-                beq     STATUS6550
-                cpy     #CHAR_OP_WR     ;Write operation
-                beq     WRITE6550
-                cpy     #CHAR_OP_INI    ;Initialise
-                beq     INIT6550
-                cpy     #CHAR_OP_RD     ;Read operation
-                bne     CHAR_RET_0
-RD6550WAIT:     lda     #$01            ;Wait for read data
-                jsr     STATUS6550
-                beq     RD6550WAIT      ;Nothing yet
-                lda     DATA6510,x      ;Get our data
-                lda     #$ff            ;And over write it!!!!
-                rts
-
-WRITE6550:      pha                     ;Save character
-WR6550WAIT:     lda     #$00            ;Check write status
-                jsr     STATUS6550
-                beq     WR6550WAIT      ;Wait until we can write
-                pla                     ;Get character back
-                sta     DATA6510,x      ;Send it
-                lda     #$ff
-                rts
-
-STATUS6550:     tay                     ;Read or write status
-                lda     STATUS6510,x    ;Get status reg
-                lsr     A               ;Shift into carry
-                dey                     ;Read data?
-                beq     ST6550FLAG      ;Yep, use bit 0
-                lsr     A               ;Check bit 1 for write
-ST6550FLAG:     bcc     CHAR_RET_0      ;Set flag depending on carry
-                bcs     CARDRETFF
-
-INIT6550:       lda     #$03            ;ACIA master reset
-                sta     STATUS6510,x
-                lda     #$15            ;8 bit data, no parity, 1 stop, clock is 16x
-                sta     STATUS6510,x
-                bne     CARDRETFF
 ;
-; Super Serial card calls to pascal entry points 
+COMMS6550:	pla
+		cpy  #CHAR_OP_ST	; Status operation
+		beq  STATUS6550
+		cpy  #CHAR_OP_WR	; Write operation
+		beq  WRITE6550
+		cpy  #CHAR_OP_INI	; Initialise
+		beq  INIT6550
+		cpy  #CHAR_OP_RD	; Read operation
+		bne  CHAR_RET_0
+RD6550WAIT:	lda  #$01		; Wait for read data
+		jsr  STATUS6550
+		beq  RD6550WAIT		; Nothing yet
+		lda  DATA6510,x		; Get our data
+		lda  #$ff		; And over write it!!!!
+		rts
+
+WRITE6550:	pha			; Save character
+WR6550WAIT:	lda  #$00		; Check write status
+		jsr  STATUS6550
+		beq  WR6550WAIT		; Wait until we can write
+		pla			; Get character back
+		sta  DATA6510,x		; Send it
+		lda  #$ff
+		rts
+
+STATUS6550:	tay			; Read or write status
+		lda  STATUS6510,x	; Get status reg
+		lsr  A			; Shift into carry
+		dey			; Read data?
+		beq  ST6550FLAG		; Yep, use bit 0
+		lsr  A			; Check bit 1 for write
+ST6550FLAG:	bcc  CHAR_RET_0		; Set flag depending on carry
+		bcs  CARDRETFF
+
+INIT6550:	lda  #$03		; ACIA master reset
+		sta  STATUS6510,x
+		lda  #$15		; 8 bit data, no parity, 1 stop, clock is 16x
+		sta  STATUS6510,x
+		bne  CARDRETFF
 ;
-JSRSSCREAD:     jsr     PAGEINROM       ;Bring in the SSC ROM
-                jsr     SSC_READ        ;Read a character
-                lda     STSBYTE,x       ;Get the character
-                rts
+; Super Serial card calls to pascal entry points
+;
+JSRSSCREAD:	jsr  PAGEINROM		; Bring in the SSC ROM
+		jsr  SSC_READ		; Read a character
+		lda  STSBYTE,x		; Get the character
+		rts
 
-JSRSCCWRITE:    pha
-                jsr     PAGEINROM       ;Bring in the SSC ROM
-                pla
-                sta     STSBYTE,x       ;Save character to write
-                jmp     SSC_WRITE       ;Call write routine
+JSRSCCWRITE:	pha
+		jsr  PAGEINROM		; Bring in the SSC ROM
+		pla
+		sta  STSBYTE,x		; Save character to write
+		jmp  SSC_WRITE		; Call write routine
 
-JSRSCCINIT:     jsr     PAGEINROM       ;Bring in the SSC ROM
-                jmp     SCC_INIT        ;Call the init routine
+JSRSCCINIT:	jsr  PAGEINROM		; Bring in the SSC ROM
+		jmp  SCC_INIT		; Call the init routine
 ;
 ; Page in the rom
 ;
-PAGEINROM:      stx     SCRNHOLE5       ;Mark us as using rom space
-                txa
-                tay
-PAGEINROM2:     lda     #$00            ;Value over written by other code
-                ora     #$c0            ;Put into correct IO space
-                tax
-                stx     READROMSLOT+2   ;Set up for a read from the ROM
-                bit     CLRROM          ;Clear any other ROMS in $C800
-READROMSLOT:    lda     $c100           ;Read from our rom to bring in $C800
-                rts
-                DS 080H,01AH
-                END
+PAGEINROM:	stx  SCRNHOLE5		; Mark us as using rom space
+		txa
+		tay
+PAGEINROM2:	lda  #$00		; Value over written by other code
+		ora  #$c0		; Put into correct IO space
+		tax
+		stx  READROMSLOT+2	; Set up for a read from the ROM
+		bit  CLRROM		; Clear any other ROMS in $C800
+READROMSLOT:	lda  $c100		; Read from our rom to bring in $C800
+		rts
+		DS   080H,01AH
+		END

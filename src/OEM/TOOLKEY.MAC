@@ -1,62 +1,62 @@
-                TITLE 'Toolkey messages'
+		TITLE 'Toolkey messages'
 ;********************************************************************************
 ;* Cirtech Apple //e CP/M Plus toolkey messages                                 *
 ;*                                                                              *
 ;* Disassembled by Peter Ibbotson.                                              *
 ;*                                                                              *
 ;********************************************************************************
-HIBYTE          MACRO MSG
-                  IRPC X,<MSG>
-                    IF '&X' NE '"'
-                      DB '&X'+080h
-                    ENDIF
-                  ENDM
-                ENDM
-                aseg
-                org 0
-                ; Lives at $0C00 0FC00H
-                HIBYTE " __________ CIRTECH ToolKey _____________ "
-                HIBYTE "|                                        |"
-                HIBYTE "| "
-                DB 'D'-040H
-                HIBYTE "uplicate  "
-                DB 'F'-040H
-                HIBYTE "ormat  "
-                DB 'P'-040H
-                HIBYTE "rint  "
-                DB 'E'-040H
-                HIBYTE "mpty  e"
-                DB 'X'-040H
-                HIBYTE "tra |"
-                HIBYTE "|                                        |"
-                HIBYTE "|___________Press  ESC to quit___________|"
-                ; Lives at $0CD2 0FCD2H
-                HIBYTE " Format disk in which drive (A to P)? "
-                ; Lives at $0CF8 0FCF8H
-                HIBYTE " Insert disk in drive and press <RTN> "
-                ; Lives at $0D1E 0FD1EH
-                HIBYTE "     Formatting...... please wait     "
-                ; Lives at $0D44 0FD44H
-                HIBYTE " Format successful.   Do again (Y/N)? "
-                ; Lives at $0D6A 0FD6AH
-                HIBYTE " Disk error          Try again (Y/N)? "
-                ; Lives at $0D90 0FD90H
-                HIBYTE "Disk Write Protected. Try Again (Y/N)?"  
-                ; Lives at $0DB6 0FDB6H
-                HIBYTE " Which drive is the SOURCE  (A to P)? "
-                ; Lives at $0DDC 0FDDCH
-                HIBYTE " Which is the  DESTINATION  (A to P)? "
-                ; Lives at $0E02 0FE02H
-                HIBYTE "     Insert disks and press <RTN>     "
-                ; Lives at $0E28 0FE28H
-                HIBYTE "    Duplicating...... please wait     "
-                ; Lives at $0E4E 0FE4EH
-                HIBYTE " Operation successful. Do again (Y/N)?"
-                ; Lives at $0E74 0FE74H
-                HIBYTE "  Insert SOURCE disk and press <RTN>  "
-                ; Lives at $0E9A 0FE9AH
-                HIBYTE "  Insert DESTINATION and press <RTN>  "
-                ; Lives at $0EC0 0FEC0H
-                HIBYTE " Incompatible Drives. Try again (Y/N)?"
-                ; Lives at $0EE6 0FEE6H
-                END
+HIBYTE		MACRO MSG
+		IRPC X,<MSG>
+		IF   '&X' NE '"'
+		DB   '&X'+080h
+		ENDIF
+		ENDM
+		ENDM
+		aseg
+		org  0
+		; Lives at $0C00 0FC00H
+		HIBYTE " __________ CIRTECH ToolKey _____________ "
+		HIBYTE "|                                        |"
+		HIBYTE "| "
+		DB   'D'-040H
+		HIBYTE "uplicate  "
+		DB   'F'-040H
+		HIBYTE "ormat  "
+		DB   'P'-040H
+		HIBYTE "rint  "
+		DB   'E'-040H
+		HIBYTE "mpty  e"
+		DB   'X'-040H
+		HIBYTE "tra |"
+		HIBYTE "|                                        |"
+		HIBYTE "|___________Press  ESC to quit___________|"
+		; Lives at $0CD2 0FCD2H
+		HIBYTE " Format disk in which drive (A to P)? "
+		; Lives at $0CF8 0FCF8H
+		HIBYTE " Insert disk in drive and press <RTN> "
+		; Lives at $0D1E 0FD1EH
+		HIBYTE "     Formatting...... please wait     "
+		; Lives at $0D44 0FD44H
+		HIBYTE " Format successful.   Do again (Y/N)? "
+		; Lives at $0D6A 0FD6AH
+		HIBYTE " Disk error          Try again (Y/N)? "
+		; Lives at $0D90 0FD90H
+		HIBYTE "Disk Write Protected. Try Again (Y/N)?"
+		; Lives at $0DB6 0FDB6H
+		HIBYTE " Which drive is the SOURCE  (A to P)? "
+		; Lives at $0DDC 0FDDCH
+		HIBYTE " Which is the  DESTINATION  (A to P)? "
+		; Lives at $0E02 0FE02H
+		HIBYTE "     Insert disks and press <RTN>     "
+		; Lives at $0E28 0FE28H
+		HIBYTE "    Duplicating...... please wait     "
+		; Lives at $0E4E 0FE4EH
+		HIBYTE " Operation successful. Do again (Y/N)?"
+		; Lives at $0E74 0FE74H
+		HIBYTE "  Insert SOURCE disk and press <RTN>  "
+		; Lives at $0E9A 0FE9AH
+		HIBYTE "  Insert DESTINATION and press <RTN>  "
+		; Lives at $0EC0 0FEC0H
+		HIBYTE " Incompatible Drives. Try again (Y/N)?"
+		; Lives at $0EE6 0FEE6H
+		END
