@@ -5,65 +5,9 @@
 ; Code status
 ; D400-DBFF requires more work
 ;
+		INCLUDE EQUATES.MAC
 		cseg
 		.6502
-SCRLINEL	EQU  $20		; Address of current line in $400
-SCRLINEH	EQU  $21		; Screen address high
-ESCAPE_STATE	EQU  $22		; State for ESCAPE leadin
-CURSOR_STATE	EQU  $23		; Bit 7 high if cursor on screen
-CURSORX		EQU  $25		; Cursor X (80 col)
-ZP_TEMP1	EQU  $26		; Zero page temporary
-D2_CHECK_SUM	EQU  $27		; Checksum for disk routines
-CURSORY		EQU  $29		; Cursor Y (80 col)
-HEADER_CHECKSUM	EQU  $2c		; Checksum for the sector header
-HEADER_SECTOR	EQU  $2d
-HEADER_TRACK	EQU  $2e		; Track from sector header
-HEADER_VOLUME	EQU  $2f
-MON_INVFLAG	EQU  $32		; text mask (255=normal, 127=flash, 63=inv)
-MON_A1H		EQU  $3d		; general purpose
-MON_A2L		EQU  $3e		; general purpose
-MON_A2H		EQU  $3f		; general purpose
-MON_A3H		EQU  $41		; general purpose
-PRODOS_CMD	EQU  $42
-PRODOS_UNITNUM	EQU  $43
-PRDOOS_BUFPTRL	EQU  $44
-PRODOS_BUFPTRH	EQU  $45		; Prodos buffer pointer high
-PRODOS_BLKNUM	EQU  $46
-DISK_TRKL	EQU  $0380		; Disk track low (From Z80)
-DISK_SECT	EQU  $0381		; Disk sector (from Z80)
-DISK_TRK_ADDR	EQU  $0382		; While track read/write page
-DISK_DRV	EQU  $0384		; Drive to use from CPM (Slot)
-DISK_ACTD	EQU  $0385		; Current active disk ][ drive
-DISK_TRKH	EQU  $0386		; Disk track high (from Z80)
-DISK_VOL	EQU  $0387		; Disk volume
-DISK_OP		EQU  $0388		; Disk operation
-DISK_ERR	EQU  $0389		; Disk Error back
-SLOT_INFO	EQU  $03b8
-SCRNHOLE0	EQU  $0478		; text page 1 screen holes
-SCRNHOLE1	EQU  $04f8		; text page 1 screen holes
-SCRNHOLE2	EQU  $0578		; text page 1 screen holes
-DISKSLOTCX	EQU  $05f8		; Disk slot $60
-SCRNHOLE4	EQU  $0678		; text page 1 screen holes
-SCRNHOLE5	EQU  $06f8		; text page 1 screen holes
-SET80COL	EQU  $c001		; W use PAGE2 for aux mem (80STOREON)
-SET80VID	EQU  $c00d		; W enable 80-column display mode
-SETALTCHAR	EQU  $c00f		; W use alternate char set
-SPKR		EQU  $c030		; RW toggle speaker
-TXTPAGE1	EQU  $c054		; RW display page 1
-TXTPAGE2	EQU  $c055		; RW display page 2 (or read/write aux mem)
-IWM_PH0_OFF	EQU  $c080		; IWM phase 0 off
-IWM_MOTOR_OFF	EQU  $c088		; IWM motor off
-IWM_MOTOR_ON	EQU  $c089		; IWM motor on
-IWM_DRIVE_1	EQU  $c08a		; IWM select drive 1
-IWM_DRIVE_2	EQU  $c08b		; IWM select drive 2
-LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
-IWM_Q6_OFF	EQU  $c08c		; IWM read
-IWM_Q6_ON	EQU  $c08d		; IWM WP-sense
-IWM_Q7_OFF	EQU  $c08e		; IWM WP-sense/read
-IWM_Q7_ON	EQU  $c08f		; IWM write
-CLRROM		EQU  $cfff		; disable slot C8 ROM
-SIX_BIT_DATA	EQU  $de00		; Six bit data bytes
-TWO_BIT_DATA	EQU  $df00		; 56 bytes of 2 bit data
 ;*******************************************************************************
 ;*                                                                             *
 ;* Routines to handle Disk drives                                              *

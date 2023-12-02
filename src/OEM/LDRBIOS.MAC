@@ -7,104 +7,10 @@
 ; Binary   (C) Copyright Cirtech 1985
 ; Comments (C) Copyright Peter Ibbotson 2023
 ;
-
-		.6502
-ACC_6502	EQU  $45		; 6502 Acc
-X_6502		EQU  $46		; 6502 X reg
-Y_6502		EQU  $47		; 6502 Y reg
-FLAG_6502	EQU  $48		; 6502 flag
-DISK_ROUT	EQU  $03DC		; Disk routine to call
-LCBANK1		EQU  $C08B		; LCBANK 1 has 6502 code
-LCBANK2		EQU  $C083		; LCBANK 2 is used by Z80 code
-Z80CARD		EQU  $C400		; Address of Z80 card
-BIOSDISK	EQU  $D400		; BIOS disk address
-ROMIN		EQU  $C081		; 6502 bring back roms
-F8ROMSAVE	EQU  $FF4A		; Save registers from ROM
-		.z80
-;
-; 6502 Zero page stuff seen from Z80
-;
-ZSLOTX		EQU  0F004H		; Boot slot 1..7
-ZPRODOS_CMD	EQU  0F042H		; Prodos command
-ZPRODOS_UNITNUM	EQU  0F043H		; Prodos unit number
-ZACC_6502	EQU  0F045H		; 6502 Acc
-ZX_6502		EQU  0F046H		; 6502 X reg
-ZY_6502		EQU  0F047H		; 6502 Y reg
-ZFLAG_6502	EQU  0F048H		; 6502 flag
-;
-; 6502 stuff in 0300 range as seen from Z80
-;
-PAGE300Z80	EQU  0F300H		; Page 300
-DISK_TRKL	EQU  0F380H		; Disk track low
-DISK_SECT	EQU  0F381H		; Disk sector
-DISK_DRV	EQU  0F384H		; Disk drive slot (060)
-DISK_ACTD	EQU  0F385H		; Disk active drive
-DISK_TRKH	EQU  0F386H		; Disk track high
-DISK_OP		EQU  0F388H		; Disk operation
-DISK_ERR	EQU  0F389H		; Disk Result
-SLOT_INFO	EQU  0F3B8H		; Slot info
-ROUT_6502	EQU  0F3D0H		; 6502 routine to call
-CARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
-;
-; 6502 soft switches
-;
-WRMAINRAM	EQU  0E004H		; Write to main ram ($200-$BFFF)
-WRCARDRAM	EQU  0E005H		; Write to 80 col card ram ($200-$BFFF)
-;
-; DPB constants
-;
-DPB_SPT		EQU  00H		; SPT number of 128 records per track
-DPB_BSH		EQU  02H		; BSH Block shift factor
-DPB_BLM		EQU  03H		; BLM Block mask
-DPB_EXM		EQU  04H		; EXM extant mask
-DPB_DSM		EQU  05H		; DSM Blocks on drive
-DPB_DRM		EQU  07H		; DRM Number of directory entries
-DPB_AL0		EQU  09H		; AL0 reserved blocks for directory
-DPB_AL1		EQU  0AH		; AL1
-DPB_CKS		EQU  0BH		; CKS size of directory check vector
-DPB_OFF		EQU  0DH		; OFF reserved tracks
-DPB_PSH		EQU  0FH		; PSH Physical Shift
-DPB_PHM		EQU  10H		; PHM Physical Mask
-DPBLEN		EQU  11H		; Length of Disk parameter block
-;
-; DPH constants
-;
-DPH_XLT		EQU  00H		; Logical to physical table 0,1
-DPH_0_		EQU  02H		; BDOS Scratch - 2,3,4,5, 6,7,8,9, A
-DPH_MF		EQU  0BH		; Media flag - B
-DPH_DPB		EQU  0CH		; Pointer to Disk Parameter Block - C,D
-DPH_CSV		EQU  0EH		; CSV - E,F
-DPH_ALV		EQU  10H		; Allocation vector - 10,11
-DPH_DIRBCB	EQU  12H		; DIRBCB - 12,13
-DPH_DTABCB	EQU  14H		; DTABCB - 14,15
-DPH_HASH	EQU  16H		; hash - 16, 17
-DPH_HBANK	EQU  18H		; 18
-DPHLEN		EQU  19H
-;
-; BCB constants
-;
-BCBLEN		EQU  0FH		; Length of a BCB
-BCB_DRV		EQU  00H		; Disk drive associated with record - 0
-BCB_REC		EQU  01H		; Record position of current content - 1,2,3
-BCB_WFLG	EQU  04H		; Contains data not written to disk - 4
-BCB_SCRATCH	EQU  05H		; Scratch byte - 5
-BCB_TRACK	EQU  06H		; Disk track - 6,7
-BCB_SECTOR	EQU  08H		; Disk sector - 8,9
-BCB_BUFADDR	EQU  0AH		; Buffer address - 10,11
-BCB_BANK	EQU  0CH		; Buffer bank - 12
-BCB_LINK	EQU  0DH		; Link to next BCB - 13,14
-;
-; Memory constants
-;
-DRVTBL		EQU  05E00H		; 05E00H - Table of DPH for drives
-LDRDPBTBL	EQU  DRVTBL-(4*DPBLEN)	; 05DBCH - four DPB created by LDRBIOS
-DRVMAP		EQU  DRVTBL+(2*10H)	; 05E20H - Map of CPM drives to apple drives
-DIRBCB		EQU  DRVMAP+(2*6)	; 05E2CH - Start of Directory BCB chain.
-DTABCB		EQU  DIRBCB+2+6*(BCBLEN+0200H) ; 06A88H - Start of Data deblocking BCB chain.
-FREEMEM		EQU  DTABCB+2+2*(BCBLEN+0200H) ; 06EA8H - FREEMEM for Disk ALV / CKS
-BDOSSTART	EQU  07400H		; BDOS start address
-		cseg
-		org  0
+		INCLUDE EQUATES.MAC
+		.Z80
+		CSEG
+		ORG  0
 ;============================================================
 ;
 ;  BIOS jump table
@@ -225,13 +131,13 @@ boot:		ld   (SAVSTK+1),sp
 		ld   a,(ZSLOTX)		; Get the boot slot
 		ld   e,a
 		ld   d,0
-		ld   ix,SLOT_INFO	; set ix to SLOT_INFO+ZSLOTX
+		ld   ix,ZSLOT_INFO	; set ix to ZSLOT_INFO+ZSLOTX
 		add  ix,de
 		or   0E0H		; Convert slot to 0Ex00H
 		ld   h,a
 		ld   a,SLOT_SCAN-(SLOTJR+2) ; Patch jr to do rest of loop
 		jr   SAVE_BOOT		; Save boot slot
-SLOT_SCAN:	ld   ix,SLOT_INFO+7
+SLOT_SCAN:	ld   ix,ZSLOT_INFO+7
 		ld   hl,0E700H
 NEXT_SLOT:	ld   a,0E0H		; Slot zero?
 		cp   h
@@ -277,10 +183,10 @@ CHKPARAL:	inc  c			; C=5
 		call CHECKCARDSIG
 		jr   nz,CHKSLDRIVE
 SAVECARD:	ld   (ix+0),c
-SKIPBOOT:	dec  ix			; Decrement SLOT_INFO pointer
+SKIPBOOT:	dec  ix			; Decrement ZSLOT_INFO pointer
 		dec  h			; Decrement current slot
 SLOTJR:		jr   SLOT_SCAN		; Gets overwritten
-BOOTEXIT:	ld   (WRCARDRAM),a	; Write to aux memory (48K)
+BOOTEXIT:	ld   (ZWRCARDRAM),a	; Write to aux memory (48K)
 		xor  a
 		ld   (0F027H),a		; Store a zero in 6502?
 		ld   de,PAGE300Z80	; Copy 0300 to aux memory
@@ -288,7 +194,7 @@ BOOTEXIT:	ld   (WRCARDRAM),a	; Write to aux memory (48K)
 		ld   l,e
 		ld   bc,08FFH
 		ldir			; Now $300-$BFF is the same in both banks
-		ld   (WRMAINRAM),a	; Back to main memory
+		ld   (ZWRMAINRAM),a	; Back to main memory
 		ld   a,004
 		ld   (0F47EH),a
 		xor  a
@@ -448,12 +354,12 @@ PDSIZE:		ld   h,000H		; Overwritten by card find routine
 		ld   l,0FFH		; Get prodos entry point
 		ld   l,(hl)
 		res  5,h		; Convert $ExFF to $CxFF
-		ld   (ROUT_6502),hl	; put the ROM address into 6502 call
+		ld   (ZROUT_6502),hl	; put the ROM address into 6502 call
 		ld   a,(APPDRV+1)	; Save disk drive ($6x pr $Ex etc)
 		ld   (ZPRODOS_UNITNUM),a ; For prodos status
 		xor  a
 		ld   (ZPRODOS_CMD),a	; Prodos Status command
-		ld   hl,(CARD_Z80)	; Lets go to 6502 land
+		ld   hl,(ZCARD_Z80)	; Lets go to 6502 land
 		ld   (hl),a
 		ld   a,(ZACC_6502)	; Get error code
 		cp   028H		; No drive?
@@ -869,8 +775,8 @@ SMBLKCALL:	ld   a,c
 ;============================================================
 CALL6502:	ld   a,04H		; Set 6502 flags
 		ld   (ZFLAG_6502),a	; Just Interrupts disabled
-		ld   (ROUT_6502),hl	; Set our destination
-		ld   hl,(CARD_Z80)	; Bounce off to
+		ld   (ZROUT_6502),hl	; Set our destination
+		ld   hl,(ZCARD_Z80)	; Bounce off to
 		ld   (hl),a		; 6502 land
 		ret
 		.6502
@@ -927,7 +833,7 @@ sectran:	ld   h,b		; Copy BC to HL as we don't translate
 ; HL = Disk parameter Header
 ;============================================================
 seldsk:		ld   a,(DRVMAP)		; Get drive A as Apple Drive ID
-		ld   (DISK_DRV),a	; save it for our caller
+		ld   (ZDISK_DRV),a	; save it for our caller
 		ld   hl,FREEMEM		; return back boot DPH
 		ret
 ;============================================================
@@ -945,9 +851,9 @@ home:		ld   bc,0		; Set track to zero fall thru
 ; Exit
 ;============================================================
 settrk:		ld   a,c
-		ld   (DISK_TRKL),a
+		ld   (ZDISK_TRKL),a
 		ld   a,b
-		ld   (DISK_TRKH),a
+		ld   (ZDISK_TRKH),a
 		ret
 ;============================================================
 ; BIOS Func 12 - SETDMA
@@ -968,14 +874,14 @@ setdma:		ld   (readdest+1),bc	; Save address into read func
 ;     FF if media changed.
 ;============================================================
 read:		ld   a,1
-		ld   (DISK_OP),a
+		ld   (ZDISK_OP),a
 		ld   hl,DISK_ROUT
 		call CALL6502
 readdest:	ld   de,0000H		; Setup to copy result back
 		ld   hl,0F800H
 		ld   bc,0200H
 		ldir
-		ld   a,(DISK_ERR)	; Disk read result
+		ld   a,(ZDISK_ERR)	; Disk read result
 		or   a			; All ok?
 		ret  z			; Go home
 		ld   c,7		; Ring the bell
@@ -1019,7 +925,7 @@ z80scrn2:	DW   0F7D0H,0F750H,0F6D0H,0F650H ; Lines 24,23,22,21
 ; Exit
 ;============================================================
 setsec:		ld   a,c
-		ld   (DISK_SECT),a
+		ld   (ZDISK_SECT),a
 		ret
 ;============================================================
 ; BIOS Func 25 - MOVE

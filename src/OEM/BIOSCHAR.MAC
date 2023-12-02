@@ -16,27 +16,9 @@
 ;*  $0F = Write character                                                      *
 ;*  $10 = Get status                                                           *
 ;*******************************************************************************
-		cseg
+		INCLUDE EQUATES.MAC
+		CSEG
 		.6502
-CHAR_OP_INI	EQU  $0d		; Character IO Init (same as pascal offset)
-CHAR_OP_RD	EQU  $0e		; Character IO Read (same as pascal offset)
-CHAR_OP_WR	EQU  $0f		; Character IO Write (same as pascal offset)
-CHAR_OP_ST	EQU  $10		; Character IO Status (same as pascal offset)
-SLOT_INFO	EQU  $03b8		; Card slot information
-STSBYTE		EQU  $05b8		; SSC Char
-SCRNHOLE5	EQU  $06f8		; text page 1 screen hole 5
-PARA_DATAOUT	EQU  $c080		; Apple parallel card data out
-LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
-CLRROM		EQU  $cfff		; disable slot C8 ROM
-STATUS6510	EQU  $c08e		; Status port for 6510 cards
-DATA6510	EQU  $c08f		; Data port for 6510 cards
-PARA_ACKIN	EQU  $c0c1		; Apple parallel port ack in
-SCC_INIT	EQU  $c800		; Super serial card init
-SSC_READ	EQU  $c84d		; Super serial card read routine
-SSC_WRITE	EQU  $c9aa		; Super serial card write routine
-CLRROM		EQU  $cfff		; disable slot C8 ROM
-TOG_CURJMP	EQU  $D000		; Address in video BIOS
-PRINT_STACK_CHAR EQU  $D003		; Address in video BIOS
 ; Entry point
 CHAR_IO_OPER:	cld			; Clear decimal mode
 		pha			; Put acc on stack
@@ -44,7 +26,7 @@ CHAR_IO_OPER:	cld			; Clear decimal mode
 		bne  CHECK_CUR_TOG	; Output to console?
 		bit  LCBANK1		; Yes, page in video BIOS in language card
 		bit  LCBANK1
-		jmp  PRINT_STACK_CHAR	; Put top of stack onto screen
+		jmp  PRT_STACK_CHAR	; Put top of stack onto screen
 
 CHECK_CUR_TOG:	bpl  DO_SLOT_IO		; Slot number positive
 		bit  LCBANK1		; Nope, so page in video BIOS

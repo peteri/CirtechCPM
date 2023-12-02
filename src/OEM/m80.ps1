@@ -5,7 +5,8 @@ C:\tools\ntvcm.exe ..\..\tools\ALDS\M80P.COM =$filename/R | Tee-Object -FilePath
 dotnet run --project ..\..\tools\CtrlZ remove "$filename.MAC"
 $errLog=(Get-Content -Path .\M80ERR.LOG)[-1]
 if ($errLog -ne 'No Fatal Error(s)')
-{
-    throw "Error assembling $filename.MAC, examine M80ERR.LOG"
+{	
+    $errMsg="Error assembling $filename.MAC, examine M80ERR.LOG"
+    throw $errMsg
 }
 Remove-Item -Path .\M80ERR.LOG

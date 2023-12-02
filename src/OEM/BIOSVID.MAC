@@ -5,40 +5,23 @@
 ;* Other one is put character on top of stack to screen and use terminal       *
 ;* emulation codes.                                                            *
 ;*******************************************************************************
-		cseg
+		INCLUDE EQUATES.MAC
+		CSEG
 		.6502
-SCRLINEL	EQU  $20		; Address of current line in $400
-SCRLINEH	EQU  $21		; Screen address high
-ESCAPE_STATE	EQU  $22		; State for ESCAPE leadin
-CURSOR_STATE	EQU  $23		; Bit 7 high if cursor on screen
-CURSORX		EQU  $25		; Cursor X (80 col)
-ZP_TEMP1	EQU  $26		; Zero page temporary
-CURSORY		EQU  $29		; Cursor Y (80 col)
-MON_INVFLAG	EQU  $32		; text mask (255=normal, 127=flash, 63=inv)
-SET80COL	EQU  $c001		; W use PAGE2 for aux mem (80STOREON)
-SET80VID	EQU  $c00d		; W enable 80-column display mode
-SETALTCHAR	EQU  $c00f		; W use alternate char set
-SPKR		EQU  $c030		; RW toggle speaker
-TXTPAGE1	EQU  $c054		; RW display page 1
-TXTPAGE2	EQU  $c055		; RW display page 2 (or read/write aux mem)
 ;*******************************************************************************
 ;*                                                                             *
 ;* Routines to handle the 80 Column card                                       *
 ;*                                                                             *
 ;*******************************************************************************
-TOG_CURJMP:
-		jmp  POP_TOGGLE_CURSOR
-PRINT_STACK_CHAR:
-		pla			; Get our character off the stack
-PRINT_CHAR:
-		ora  #$80		; Set the high bit
+TOGCURJMP:	jmp  POP_TOGGLE_CURSOR
+PRTSTACKCHAR:	pla			; Get our character off the stack
+PRINT_CHAR:	ora  #$80		; Set the high bit
 		bit  ESCAPE_STATE
 		bpl  CHECK_ESC_CHAR1	; Bit 7 clear check for escape
 		bit  GOTO_Y		; Goto YX, Y Character set yet?
 		bmi  GOTO_YX		; Must be the X postion now we can move the  cursor
 		sta  GOTO_Y		; Setting the Y character
 		rts
-
 ; There is a fairly complicated state machine here
 ; ESCAPE_STATE
 ;   Bit 7 0=no escape seen
