@@ -101,6 +101,14 @@ MON_SAVE	EQU  $ff4a		; save 6502 registers to $45-49
 F8ROMSAVE	EQU  $ff4a		; Save registers from ROM
 MON_MONZ	EQU  $ff69		; reset and enter monitor
 		; Misc constants
+ESC		EQU  1BH		; Escape character
+CR		EQU  0DH		; Carriage return
+LF		EQU  0AH		; Line feed
+DSKOP_RD	EQU  01H		; Disk operation Read
+DSKOP_WR	EQU  02H		; Disk operation Write
+DSKOP_FMT	EQU  03H		; Disk operation Format
+DSKOP_WRTRK	EQU  04H		; Disk operation Write Track
+DSKOP_RDTRK	EQU  05H		; Disk operation Read Track
 CHAR_OP_INI	EQU  $0d		; Character IO Init (same as pascal offset)
 CHAR_OP_RD	EQU  $0e		; Character IO Read (same as pascal offset)
 CHAR_OP_WR	EQU  $0f		; Character IO Write (same as pascal offset)
@@ -167,7 +175,10 @@ BDOSSTART	EQU  07400H		; BDOS start address
 ;
 ; 6502 Zero page stuff seen from Z80
 ;
+Z80OFFS		EQU  0F000H
 ZSLOTX		EQU  0F004H		; Boot slot 1..7
+ZESC_STATE	EQU  0F022H		; Escape lead in state
+ZCUR_STATE	EQU  0F023H		; Bit 7 high if cursor on screen
 ZPRODOS_CMD	EQU  0F042H		; Prodos command
 ZPRODOS_UNITNUM	EQU  0F043H		; Prodos unit number
 ZACC_6502	EQU  0F045H		; 6502 Acc
@@ -193,3 +204,28 @@ ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
 ;
 ZWRMAINRAM	EQU  0E004H		; Write to main ram ($200-$BFFF)
 ZWRCARDRAM	EQU  0E005H		; Write to 80 col card ram ($200-$BFFF)
+;
+; Messages for the toolkey popup (see src\boot\toolkey.mac)
+;
+MSG_TOOLKEY	EQU  0FC00H		; Message box for toolkey
+MSG_FORMAT	EQU  0FCD2H		; Format disk in which drive
+MSG_INSDISK	EQU  0FCF8H		; Insert disk in drive and press rtn
+MSG_FMTING	EQU  0FD1EH		; Formatting
+MSG_FORMOK	EQU  0FD44H		; Format successful, do again
+ERR_DSKERR	EQU  0FD6AH		; Disk error
+ERR_WRPRO	EQU  0FD90H		; Write protected error
+MSG_GETSRC	EQU  0FDB6H		; Which drive is source
+MSG_GETDST	EQU  0FDDCH		; Which drive is dest
+MSG_INSDSKS	EQU  0FE02H		; Insert disks
+MSG_DUPLIC	EQU  0FE28H		; Duplicating disk
+MSG_DUPOK	EQU  0FE4EH		; Operation sucessful, do again
+MSG_SRCDSK	EQU  0FE74H		; Insert source disk
+MSG_DSTDSK	EQU  0FE9AH		; Insert destination disk
+MSG_WRNGDSK	EQU  0FEC0H		; Incompatible drives
+;
+; Misc constants
+;
+WBOOTJP		EQU  00000H
+BDOSJP		EQU  00005H
+CCP		EQU  00100H		; CCP entry
+WARMCOPYLEN	EQU  05CFFH		; Warm copy length

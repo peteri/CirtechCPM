@@ -7,7 +7,7 @@
 ; Disassembly (C) Copyright Peter Ibbotson
 ;
 ;============================================================
-
+		INCLUDE EQUATES.MAC
 ; Macro to put hi bit ascii strings in the code.
 HIBYTE		MACRO MSG
 		IRPC X,<MSG>
@@ -38,14 +38,6 @@ AUXBUFEND	EQU  0C000H		; Aux buffer is 4K
 ;
 ; Misc constants
 ;
-ESC		EQU  1BH
-CR		EQU  0DH
-LF		EQU  0AH
-DSKOP_RD	EQU  01H		; Disk operation Read
-DSKOP_WR	EQU  02H		; Disk operation Write
-DSKOP_FMT	EQU  03H		; Disk operation Format
-DSKOP_WRTRK	EQU  04H		; Disk operation Write Track
-DSKOP_RDTRK	EQU  05H		; Disk operation Read Track
 CHAR_OP_INI	EQU  0DH		; Character IO Init (same as pascal offset)
 CHAR_OP_RD	EQU  0EH		; Character IO Read (same as pascal offset)
 CHAR_OP_WR	EQU  0FH		; Character IO Write (same as pascal offset)
@@ -53,10 +45,8 @@ CHAR_OP_ST	EQU  10H		; Character IO Status (same as pascal offset)
 ;
 ; 6502 Zero page stuff seen from Z80
 ;
-Z80OFFS		EQU  0F000H
 ZSLOTX		EQU  0F004H		; Boot slot 1..7
-ZESC_STATE	EQU  0F022H		; Escape lead in state
-ZCUR_STATE	EQU  0F023H		; Bit 7 high if cursor on screen
+
 ZACC_6502	EQU  0F045H		; 6502 Acc
 ZX_6502		EQU  0F046H		; 6502 X reg
 ZY_6502		EQU  0F047H		; 6502 Y reg
@@ -87,63 +77,6 @@ SCRL10		EQU  0528H + LEFTEDGE + Z80OFFS
 SCRL11		EQU  05A8H + LEFTEDGE + Z80OFFS
 SCRL12		EQU  0628H + LEFTEDGE + Z80OFFS
 DISK_BUFF	EQU  0F800H		; Disk buffer for BIOS
-;
-; Shared stuff between ldr bios and here
-;
-WBOOTJP		EQU  00000H
-BDOSJP		EQU  00005H
-CCP		EQU  00100H		; CCP entry
-WARMCOPYLEN	EQU  05CFFH		; Warm copy length
-LDRDPBTBL	EQU  5DBCH		; four DPB created by LDRBIOS
-DRVTBL		EQU  5E00H		; Table of DPH entries for drives
-DRVMAP		EQU  5E20H		; Map of CPM drives to apple drives
-DIRBCB		EQU  5E2CH		; Start of Directory BCB chain.
-DTABCB		EQU  6A88H		; Start of Data deblocking BCB chain.
-FREEMEM		EQU  6EA8H		; FREEMEM for Disk 0
-DPBL		EQU  0CH		; DPH low offset of drive parameter block
-DPBH		EQU  0DH		; DPH high offset of drive parameter block
-DPBLEN		EQU  11H		; Length of a drive parameter block
-DPB_SPT		EQU  00H		; SPT number of 128 records per track
-DPB_BSH		EQU  02H		; BSH Block shift factor
-DPB_BLM		EQU  03H		; BLM Block mask
-DPB_EXM		EQU  04H		; EXM extant mask
-DPB_DSM		EQU  05H		; DSM Blocks on drive
-DPB_DRM		EQU  07H		; DRM Number of directory entries
-DPB_AL0		EQU  09H		; AL0 reserved blocks for directory
-DPB_AL1		EQU  0AH		; AL1
-DPB_CKS		EQU  0BH		; CKS size of directory check vector
-DPB_OFF		EQU  0DH		; OFF 3 reserved tracks
-DPB_PSH		EQU  0FH		; PSH Physical Shift
-DPB_PHM		EQU  10H		; PHM Physical Mask
-; Constants from the DPH stuff
-DPHLEN		EQU  19H
-DPH_DIRBCB	EQU  12H		; DIRBCB - Directory Buffer Control Blocks
-DPH_DTABCB	EQU  14H		; DTABCB - Data Buffer Control Blocks
-;
-; Messages for the toolkey popup (see src\boot\toolkey.mac)
-;
-MSG_TOOLKEY	EQU  0FC00H		; Message box for toolkey
-MSG_FORMAT	EQU  0FCD2H		; Format disk in which drive
-MSG_INSDISK	EQU  0FCF8H		; Insert disk in drive and press rtn
-MSG_FMTING	EQU  0FD1EH		; Formatting
-MSG_FORMOK	EQU  0FD44H		; Format successful, do again
-ERR_DSKERR	EQU  0FD6AH		; Disk error
-ERR_WRPRO	EQU  0FD90H		; Write protected error
-MSG_GETSRC	EQU  0FDB6H		; Which drive is source
-MSG_GETDST	EQU  0FDDCH		; Which drive is dest
-MSG_INSDSKS	EQU  0FE02H		; Insert disks
-;
-; Note duplicate message is at the same address as
-; @AOVEC before GENCPM runs unclear why this does not
-; nobbled by the SCB relocate, best guess is it's not in
-; the common area so it never gets done. Need to investigate
-; via the CP/M plus code.
-;
-MSG_DUPLIC	EQU  0FE28H		; Duplicating disk
-MSG_DUPOK	EQU  0FE4EH		; Operation sucessful, do again
-MSG_SRCDSK	EQU  0FE74H		; Insert source disk
-MSG_DSTDSK	EQU  0FE9AH		; Insert destination disk
-MSG_WRNGDSK	EQU  0FEC0H		; Incompatible drives
 ;******************************************************************
 ;*                                                                *
 ;*  Set the common memory segment, code from here on in lives     *
