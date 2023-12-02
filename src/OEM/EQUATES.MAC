@@ -1,33 +1,33 @@
 ;********************************
-;*				*
-;*	6502 constants		*
-;*				*
+;*                              *
+;*     6502 constants           *
+;*                              *
 ;********************************
 		.6502
 		; Zero page addresses
-SECT2READ	equ  $00		; sector we're going to read
+SECT2READ	EQU  $00		; sector we're going to read
 SLOTX16		EQU  $01		; Boot slot times sixteen
-SLOTX		EQU  $04		; SLOTX		
+SLOTX		EQU  $04		; SLOTX
 SCRLINEL	EQU  $20		; Address of current line in $400
 SCRLINEH	EQU  $21		; Screen address high
-ESCAPE_STATE	EQU  $22		; State for ESCAPE leadin
-CURSOR_STATE	EQU  $23		; Bit 7 high if cursor on screen
+ESC_STATE	EQU  $22		; State for ESCAPE leadin
+CUR_STATE	EQU  $23		; Bit 7 high if cursor on screen
 CURSORX		EQU  $25		; Cursor X (80 col)
 ZP_TEMP1	EQU  $26		; Zero page temporary
-DATA_PTR	equ  $26
-D2_CHECK_SUM	EQU  $27		; Disk ][ check sum	
+DATA_PTR	EQU  $26
+D2_CHECK_SUM	EQU  $27		; Disk ][ check sum
 CURSORY		EQU  $29		; Cursor Y (80 col)
 HEADER_CHECKSUM	EQU  $2c		; Checksum for the sector header
 HEADER_SECTOR	EQU  $2d
 HEADER_TRACK	EQU  $2e		; Track from sector header
 HEADER_VOLUME	EQU  $2f
 MON_INVFLAG	EQU  $32		; text mask (255=normal, 127=flash, 63=inv)
-ROM_SECT2READ 	equ  $3d		; Disk II sector to read
+ROM_SECT2READ	EQU  $3d		; Disk II sector to read
 MON_A1H		EQU  $3d		; general purpose
 MON_A2L		EQU  $3e		; general purpose
 MON_A2H		EQU  $3f		; general purpose
 MON_A3H		EQU  $41		; general purpose
-BOOT_TRACK	equ  $41		; BOOT_TRACK to read
+BOOT_TRACK	EQU  $41		; BOOT_TRACK to read
 PRODOS_CMD	EQU  $42
 PRODOS_UNITNUM	EQU  $43
 PRDOOS_BUFPTRL	EQU  $44
@@ -63,10 +63,10 @@ PARA_ACKIN	EQU  $c0c1		; Apple parallel port ack in
 Z80CARD		EQU  $c400		; Address of Z80 card
 CLRROM		EQU  $cfff		; disable slot C8 ROM
 		; IWM hardware addresses
-IWM_PH0_OFF	equ  $c080		; IWM phase 0 off
-IWM_PH1_OFF	equ  $c082		; IWM phase 1 off
-IWM_PH1_ON	equ  $c083		; IWM phase 1 on
-IWM_PH2_ON	equ  $c085		; IWM phase 2 on
+IWM_PH0_OFF	EQU  $c080		; IWM phase 0 off
+IWM_PH1_OFF	EQU  $c082		; IWM phase 1 off
+IWM_PH1_ON	EQU  $c083		; IWM phase 1 on
+IWM_PH2_ON	EQU  $c085		; IWM phase 2 on
 IWM_MOTOR_OFF	EQU  $c088		; IWM motor off
 IWM_MOTOR_ON	EQU  $c089		; IWM motor on
 IWM_DRIVE_1	EQU  $c08a		; IWM select drive 1
@@ -84,7 +84,7 @@ DISK_ACTD	EQU  $0385		; Current active disk ][ drive
 DISK_TRKH	EQU  $0386		; Disk track high (from Z80)
 DISK_VOL	EQU  $0387		; Disk volume
 DISK_OP		EQU  $0388		; Disk operation
-DISK_ERR	EQU  $0389		; Disk Error back		
+DISK_ERR	EQU  $0389		; Disk Error back
 SLOT_INFO	EQU  $03b8		; Card slot information
 DISK_ROUT	EQU  $03dc		; Disk routine to call
 STSBYTE		EQU  $05b8		; SSC Char
@@ -94,7 +94,7 @@ SCRNHOLE2	EQU  $0578		; text page 1 screen holes
 DISKSLOTCX	EQU  $05f8		; Disk slot $60
 SCRNHOLE4	EQU  $0678		; text page 1 screen holes
 SCRNHOLE5	EQU  $06f8		; text page 1 screen hole 5
-DISKREADSECT	equ  $c05c		; ROM Disk read sector routine
+DISKREADSECT	EQU  $c05c		; ROM Disk read sector routine
 SCC_INIT	EQU  $c800		; Super serial card init
 SSC_READ	EQU  $c84d		; Super serial card read routine
 SSC_WRITE	EQU  $c9aa		; Super serial card write routine
@@ -123,9 +123,9 @@ CHAR_OP_RD	EQU  $0e		; Character IO Read (same as pascal offset)
 CHAR_OP_WR	EQU  $0f		; Character IO Write (same as pascal offset)
 CHAR_OP_ST	EQU  $10		; Character IO Status (same as pascal offset)
 ;********************************
-;*				*
-;*	Z80 constants		*
-;*				*
+;*                              *
+;*     Z80 constants            *
+;*                              *
 ;********************************
 		.z80
 ;
@@ -180,7 +180,7 @@ DRVMAP		EQU  DRVTBL+(2*10H)	; 05E20H - Map of CPM drives to apple drives
 DIRBCB		EQU  DRVMAP+(2*6)	; 05E2CH - Start of Directory BCB chain.
 DTABCB		EQU  DIRBCB+2+6*(BCBLEN+0200H) ; 06A88H - Start of Data deblocking BCB chain.
 FREEMEM		EQU  DTABCB+2+2*(BCBLEN+0200H) ; 06EA8H - FREEMEM for Disk ALV / CKS
-BDOSSTART	EQU  07400H		; BDOS start address		
+BDOSSTART	EQU  07400H		; BDOS start address
 ;
 ; 6502 soft switches as seen from Z80
 ;
@@ -202,30 +202,30 @@ ZLCBANK1	EQU  ZC0 + LCBANK1	; Language card bank 1
 ;
 ; 6502 Zero page stuff seen from Z80
 ;
-Z80OFFS		EQU  0F000H
-ZSLOTX		EQU  0F004H		; Boot slot 1..7
-ZESC_STATE	EQU  0F022H		; Escape lead in state
-ZCUR_STATE	EQU  0F023H		; Bit 7 high if cursor on screen
-ZPRODOS_CMD	EQU  0F042H		; Prodos command
-ZPRODOS_UNITNUM	EQU  0F043H		; Prodos unit number
-ZACC_6502	EQU  0F045H		; 6502 Acc
-ZX_6502		EQU  0F046H		; 6502 X reg
-ZY_6502		EQU  0F047H		; 6502 Y reg
-ZFLAG_6502	EQU  0F048H		; 6502 flag
+Z00		EQU  0F000H		; Z80 -> 6502 hardware ofset for $0000-$0FFF
+ZSLOTX		EQU  Z00 + SLOTX	; Boot slot 1..7
+ZESC_STATE	EQU  Z00 + ESC_STATE	; Escape lead in state
+ZCUR_STATE	EQU  Z00 + CUR_STATE	; Bit 7 high if cursor on screen
+ZPRODOS_CMD	EQU  Z00 + PRODOS_CMD	; Prodos command
+ZPRODOS_UNITNUM	EQU  Z00 + PRODOS_UNITNUM ; Prodos unit number
+ZACC_6502	EQU  Z00 + ACC_6502	; 6502 Acc
+ZX_6502		EQU  Z00 + X_6502	; 6502 X reg
+ZY_6502		EQU  Z00 + Y_6502	; 6502 Y reg
+ZFLAG_6502	EQU  Z00 + FLAG_6502	; 6502 flag
 ;
 ; 6502 stuff in 0300 range as seen from Z80
 ;
 PAGE300Z80	EQU  0F300H		; Page 300
 SCRLINES	EQU  0F312H		; Screen lines table going up
-ZDISK_TRKL	EQU  0F380H		; Disk track low
-ZDISK_SECT	EQU  0F381H		; Disk sector
-ZDISK_TRK_ADDR  EQU  0F382H
-ZDISK_DRV	EQU  0F384H		; Disk drive slot (060)
-ZDISK_ACTD	EQU  0F385H		; Disk active drive
-ZDISK_TRKH	EQU  0F386H		; Disk track high
-ZDISK_OP	EQU  0F388H		; Disk operation
-ZDISK_ERR	EQU  0F389H		; Disk Result
-ZSLOT_INFO	EQU  0F3B8H		; Slot info
+ZDISK_TRKL	EQU  Z00 + DISK_TRKL	; Disk track low
+ZDISK_SECT	EQU  Z00 + DISK_SECT	; Disk sector
+ZDISK_TRK_ADDR	EQU  Z00 + DISK_TRK_ADDR
+ZDISK_DRV	EQU  Z00 + DISK_DRV	; Disk drive slot (060)
+ZDISK_ACTD	EQU  Z00 + DISK_ACTD	; Disk active drive
+ZDISK_TRKH	EQU  Z00 + DISK_TRKH	; Disk track high
+ZDISK_OP	EQU  Z00 + DISK_OP	; Disk operation
+ZDISK_ERR	EQU  Z00 + DISK_ERR	; Disk Result
+ZSLOT_INFO	EQU  Z00 + SLOT_INFO	; Slot info
 ZROUT_6502	EQU  0F3D0H		; 6502 routine to call
 ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
 ZIO_STATUS	EQU  0F3EBH		; Io status, bit 2=key press ready
@@ -234,11 +234,11 @@ ZDISK_BUFF	EQU  0F800H		; Disk buffer for BIOS
 ; Constants for TOOLKEY pop up
 ;
 LEFTEDGE	EQU  9			; Left edge of window
-SCRL8		EQU  0428H + LEFTEDGE + Z80OFFS
-SCRL9		EQU  04A8H + LEFTEDGE + Z80OFFS
-SCRL10		EQU  0528H + LEFTEDGE + Z80OFFS
-SCRL11		EQU  05A8H + LEFTEDGE + Z80OFFS
-SCRL12		EQU  0628H + LEFTEDGE + Z80OFFS
+SCRL8		EQU  Z00 + 0428H + LEFTEDGE
+SCRL9		EQU  Z00 + 04A8H + LEFTEDGE
+SCRL10		EQU  Z00 + 0528H + LEFTEDGE
+SCRL11		EQU  Z00 + 05A8H + LEFTEDGE
+SCRL12		EQU  Z00 + 0628H + LEFTEDGE
 ;
 ; Messages for the toolkey popup (see src\boot\toolkey.mac)
 ;

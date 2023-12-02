@@ -16,14 +16,14 @@
 TOGCURJMP:	jmp  POP_TOGGLE_CURSOR
 PRTSTACKCHAR:	pla			; Get our character off the stack
 PRINT_CHAR:	ora  #$80		; Set the high bit
-		bit  ESCAPE_STATE
+		bit  ESC_STATE
 		bpl  CHECK_ESC_CHAR1	; Bit 7 clear check for escape
 		bit  GOTO_Y		; Goto YX, Y Character set yet?
 		bmi  GOTO_YX		; Must be the X postion now we can move the  cursor
 		sta  GOTO_Y		; Setting the Y character
 		rts
 ; There is a fairly complicated state machine here
-; ESCAPE_STATE
+; ESC_STATE
 ;   Bit 7 0=no escape seen
 ;   Bit 6 0=Possible normal character
 ;   Bit 6 1=Escape seen
@@ -66,7 +66,7 @@ CURSORY_OK:
 		sta  CURSORY
 		jsr  SET_LINE_PTR
 		ldy  #$00
-		sty  ESCAPE_STATE
+		sty  ESC_STATE
 		beq  SHOW_CURSOR
 
 CHECK_ESC_CHAR1:
@@ -77,7 +77,7 @@ CHECK_FOR_ESC:
 		cmp  #$9b
 		bne  CTRL_WRITE_SCR
 		lda  #$40
-		sta  ESCAPE_STATE
+		sta  ESC_STATE
 		rts
 
 ; Come here to write a character to screen
@@ -123,7 +123,7 @@ NO_SCROLL:
 		sta  SCRLINEL
 SHOW_CURSOR:
 		lda  #$80
-		sta  CURSOR_STATE	; Set the cursor to on
+		sta  CUR_STATE		; Set the cursor to on
 FLIP_INVERTED:
 		lda  CURSORX		; Get cursor position
 		lsr  A
@@ -172,7 +172,7 @@ CTRL_CHAR_JSR:
 
 ESCAPE_CHAR1:
 		ldy  #$00		; First character in escape sequence
-		sty  ESCAPE_STATE
+		sty  ESC_STATE
 		cmp  #'=' + $80		; Goto YX command?
 		beq  GOTO_YX_CMD	; Yes it is
 ; Convert any of the single character escape codes
@@ -186,7 +186,7 @@ FIND_ESC_CHAR_LOOP:
 
 GOTO_YX_CMD:
 		sec			; Set the high bit so say we're waiting for Y
-		ror  ESCAPE_STATE
+		ror  ESC_STATE
 		clc
 		ror  GOTO_Y		; Clear bit 7 (Seen Y coord)
 		rts
@@ -219,9 +219,9 @@ SET_LINE_PTR:
 POP_TOGGLE_CURSOR:
 		pla			; Pop unwanted parameter
 TOGGLE_CURSOR:
-		lda  CURSOR_STATE	; Flip the cursor state
+		lda  CUR_STATE		; Flip the cursor state
 		eor  #$80
-		sta  CURSOR_STATE
+		sta  CUR_STATE
 		jmp  FLIP_INVERTED	; Flip the character on screen inverse state
 
 ; Backspace
@@ -498,7 +498,7 @@ SCROLL_COL_DOWN:
 		rts
 
 HIDE_CURSOR:
-		bit  CURSOR_STATE	; Get the current cursor state
+		bit  CUR_STATE		; Get the current cursor state
 		bpl  CURSOR_IS_OFF	; Is it off
 		pha			; Nope save the accumulator
 		jsr  TOGGLE_CURSOR	; Toggle the cursor

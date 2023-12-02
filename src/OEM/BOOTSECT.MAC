@@ -47,7 +47,7 @@ DISKII_FOUND_INIT
 		sta  SECT2READ
 ; Future reads skip the code above and jump to here.
 SKIP_DISKII_INIT
-		inc  SECT2READ	; Add one to our sect to read
+		inc  SECT2READ		; Add one to our sect to read
 		lda  SECT2READ
 		ldx  BOOT_TRACK		; Still on BOOT_TRACK 0?
 		bne  BOOTTRKREADYET	; Nope see if we've read the whole BOOT_TRACK
@@ -103,7 +103,7 @@ DELAY2		sbc  #$01
 		ldx  SLOTXMINUS4	; Time to go to BOOT_TRACK 2
 READTRK1	lda  IWM_PH2_ON,x	; Another half BOOT_TRACK
 MAP_SECTOR_AND_READ
-		ldy  SECT2READ	; Get the prodos(?) style sector
+		ldy  SECT2READ		; Get the prodos(?) style sector
 		lda  SECTORMAP,y	; Convert it for the ROM
 		sta  ROM_SECT2READ
 		ldx  SLOTX16		; Setup X register for ROM
@@ -222,7 +222,7 @@ SMART_BLOCK_NUM	db   $00		; Three bytes for the address
 PRODOS_READ	sty  PD_CALL_DRIVER+1
 		lda  SLOTX16
 		sta  BPRODOS_UNITNUM
-		ora  #$0f		
+		ora  #$0f
 		sta  SLOTX16		; Used by BIOS to set A: drive
 		ldx  #$06
 PD_ZP_COPY	lda  BPRODOS_CMD,x	; Copy prodos command to zero page
