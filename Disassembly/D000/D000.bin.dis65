@@ -161,6 +161,74 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"D2_SAVETRAN":{
+"DataDescriptor":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":true,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"D2_SAVETRAN",
+"Value":57193,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"D2DRIVE":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Hi bit set if drive 2 for Disk II",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"D2DRIVE",
+"Value":53,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"D2SAVRDDTAPG":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"D2SAVRDDTAPG",
+"Value":57192,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"D2SAVWRDTAPG":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"D2SAVWRDTAPG",
+"Value":57191,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "DATA6510":{
 "DataDescriptor":{
 "Length":1,
@@ -178,6 +246,40 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"DELAYINNER":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DELAYINNER",
+"Value":70,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"DELAYOUTER":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DELAYOUTER",
+"Value":71,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "DISK_ACTD":{
 "DataDescriptor":{
 "Length":1,
@@ -191,6 +293,23 @@
 "MultiMask":null,
 "Label":"DISK_ACTD",
 "Value":901,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"DISK_BUFF":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DISK_BUFF",
+"Value":2048,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -346,6 +465,91 @@
 "Value":1528,
 "Source":"Project",
 "Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"DSKOP_FMT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"Comment":"Disk operation format",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DSKOP_FMT",
+"Value":3,
+"Source":"Project",
+"Type":"Constant",
+"LabelAnno":"None"},
+
+"DSKOP_RD":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"Comment":"Disk operation read",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DSKOP_RD",
+"Value":1,
+"Source":"Project",
+"Type":"Constant",
+"LabelAnno":"None"},
+
+"DSKOP_RDTRK":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"Comment":"Disk operation read track",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DSKOP_RDTRK",
+"Value":5,
+"Source":"Project",
+"Type":"Constant",
+"LabelAnno":"None"},
+
+"DSKOP_WR":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"Comment":"Disk operation write",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DSKOP_WR",
+"Value":2,
+"Source":"Project",
+"Type":"Constant",
+"LabelAnno":"None"},
+
+"DSKOP_WRTRK":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"Comment":"Disk operation write track",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DSKOP_WRTRK",
+"Value":4,
+"Source":"Project",
+"Type":"Constant",
 "LabelAnno":"None"},
 
 "ESCAPE_STATE":{
@@ -1107,6 +1311,8 @@
 "1027":"Mask off drive (ProDOS style)",
 "1037":"Get Disk type? Might be card in slot",
 "1040":"DISK ][ ?",
+"1044":"Ram drive or Prodos?",
+"1048":"Go do IDC check",
 "1070":"Into read mode",
 "1078":"Read some data",
 "1081":"Waste 3+4 cycles",
@@ -1117,8 +1323,14 @@
 "1108":"Same as active drive",
 "1113":"Update the drive",
 "1117":"Clear zero flag",
+"1123":"Assume drive 1",
+"1126":"Save drive 1 into D2DRIVE",
+"1128":"Nope drive 2",
+"1131":"Rotate carry flag into variable",
+"1133":"Means we can use BIT to decide",
 "1171":"Read?",
-"1178":"Read multiple sectors",
+"1178":"Write a whole track",
+"1185":"Read a whole track",
 "1313":"Clear error",
 "1316":"Setup disk error",
 "1319":"Turn off motor",
@@ -1126,6 +1338,18 @@
 "1576":"Write data header bytes",
 "1648":"Write checksum",
 "1651":"Write trailer bytes",
+"1678":"Clear out the two bit table",
+"1682":"Clear it",
+"1686":"Loop until done",
+"1688":"Zero counter",
+"1689":"First time thru we need to more bits",
+"1691":"BIT instruction",
+"1692":"First time X is AC, Second time AA",
+"1695":"Get data byte",
+"1699":"Rotate into two bit data",
+"1706":"Put left overs into six bit data",
+"1710":"Out of two bit data?",
+"1713":"Done all 256 bytes?",
 "1716":"2 Cycles - Provide different delays",
 "1717":"3 cycles - delays to produce",
 "1718":"4 cycles correct timeing",
@@ -1133,6 +1357,12 @@
 "1722":"5 cycles - write byte",
 "1725":"6 cycles - return to caller ",
 "1726":"Merge together 6 and 2 bits",
+"1728":"Reset two bit counter",
+"1731":"Reset counter if we\u0027re out of space",
+"1733":"Get our six bits and merge with two",
+"1736":"bits from the two bit data",
+"1744":"Store into the destination buffer",
+"1748":"All done? (not sure why the comparison?",
 "1799":"Try to find a D5 32 times (we\u0027ve seen a sector header)",
 "1809":"Look for D5 (and zero ACC)",
 "1811":"Not yet try again",
@@ -1144,8 +1374,30 @@
 "1837":"Save away counter",
 "1839":"Read a data byte for our 2 bits",
 "1847":"Restore counter",
+"1849":"Store the data",
+"1852":"Carry on reading two bit data",
 "1854":"Save counter",
+"1856":"Time to do the 6 bit bytes",
+"1861":"Translate data",
+"1866":"Save it",
+"1870":"Keep going until we\u0027ve done $100",
+"1872":"Get the checksum",
+"1877":"Compare against table",
+"1880":"Bad? Flag error and home",
+"1882":"Wait for first byte of trailer",
+"1887":"Wrong value go home",
+"1892":"Wait for second byte of trailer",
+"1899":"Right value clear the carry and go home",
 "1901":"Set carry flag and return",
+"1905":"Header find loop counter",
+"1907":"First time around this loop we wait for four attempts",
+"1908":"Second time we wait for 256 rounds.",
+"1910":"Read $304 bytes from disk?",
+"1912":"Not seen D5 yet go home",
+"1914":"Get a data byte",
+"1919":"D5 yet",
+"1921":"Keep on going",
+"1924":"Wait for AA",
 "1933":"Setup counter for header bytes",
 "1940":"Last byte of header?",
 "1942":"Nope loop back to beginning",
@@ -1159,11 +1411,34 @@
 "1963":"Store away the data",
 "1968":"Count backwards",
 "1969":"Done all four bytes",
+"1971":"Checksum zero, set zero flag",
+"1972":"Go home with an error",
+"1974":"Read trailing byte",
+"1981":"Wrong, go home with a error",
+"1984":"Wait for AA",
+"1991":"Wrong, go home with an error",
+"1993":"We\u0027re good",
 "1995":"MOVE_TO_TRACK",
+"2591":"Save data buffer page value for writes",
+"2597":"Save data buffer page value for reads",
+"2603":"Save CPM sector translate",
+"2615":"Swap to Prodos sector translate",
+"2625":"Set up data pointers",
+"2650":"Had an error go home",
+"2652":"Leave the motor running",
+"2655":"Increment data pointer",
+"2661":"Bounce sector",
+"2664":"And the data pointer",
+"2667":"Done a track?",
+"2672":"Nope loop",
+"2677":"Put back data buffer pages for writes",
+"2683":"Put back data buffer pages for reads",
+"2689":"Put back CPM sector translate",
 "2714":"Get slot number *16",
 "2717":"Divide by 16",
 "2721":"Put Acc into Y",
 "2723":"What sort of drive?",
+"2725":"Smartdrive is for RAM drives",
 "2730":"Convert to CX",
 "2733":"Save slot rom into call high",
 "2736":"Save slot rom to get entry point",
@@ -1178,6 +1453,7 @@
 "2766":"8 sectors per track",
 "2772":"Shift left 4 times (aka mult by 16)",
 "2781":"Or in the sector",
+"2784":"Save blocknumber into parameters",
 "2799":"Everything happy",
 "2801":"Yeah store success and return",
 "2803":"Nope setup for a error",
@@ -1475,7 +1751,7 @@
 "BackgroundColor":0},
 
 "2903":{
-"Text":"We get here if the command is greater than or equal to four.\r\nNormal ProDOS commands are \r\n0 - Status\r\n1 - Read\r\n2 - Write\r\n3 - Init\r\nExtended commands (read / write a whole track?)\r\n4 - gets translated as (4-3)^3 so to a 2 - Write\r\n5 - gets translated as (5-3)^3 so to a 1 - Read\r\n6 - gets translated as (6-3)^3 so to a 0 - status\r\n",
+"Text":"We get here if the command is greater than or equal to four.\r\nNormal ProDOS commands are \r\n0 - Status\r\n1 - Read\r\n2 - Write\r\n3 - Init\r\nExtended commands (read / write a whole track)\r\n4 - gets translated as (4-3)^3 so to a 2 - Write\r\n5 - gets translated as (5-3)^3 so to a 1 - Read\r\n6 - gets translated as (6-3)^3 so to a 0 - status\r\n",
 "BoxMode":true,
 "MaxWidth":80,
 "BackgroundColor":0},
@@ -1520,6 +1796,36 @@
 "Text":"\r\nSuper serial card code, calls pascal entry points directly\r\n ",
 "BoxMode":false,
 "MaxWidth":80,
+"BackgroundColor":0},
+
+"1903":{
+"Text":"Read in a sector header.\r\nLoops around for $304 reads looking for a D5\r\nReturns carry clear on success\r\nReturns carry set if checksum bad or no header found",
+"BoxMode":true,
+"MaxWidth":64,
+"BackgroundColor":0},
+
+"1799":{
+"Text":"Read in sector data\r\nReturns carry clear on success\r\nCarry set on error",
+"BoxMode":true,
+"MaxWidth":64,
+"BackgroundColor":0},
+
+"1726":{
+"Text":"Merge together 6 and 2 data into $800",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1678":{
+"Text":"Nibblize data bytes into a 6/2 structure",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1536":{
+"Text":"Write sector data out",
+"BoxMode":true,
+"MaxWidth":40,
 "BackgroundColor":0}},
 
 "Notes":{
@@ -2472,7 +2778,7 @@
 "LabelAnno":"None"},
 
 "1856":{
-"Label":"D2_WAIT_6BYES",
+"Label":"D2_WAIT_6BYTES",
 "Value":55104,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2663,6 +2969,139 @@
 "3291":{
 "Label":"ST6550FLAG",
 "Value":2779,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2586":{
+"Label":"D2TRACKOPER",
+"Value":55834,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2483":{
+"Label":"D2FORMAT",
+"Value":55731,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1974":{
+"Label":"D2_HDWAIT_TRAIL1",
+"Value":55222,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1984":{
+"Label":"D2_HDWAIT_TRAIL2",
+"Value":55232,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1993":{
+"Label":"CLC_AND_RET",
+"Value":55241,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1872":{
+"Label":"D2_WAIT_CHKSUM",
+"Value":55120,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1882":{
+"Label":"D2_WAIT_RDTR1",
+"Value":55130,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1892":{
+"Label":"D2_WAIT_RDTR2",
+"Value":55140,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1744":{
+"Label":"D2_RDDATAPAGE",
+"Value":54992,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1695":{
+"Label":"D2_WRDATAPAGE",
+"Value":54943,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1682":{
+"Label":"ZERO_2BITS_LP",
+"Value":54930,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1692":{
+"Label":"NIB62_LOOP",
+"Value":54940,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1694":{
+"Label":"NIB62_LOOP2",
+"Value":54942,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2310":{
+"Label":"PD_SECT_TRAN",
+"Value":55558,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1286":{
+"Label":"DOSECTTRAN",
+"Value":54534,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2677":{
+"Label":"D2TRACKOPEX",
+"Value":55925,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2634":{
+"Label":"D2TRKNXTSECT",
+"Value":55882,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1192":{
+"Label":"RWSECTOR",
+"Value":54440,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1131":{
+"Label":"SAVEDRIVE",
+"Value":54379,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"}},
@@ -3088,12 +3527,28 @@
 "Label":"SLOT_INFO",
 "Part":"Low"}},
 
+"1070":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IWM_Q7_OFF",
+"Part":"Low"}},
+
+"1099":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DELAYINNER",
+"Part":"Low"}},
+
 "1103":{
 "Length":2,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"PRODOS_BLKNUM",
+"Label":"DELAYOUTER",
 "Part":"Low"}},
 
 "1108":{
@@ -3102,6 +3557,46 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"DISK_ACTD",
+"Part":"Low"}},
+
+"1131":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"D2DRIVE",
+"Part":"Low"}},
+
+"1151":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DSKOP_FMT",
+"Part":"Low"}},
+
+"1171":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DSKOP_RD",
+"Part":"Low"}},
+
+"1178":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DSKOP_WRTRK",
+"Part":"Low"}},
+
+"1185":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DSKOP_RDTRK",
 "Part":"Low"}},
 
 "1246":{
@@ -3272,6 +3767,54 @@
 "SubFormat":"None",
 "SymbolRef":null},
 
+"1545":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IWM_Q7_OFF",
+"Part":"Low"}},
+
+"1557":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IWM_Q7_ON",
+"Part":"Low"}},
+
+"1671":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IWM_Q7_OFF",
+"Part":"Low"}},
+
+"1744":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DISK_BUFF",
+"Part":"Low"}},
+
+"1762":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRODOS_BLKNUM",
+"Part":"Low"}},
+
+"1766":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRODOS_BLKNUM",
+"Part":"Low"}},
+
 "1837":{
 "Length":2,
 "Format":"NumericLE",
@@ -3280,12 +3823,36 @@
 "Label":"ZP_TEMP1",
 "Part":"Low"}},
 
+"1844":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRANS62",
+"Part":"Low"}},
+
 "1849":{
 "Length":3,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"TWO_BIT_DATA",
+"Part":"Low"}},
+
+"1861":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRANS62",
+"Part":"Low"}},
+
+"1877":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRANS62",
 "Part":"Low"}},
 
 "1946":{
@@ -3302,6 +3869,38 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"HEADER_CHECKSUM",
+"Part":"Low"}},
+
+"2122":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IWM_PH0_OFF",
+"Part":"Low"}},
+
+"2138":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IWM_Q7_OFF",
+"Part":"Low"}},
+
+"2145":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IWM_Q7_ON",
+"Part":"Low"}},
+
+"2237":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IWM_Q7_OFF",
 "Part":"Low"}},
 
 "2310":{
@@ -3330,6 +3929,46 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"PRDOOS_BUFPTRL",
+"Part":"Low"}},
+
+"2594":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"D2SAVWRDTAPG",
+"Part":"Low"}},
+
+"2600":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"D2SAVRDDTAPG",
+"Part":"Low"}},
+
+"2606":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"D2_SAVETRAN",
+"Part":"Low"}},
+
+"2615":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PD_SECT_TRAN",
+"Part":"High"}},
+
+"2620":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PD_SECT_TRAN",
 "Part":"Low"}},
 
 "2733":{
