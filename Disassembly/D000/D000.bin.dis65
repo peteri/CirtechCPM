@@ -246,40 +246,6 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
-"DELAYINNER":{
-"DataDescriptor":{
-"Length":1,
-"Format":"NumericLE",
-"SubFormat":"Hex",
-"SymbolRef":null},
-
-"Comment":"",
-"HasWidth":false,
-"Direction":"ReadWrite",
-"MultiMask":null,
-"Label":"DELAYINNER",
-"Value":70,
-"Source":"Project",
-"Type":"ExternalAddr",
-"LabelAnno":"None"},
-
-"DELAYOUTER":{
-"DataDescriptor":{
-"Length":1,
-"Format":"NumericLE",
-"SubFormat":"Hex",
-"SymbolRef":null},
-
-"Comment":"",
-"HasWidth":false,
-"Direction":"ReadWrite",
-"MultiMask":null,
-"Label":"DELAYOUTER",
-"Value":71,
-"Source":"Project",
-"Type":"ExternalAddr",
-"LabelAnno":"None"},
-
 "DISK_ACTD":{
 "DataDescriptor":{
 "Length":1,
@@ -637,6 +603,91 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"IDX":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"; Fix me",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"IDX",
+"Value":38,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"MONTIMEH":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"MONTIMEH",
+"Value":71,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"MONTIMEL":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"MONTIMEL",
+"Value":70,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"NBUF1":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Six bit data bytes",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"NBUF1",
+"Value":56832,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"NBUF2":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"56 bytes of 2 bit data",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"NBUF2",
+"Value":57088,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "PARA_ACKIN":{
 "DataDescriptor":{
 "Length":1,
@@ -807,23 +858,6 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
-"SIX_BIT_DATA":{
-"DataDescriptor":{
-"Length":1,
-"Format":"NumericLE",
-"SubFormat":"Hex",
-"SymbolRef":null},
-
-"Comment":"Six bit data bytes",
-"HasWidth":false,
-"Direction":"ReadWrite",
-"MultiMask":null,
-"Label":"SIX_BIT_DATA",
-"Value":56832,
-"Source":"Project",
-"Type":"ExternalAddr",
-"LabelAnno":"None"},
-
 "SLOT_INFO":{
 "DataDescriptor":{
 "Length":1,
@@ -905,23 +939,6 @@
 "MultiMask":null,
 "Label":"STSBYTE",
 "Value":1464,
-"Source":"Project",
-"Type":"ExternalAddr",
-"LabelAnno":"None"},
-
-"TWO_BIT_DATA":{
-"DataDescriptor":{
-"Length":1,
-"Format":"NumericLE",
-"SubFormat":"Hex",
-"SymbolRef":null},
-
-"Comment":"56 bytes of 2 bit data",
-"HasWidth":false,
-"Direction":"ReadWrite",
-"MultiMask":null,
-"Label":"TWO_BIT_DATA",
-"Value":57088,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -1363,7 +1380,8 @@
 "1736":"bits from the two bit data",
 "1744":"Store into the destination buffer",
 "1748":"All done? (not sure why the comparison?",
-"1799":"Try to find a D5 32 times (we\u0027ve seen a sector header)",
+"1799":"\u0027Must find\u0027 count",
+"1801":"If can\u0027t find marks",
 "1809":"Look for D5 (and zero ACC)",
 "1811":"Not yet try again",
 "1814":"Try and read AA",
@@ -1805,9 +1823,9 @@
 "BackgroundColor":0},
 
 "1799":{
-"Text":"Read in sector data\r\nReturns carry clear on success\r\nCarry set on error",
-"BoxMode":true,
-"MaxWidth":64,
+"Text":"*****************************************************************\r\n* READ SUBROUTINE (16-SECTOR FORMAT)                            *\r\n*****************************************************************\r\n* READS 6-BIT NIBLS (00ABCDEF) INTO  NBUF1 and NBUF2 CONVERTING *\r\n* 7-BIT NIBLS TO 7-BIT VIA \u0027DNIBL\u0027 TABLE                        *\r\n* FIRST READS NBUF2 HIGH TO LOW THEN READS NBUF1 LOW TO HIGH    *\r\n* ---- ON ENTRY ----                                            *\r\n* X-REG: SLOTNUM TIMES $10. READ MODE (Q6L, Q7L)                *\r\n* ---- ON EXIT -----                                            *\r\n* CARRY SET IF ERROR                                            *\r\n* IF NO ERROR:  A-REG HOLDS $AA. X-REG UNCHANGED.               *\r\n* Y-REG HOLDS $00. CARRY CLEAR.                                 *\r\n* NBUF1 AND NBUF2  HOLD 6-BIT NIBLS (00ABCDEF) USES TEMP \u0027IDX\u0027. *\r\n* ---- CAUTION -----                                            *\r\n* OBSERVE \u0027NO PAGE CROSS\u0027  WARNINGS ON SOME BRANCHES!!          *\r\n* ---- ASSUMES -----                                            *\r\n* 1 USEC CYCLE TIME                                             *\r\n*****************************************************************",
+"BoxMode":false,
+"MaxWidth":80,
 "BackgroundColor":0},
 
 "1726":{
@@ -2470,7 +2488,7 @@
 "LabelAnno":"None"},
 
 "1362":{
-"Label":"TRANS62",
+"Label":"NIBL",
 "Value":54610,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2526,7 +2544,7 @@
 "LabelAnno":"None"},
 
 "1716":{
-"Label":"WRITE9",
+"Label":"WNIBL9",
 "Value":54964,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2540,7 +2558,7 @@
 "LabelAnno":"None"},
 
 "1717":{
-"Label":"WRITE7",
+"Label":"WNIBL7",
 "Value":54965,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2554,7 +2572,7 @@
 "LabelAnno":"None"},
 
 "1719":{
-"Label":"WRITE",
+"Label":"WNIBL",
 "Value":54967,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2610,21 +2628,21 @@
 "LabelAnno":"None"},
 
 "1726":{
-"Label":"MERGE62",
+"Label":"POSTNB16",
 "Value":54974,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1728":{
-"Label":"RESET2PTR",
+"Label":"POST1",
 "Value":54976,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1730":{
-"Label":"MERGE_NXTBYTE",
+"Label":"POST2",
 "Value":54978,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2694,7 +2712,7 @@
 "LabelAnno":"None"},
 
 "1901":{
-"Label":"SEC_AND_RET",
+"Label":"RDERR",
 "Value":55149,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2715,70 +2733,70 @@
 "LabelAnno":"None"},
 
 "1799":{
-"Label":"D2_READ_SECTOR_DATA",
+"Label":"READ16",
 "Value":55047,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1804":{
-"Label":"D2_READ_SECT_D5",
+"Label":"READ1",
 "Value":55052,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1814":{
-"Label":"D2_READ_SECT_AA",
+"Label":"READ2",
 "Value":55062,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1825":{
-"Label":"D2_READ_SECT_AD",
+"Label":"READ3",
 "Value":55073,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1809":{
-"Label":"D2_WAIT_SECT_D5",
+"Label":"RSYNC1",
 "Value":55057,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1801":{
-"Label":"D2_READ_SECT_RETRY",
+"Label":"RSYNC",
 "Value":55049,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1836":{
-"Label":"D2_READ_2BYTES",
+"Label":"RDATA1",
 "Value":55084,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1854":{
-"Label":"D2_READ_6BYTES",
+"Label":"RDATA2",
 "Value":55102,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1839":{
-"Label":"D2_WAIT_2BYTES",
+"Label":"READ4",
 "Value":55087,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1856":{
-"Label":"D2_WAIT_6BYTES",
+"Label":"READ5",
 "Value":55104,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2792,7 +2810,7 @@
 "LabelAnno":"None"},
 
 "1536":{
-"Label":"D2_WRITE_SECTOR_DATA",
+"Label":"WRITE16",
 "Value":54784,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -3009,28 +3027,28 @@
 "LabelAnno":"None"},
 
 "1872":{
-"Label":"D2_WAIT_CHKSUM",
+"Label":"READ6",
 "Value":55120,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1882":{
-"Label":"D2_WAIT_RDTR1",
+"Label":"READ7",
 "Value":55130,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1892":{
-"Label":"D2_WAIT_RDTR2",
+"Label":"READ8",
 "Value":55140,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1744":{
-"Label":"D2_RDDATAPAGE",
+"Label":"POSTNBPAGE",
 "Value":54992,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -3102,6 +3120,76 @@
 "1131":{
 "Label":"SAVEDRIVE",
 "Value":54379,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1349":{
+"Label":"OFFTABLE",
+"Value":54597,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1568":{
+"Label":"WSYNC",
+"Value":54816,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1596":{
+"Label":"WDATA0",
+"Value":54844,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1599":{
+"Label":"WDATA1",
+"Value":54847,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1620":{
+"Label":"WDATA2",
+"Value":54868,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1674":{
+"Label":"WEXIT",
+"Value":54922,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2702":{
+"Label":"ONTABLE",
+"Value":55950,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1753":{
+"Label":"MSWAIT",
+"Value":55001,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1755":{
+"Label":"MSW1",
+"Value":55003,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1768":{
+"Label":"MSW2",
+"Value":55016,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"}},
@@ -3635,6 +3723,18 @@
 "SubFormat":"None",
 "SymbolRef":null},
 
+"1349":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"1357":{
+"Length":5,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
 "1362":{
 "Length":8,
 "Format":"Dense",
@@ -3804,7 +3904,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"PRODOS_BLKNUM",
+"Label":"MONTIMEH",
 "Part":"Low"}},
 
 "1766":{
@@ -3812,7 +3912,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"PRODOS_BLKNUM",
+"Label":"MONTIMEH",
 "Part":"Low"}},
 
 "1837":{
@@ -3828,7 +3928,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"TRANS62",
+"Label":"NIBL",
 "Part":"Low"}},
 
 "1849":{
@@ -3844,7 +3944,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"TRANS62",
+"Label":"NIBL",
 "Part":"Low"}},
 
 "1877":{
@@ -3852,7 +3952,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"TRANS62",
+"Label":"NIBL",
 "Part":"Low"}},
 
 "1946":{
@@ -3970,6 +4070,18 @@
 "SymbolRef":{
 "Label":"PD_SECT_TRAN",
 "Part":"Low"}},
+
+"2702":{
+"Length":8,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
+
+"2710":{
+"Length":4,
+"Format":"Dense",
+"SubFormat":"None",
+"SymbolRef":null},
 
 "2733":{
 "Length":3,
