@@ -93,6 +93,57 @@
 "Type":"Constant",
 "LabelAnno":"None"},
 
+"COUNT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"COUNT",
+"Value":38,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"CSSTV":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"CSSTV",
+"Value":44,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"CSUM":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"CSUM",
+"Value":39,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "CURSOR_STATE":{
 "DataDescriptor":{
 "Length":1,
@@ -144,6 +195,23 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"CURTRK":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"CURTRK",
+"Value":1144,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "D2_CHECK_SUM":{
 "DataDescriptor":{
 "Length":1,
@@ -174,23 +242,6 @@
 "MultiMask":null,
 "Label":"D2_SAVETRAN",
 "Value":57193,
-"Source":"Project",
-"Type":"ExternalAddr",
-"LabelAnno":"None"},
-
-"D2DRIVE":{
-"DataDescriptor":{
-"Length":1,
-"Format":"NumericLE",
-"SubFormat":"Hex",
-"SymbolRef":null},
-
-"Comment":"Hi bit set if drive 2 for Disk II",
-"HasWidth":false,
-"Direction":"ReadWrite",
-"MultiMask":null,
-"Label":"D2DRIVE",
-"Value":53,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -433,6 +484,57 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"DRIVNO":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Hi bit set if drive 2 for Disk II",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DRIVNO",
+"Value":53,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"DRV1TRK":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Drive 1 track",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DRV1TRK",
+"Value":1144,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"DRV2TRK":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Drive 2 track",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"DRV2TRK",
+"Value":1272,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "DSKOP_FMT":{
 "DataDescriptor":{
 "Length":1,
@@ -552,57 +654,6 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
-"HEADER_SECTOR":{
-"DataDescriptor":{
-"Length":1,
-"Format":"NumericLE",
-"SubFormat":"Hex",
-"SymbolRef":null},
-
-"Comment":"",
-"HasWidth":false,
-"Direction":"ReadWrite",
-"MultiMask":null,
-"Label":"HEADER_SECTOR",
-"Value":45,
-"Source":"Project",
-"Type":"ExternalAddr",
-"LabelAnno":"None"},
-
-"HEADER_TRACK":{
-"DataDescriptor":{
-"Length":1,
-"Format":"NumericLE",
-"SubFormat":"Hex",
-"SymbolRef":null},
-
-"Comment":"Track from sector header",
-"HasWidth":false,
-"Direction":"ReadWrite",
-"MultiMask":null,
-"Label":"HEADER_TRACK",
-"Value":46,
-"Source":"Project",
-"Type":"ExternalAddr",
-"LabelAnno":"None"},
-
-"HEADER_VOLUME":{
-"DataDescriptor":{
-"Length":1,
-"Format":"NumericLE",
-"SubFormat":"Hex",
-"SymbolRef":null},
-
-"Comment":"",
-"HasWidth":false,
-"Direction":"ReadWrite",
-"MultiMask":null,
-"Label":"HEADER_VOLUME",
-"Value":47,
-"Source":"Project",
-"Type":"ExternalAddr",
-"LabelAnno":"None"},
-
 "IDX":{
 "DataDescriptor":{
 "Length":1,
@@ -615,6 +666,23 @@
 "Direction":"ReadWrite",
 "MultiMask":null,
 "Label":"IDX",
+"Value":38,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"LAST":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"LAST",
 "Value":38,
 "Source":"Project",
 "Type":"ExternalAddr",
@@ -739,6 +807,23 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"PRIOR":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"PRIOR",
+"Value":39,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "PRODOS_BLKNUM":{
 "DataDescriptor":{
 "Length":1,
@@ -807,6 +892,40 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"RECALCNT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"RECALCNT",
+"Value":1784,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"RETRYCNT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"RETRYCNT",
+"Value":1400,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "SCC_INIT":{
 "DataDescriptor":{
 "Length":1,
@@ -858,6 +977,40 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"SECTOR":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Sector from sector header",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SECTOR",
+"Value":45,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"SEEKCNT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SEEKCNT",
+"Value":1272,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "SLOT_INFO":{
 "DataDescriptor":{
 "Length":1,
@@ -871,6 +1024,23 @@
 "MultiMask":null,
 "Label":"SLOT_INFO",
 "Value":952,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"SLOTTEMP":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SLOTTEMP",
+"Value":43,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -939,6 +1109,91 @@
 "MultiMask":null,
 "Label":"STSBYTE",
 "Value":1464,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"T0":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"T0",
+"Value":38,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"TRACK":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Track from sector header",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"TRACK",
+"Value":46,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"TRKCNT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"TRKCNT",
+"Value":38,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"TRKN":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Seek destination track",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"TRKN",
+"Value":42,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"VOLUME":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Volume from sector header",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"VOLUME",
+"Value":47,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -1330,27 +1585,103 @@
 "1040":"DISK ][ ?",
 "1044":"Ram drive or Prodos?",
 "1048":"Go do IDC check",
-"1070":"Into read mode",
-"1078":"Read some data",
-"1081":"Waste 3+4 cycles",
-"1083":"Waste 3+4 cycles",
-"1085":"Read some data",
-"1093":"Zero flag set means data incoming",
-"1105":"Get selected drive",
-"1108":"Same as active drive",
-"1113":"Update the drive",
-"1117":"Clear zero flag",
-"1123":"Assume drive 1",
-"1126":"Save drive 1 into D2DRIVE",
+"1057":"Set Recalibrate",
+"1059":"Count",
+"1062":"Set reseek",
+"1064":"count",
+"1067":"Get slot # for this operation",
+"1070":"Make sure in read mode",
+"1076":"We may hafta check several times to be sure",
+"1078":"Get the data",
+"1081":"Delay for disk data to change",
+"1085":"Check running here",
+"1088":"=\u003e it\u0027s on",
+"1090":"Maybe we didn\u0027t catch it",
+"1091":"So we\u0027ll try again",
+"1093":"Save test results",
+"1094":"Turn on motor regardless",
+"1097":"Set up the",
+"1099":"motor-on time",
+"1101":"Note value is complemented",
+"1105":"Determine drive one or two",
+"1108":"same drive used before?",
+"1113":"Now using this drive",
+"1116":"Tell him motor was off",
+"1117":"Set zero flag",
+"1120":"By going into the carry",
+"1121":"Select drive 2!",
+"1123":"Assume drive 1 to hit",
+"1126":"If wrong, enable drive 2 instead",
 "1128":"Nope drive 2",
-"1131":"Rotate carry flag into variable",
-"1133":"Means we can use BIT to decide",
+"1131":"Save selected drive",
+"1133":"Was the motor",
+"1134":"Previously off?",
+"1135":"=\u003e No, forget waiting",
+"1137":"Yes, delay 150mS",
+"1145":"Restore slot number",
+"1148":"Examine disk operation",
+"1153":"Not format",
+"1155":"Get back motor status",
+"1156":"Do the format",
+"1159":"Goto the track",
+"1165":"Get disk operation",
+"1168":"Get back if we have some data incoming?",
+"1169":"Drive running so skip",
 "1171":"Read?",
-"1178":"Write a whole track",
-"1185":"Read a whole track",
+"1173":"Can skip waiting for rest of motor",
+"1175":"Time for a read",
+"1178":"Write a whole track?",
+"1180":"Nope, check for read",
+"1182":"Go do full track operation",
+"1185":"Read track operation?",
+"1187":"Nope,do a single sector",
+"1189":"Go do full track operation",
+"1192":"Set carry=1 for read, 0 for write",
+"1193":"and save that",
+"1194":"Must prenibblize for write",
+"1199":"Only 48 retries of any kind.",
+"1204":"Get slot num into x-reg",
+"1207":"Read next address field",
+"1210":"If it read right, hurrah!",
+"1212":"Another mistaek!!",
+"1217":"Recalibrate all over again",
+"1219":"Pretend to be on track 42 (DOS uses 96)",
+"1222":"Once too many?",
+"1225":"Tried to recalibrate too many times error!",
+"1227":"Reset the",
+"1229":"seek counter",
+"1234":"Move to track 00",
+"1240":"Go to correct track this time!",
+"1243":"Loop back, tray again on this track",
+"1246":"Check volume isn\u0027t very interesting for CP/M",
+"1248":"So just copy it",
+"1251":"Left over from RWTS volume check code?",
+"1253":"On the right track",
+"1258":"If so good",
+"1260":"Preserve destination track",
+"1269":"Should we reseek?",
+"1272":"=\u003e Yes, reseek",
+"1274":"=\u003e No, Recalibrate!",
+"1276":"Bad drive error",
+"1278":"Pop disk operation",
+"1282":"Get requested (logical) sector",
+"1285":"Move to index reg",
+"1286":"Compute physical sector",
+"1289":"Did we get the sector?",
+"1291":"No, keep trying",
+"1294":"Carry was set for read operation",
+"1299":"Save status of read operation",
+"1300":"Retry on error",
+"1302":"Careful of stack",
+"1303":"Setup to postnibilize",
+"1310":"Restore slotnum into X",
 "1313":"Clear error",
 "1316":"Setup disk error",
 "1319":"Turn off motor",
+"1323":"Write nybbles now",
+"1326":"If no errors",
+"1328":"Disk is write protected.",
+"1331":"Always taken",
 "1555":"Write sync bytes",
 "1576":"Write data header bytes",
 "1648":"Write checksum",
@@ -1373,70 +1704,144 @@
 "1719":"5 cycles - Write load",
 "1722":"5 cycles - write byte",
 "1725":"6 cycles - return to caller ",
-"1726":"Merge together 6 and 2 bits",
-"1728":"Reset two bit counter",
-"1731":"Reset counter if we\u0027re out of space",
-"1733":"Get our six bits and merge with two",
-"1736":"bits from the two bit data",
-"1744":"Store into the destination buffer",
-"1748":"All done? (not sure why the comparison?",
+"1726":"User data buf IDX.",
+"1728":"Init NBUF2 Index.",
+"1730":"NBUF IDX $55 to $0",
+"1731":"Wrap around if neg.",
+"1736":"Shift 2 bits from",
+"1739":"Current NBUF2 nibl",
+"1740":"into current NUBF1",
+"1743":"nibl.",
+"1744":"Byte of user data.",
+"1747":"Next user byte.",
+"1748":"Done if equal T0",
+"1750":"Return.",
+"1755":"Delay 86 uSec.",
+"1760":"Double-byte",
+"1762":"increment.",
+"1766":"NOT SAME AS RWTS",
+"1769":"Done \u0027N\u0027 intervals?",
+"1771":"(A-reg counts)",
 "1799":"\u0027Must find\u0027 count",
 "1801":"If can\u0027t find marks",
-"1809":"Look for D5 (and zero ACC)",
-"1811":"Not yet try again",
-"1814":"Try and read AA",
-"1819":"Not AA, wait for a D5",
-"1823":"Setup to read in 56 bytes of twos",
-"1830":"End of header?",
-"1832":"Nope, lets start again",
-"1837":"Save away counter",
-"1839":"Read a data byte for our 2 bits",
-"1847":"Restore counter",
-"1849":"Store the data",
-"1852":"Carry on reading two bit data",
-"1854":"Save counter",
-"1856":"Time to do the 6 bit bytes",
-"1861":"Translate data",
-"1866":"Save it",
-"1870":"Keep going until we\u0027ve done $100",
-"1872":"Get the checksum",
-"1877":"Compare against table",
-"1880":"Bad? Flag error and home",
-"1882":"Wait for first byte of trailer",
-"1887":"Wrong value go home",
-"1892":"Wait for second byte of trailer",
-"1899":"Right value clear the carry and go home",
-"1901":"Set carry flag and return",
-"1905":"Header find loop counter",
-"1907":"First time around this loop we wait for four attempts",
-"1908":"Second time we wait for 256 rounds.",
-"1910":"Read $304 bytes from disk?",
-"1912":"Not seen D5 yet go home",
-"1914":"Get a data byte",
-"1919":"D5 yet",
-"1921":"Keep on going",
-"1924":"Wait for AA",
-"1933":"Setup counter for header bytes",
-"1940":"Last byte of header?",
-"1942":"Nope loop back to beginning",
-"1944":"Reset checksum byte",
-"1948":"Read first byte of our 44 encoding",
-"1951":"Read in 1A1C1E1G",
-"1953":"A1C1E1G1 (Carry is set by CMP #96)",
+"1802":"Then exit with carry set.",
+"1804":"Read nibl.",
+"1807":"*** NO PAGE CROSS! ***",
+"1809":"Data mark 1?",
+"1811":"Loop if not.",
+"1813":"Delay between nibls",
+"1817":"*** NO PAGE CROSS! ***",
+"1819":"Data mark 2?",
+"1821":"(If not, is it DM1?)",
+"1823":"Init NBUF2 index.",
+"1828":"*** NO PAGE CROSS! ***",
+"1830":"Data mark 3?",
+"1832":"(If not, is it DM1?)",
+"1834":"Init checksum",
+"1842":"*** NO PAGE CROSS! ***",
+"1844":"XOR 6-bit nibl.",
+"1849":"Store in NBUF2 page",
+"1852":"Taken if Y-reg nonzero.",
+"1859":"*** NO PAGE CROSS! ***",
+"1861":"XOR 6-bit nibl.",
+"1866":"Store in NBUF1 page.",
+"1872":"Read 7-bit csum nibl.",
+"1875":"*** NO PAGE CROSS! ***",
+"1877":"If last NBUF1 nibl not",
+"1880":"equal chksum nibl then err.",
+"1885":"*** NO PAGE CROSS! ***",
+"1887":"First bit slip mark?",
+"1889":"(Err if not)",
+"1891":"Delay between nibls.",
+"1895":"*** NO PAGE CROSS! ***",
+"1897":"Second bit slip mark?",
+"1899":"(Done if it is)",
+"1901":"Indicate \u0027Error exit\u0027",
+"1902":"From READ16 or RDADR16",
+"1905":"\u0027Must find\u0027 count",
+"1908":"Low order of count.",
+"1910":"(2K nibls to find",
+"1912":"adr mark, else err)",
+"1914":"Read nibl.",
+"1917":"*** NO PAGE CROSS! ***",
+"1919":"Adr mark 1?",
+"1921":"(Loop if not)",
+"1923":"Nibl delay.",
+"1927":"*** NO PAGE CROSS! ***",
+"1929":"Adr mark 2?",
+"1931":"(If not, is it AM1?)",
+"1933":"Index for 4-byte read",
+"1938":"*** NO PAGE CROSS! ***",
+"1940":"Adr mark 3?",
+"1942":"(If not, is it AM1)",
+"1946":"Init checksum",
+"1948":"Read \u0027Odd bit\u0027 nibl.",
+"1951":"*** NO PAGE CROSS! ***",
+"1953":"Align odd bits, \u00271\u0027 into LSB.",
 "1954":"Save for later",
-"1959":"Read in  1B1D1F1H",
-"1961":"And with A1C1E1G1",
-"1963":"Store away the data",
-"1968":"Count backwards",
-"1969":"Done all four bytes",
-"1971":"Checksum zero, set zero flag",
-"1972":"Go home with an error",
+"1956":"Read \u0027Even bit\u0027 nibl.",
+"1959":"*** NO PAGE CROSS! ***",
+"1961":"Merge odd and even bytes",
+"1963":"Store data byte",
+"1966":"XOR checksum",
+"1969":"Loop on 4 data bytes",
+"1971":"If final checksum",
+"1972":"Nonzero, then error.",
 "1974":"Read trailing byte",
+"1977":"*** NO PAGE CROSS! ***",
 "1981":"Wrong, go home with a error",
-"1984":"Wait for AA",
-"1991":"Wrong, go home with an error",
-"1993":"We\u0027re good",
-"1995":"MOVE_TO_TRACK",
+"1984":"Error if no match",
+"1987":"*** NO PAGE CROSS! ***",
+"1991":"Error if nonmatch",
+"1993":"Carry on",
+"1994":"Normal read exits",
+"1995":"Two phases per track",
+"1999":"Divide back down",
+"2003":"Save destination track(*2)",
+"2005":"Set Y=Slot #",
+"2013":"Is minus, on drive zero",
+"2018":"This is where I am",
+"2021":"and where I\u0027m going to",
+"2023":"Now update slot dependent",
+"2025":"locations with track",
+"2027":"Information",
+"2030":"Always taken",
+"2035":"Save X-reg",
+"2037":"Save target track",
+"2039":"On desired track",
+"2042":"Yes return",
+"2046":"Half track count",
+"2048":"save CURTRK for ",
+"2051":"Delayed turnoff",
+"2054":"Delta-tracks",
+"2056":"BR if CURTRK=DESTINATION",
+"2058":"(move out not in)",
+"2060":"Calc tracks to go",
+"2062":"increment current track (IN)",
+"2065":"(Always taken)",
+"2067":"Calc tracks to go",
+"2069":"Decr current track (Out)",
+"2074":"And \u0027trks moved\u0027",
+"2080":"If TRKCNT\u003e$B leave Y alone (Y=$B).",
+"2082":"Else set acceleration index in Y",
+"2083":"Carry set=phase on",
+"2084":"Phase on",
+"2087":"For \u0027on time\u0027",
+"2090":"(100 uSec intervals)",
+"2095":"carry clear=phase off",
+"2096":"Phase off",
+"2099":"then wait \u0027off time\u0027",
+"2102":"(100 uSec intervals)",
+"2109":"A=0: Wait 25 mS settle",
+"2112":"And turn off phase",
+"2113":"Get current phase",
+"2116":"Mask for 1 of 4 phases",
+"2118":"Double for phase index",
+"2122":"Flip the phase",
+"2125":"Restore X-reg",
+"2127":"And return",
+"2244":"Delay 100 uSec per count",
+"2255":"Count up to $0000",
 "2591":"Save data buffer page value for writes",
 "2597":"Save data buffer page value for reads",
 "2603":"Save CPM sector translate",
@@ -1775,7 +2180,7 @@
 "BackgroundColor":0},
 
 "1057":{
-"Text":"\r\nDisk II driver code\r\n\r\n",
+"Text":"\r\nDisk II driver code\r\n\r\nCode that is the same as the RWTS routines in the DOS3.3C source code from https://www.brutaldeluxe.fr/documentation/dos33/apple2_SRC_DOS33C_1983.pdf\r\nhas the same comments, although some of the long comments have been edited\r\nand the short comments have been converted to lower case.\r\n\r\nAddresses for the Woz Disk II card have used the IWM conventions from the sourcegen symbol table. Other symbols match those in the RWTS routines in the DOS 3.3C source code.\r\n \r\nCode has large chunks that are copies of the RWTS routines from DOS, but some bits are different (PRENIB16 for example) along with the RWTS calling mechanism which means a one to one match doesn\u0027t work.\r\n\r\n",
 "BoxMode":true,
 "MaxWidth":80,
 "BackgroundColor":0},
@@ -1817,8 +2222,8 @@
 "BackgroundColor":0},
 
 "1903":{
-"Text":"Read in a sector header.\r\nLoops around for $304 reads looking for a D5\r\nReturns carry clear on success\r\nReturns carry set if checksum bad or no header found",
-"BoxMode":true,
+"Text":"********************************************\r\n* READ ADDRESS FIELD SUBROUTINE            *\r\n* (16-SECTOR FORMAT)                       *\r\n********************************************\r\n* READS VOLUME, TRACK AND SECTOR           *\r\n* ---- ON ENTRY ----                       *\r\n* XREG: SLOTNUM TIMES                      *\r\n* $10 READ MODE (Q6L, Q7L)                 *\r\n* ---- ON EXIT -----                       *\r\n* CARRY SET IF ERROR.                      *\r\n* IF NO ERROR: A-REG HOLDS $AA. Y-REG      *\r\n* HOLDS $00. X-REG UNCHANGED. CARRY CLEAR. *\r\n* CSSTV HOLDS CHKSUM, SECTOR, TRACK, AND   *\r\n* VOLUME READ. USES TEMPS COUNT, LAST,     *\r\n* CSUM, AND 4 BYTES AT CSSTV.              *\r\n* ---- EXPECTS ----                        *\r\n* ORIGINAL 10-SECTOR NORMAL DENSITY NIBLS  *\r\n* (4-BIT), ODD BITS, THEN EVEN.            *\r\n* ---- CAUTION ----                        *\r\n* OBSERVE \u0027NO PAGE CROSS\u0027 WARNINGS ON      *\r\n* SOME BRANCHES!!                          *\r\n* ---- ASSUMES ----                        *\r\n* 1 USEC CYCLE TIME                        *\r\n********************************************\r\n",
+"BoxMode":false,
 "MaxWidth":64,
 "BackgroundColor":0},
 
@@ -1829,13 +2234,13 @@
 "BackgroundColor":0},
 
 "1726":{
-"Text":"Merge together 6 and 2 data into $800",
+"Text":"******************************************\r\n* POSTNIBLIZE SUBR 16-SECTOR FORMAT      *\r\n******************************************\r\n* CONVERTS 6-BIT NIBLS OF FORM 00ABCDEF  *\r\n* IN NBUF1 AND NBUF2 INTO 256 BYTES OF   *\r\n* USER DATA IN DISK_BUF.                 *\r\n******************************************\r\n* Note comments in DOS 3.3C source don\u0027t *\r\n* make sense here so have been removed.  *\r\n******************************************\r\n",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0},
 
 "1678":{
-"Text":"Nibblize data bytes into a 6/2 structure",
+"Text":"***************************************\r\n* PRENIBLIZE SUBR (16-SECTOR FORMAT)  *\r\n***************************************\r\n* CONVERTS 256 BYTES OF USER DATA IN  *\r\n* DISK_BUF INTO 342 6-BIT NIBLS       *\r\n* (00ABCDEF) IN NBUF1 AND NBUF2.      * \r\n* ---- ON ENTRY ----                  *\r\n* DISK_BUF IS 256 BYTES OF USER DATA. *\r\n* ---- ON EXIT -----                  *\r\n* A-REG UNCERTAIN. X-REG HOLDS $FF.   *\r\n* Y-REG HOLDS $FF. CARRY SET.         *\r\n* NBUF1 AND NBUF2 CONTAIN             *\r\n* 6-BIT NIBLS OF FORM 00ABCDEF.       *\r\n***************************************\r\n* NOTE: Code is different to RWTS     *\r\n***************************************\r\n",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0},
@@ -1844,6 +2249,78 @@
 "Text":"Write sector data out",
 "BoxMode":true,
 "MaxWidth":40,
+"BackgroundColor":0},
+
+"1944":{
+"Text":"(Leaves carry set!)",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1935":{
+"Text":"(Added nibl delay)",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1825":{
+"Text":"(added nibl delay)",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1834":{
+"Text":"(Carry set if DM3!)",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1753":{
+"Text":"**********************************************\r\n* MSWAIT SUBROUTINE                          *\r\n**********************************************\r\n* DELAYS A SPECIFIED NUMBER OF 100 USEC      *\r\n* INTERVALS FOR MOTOR ON TIMING.             *\r\n* ---- ON ENTRY ----                         *\r\n* A-REG: HOLDS NUMBER OF 100 USEC INTERVALS  *\r\n* TO DELAY.                                  *\r\n* ---- ON EXIT -----                         * \r\n* A-REG: HOLDS $00. X-REG: HOLDS $00.        *\r\n* Y-REG: UNCHANGED. CARRY: SET.              *\r\n* MONTIMEL, MONTIMEH ARE INCREMENTED ONCE    *\r\n* PER 100 USEC INTERVAL FOR MOTON ON TIMING. *\r\n* ---- ASSUMES ----                          *\r\n* 1 USEC CYCLE TIME                          *\r\n**********************************************",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1070":{
+"Text":"Now check if the motor is on, then start it.",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1133":{
+"Text":"Drive selected. If motoring up,\r\nwait before seeking...",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1995":{
+"Text":"THIS IS THE \u0027SEEK\u0027 ROUTINE\r\nSEEKS TRACK \u0027N\u0027 IN SLOT #X/$10\r\nIF DRIVNO IS NEGATIVE, ON DRIVE 1\r\nIF DRIVNO IS POSITIVE, ON DRIVE 2",
+"BoxMode":true,
+"MaxWidth":40,
+"BackgroundColor":0},
+
+"2109":{
+"Text":"End of seeking",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2113":{
+"Text":"Turn head stepper phase on/off",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1217":{
+"Text":"*\r\n* RRRRRECALIBRATE !!!!\r\n*",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1293":{
+"Text":"*\r\n* Hooray! We got the right sector!\r\n*",
+"BoxMode":false,
+"MaxWidth":80,
 "BackgroundColor":0}},
 
 "Notes":{
@@ -2516,7 +2993,7 @@
 "LabelAnno":"None"},
 
 "1128":{
-"Label":"SELECT_DRIVE2",
+"Label":"SD1",
 "Value":54376,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2530,7 +3007,7 @@
 "LabelAnno":"None"},
 
 "1120":{
-"Label":"SELECT_DRIVE",
+"Label":"OK",
 "Value":54368,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2586,7 +3063,7 @@
 "LabelAnno":"None"},
 
 "1078":{
-"Label":"CHECK_FOR_DATA",
+"Label":"CHKIFON",
 "Value":54326,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2600,7 +3077,7 @@
 "LabelAnno":"None"},
 
 "1093":{
-"Label":"DATA_INCOMING",
+"Label":"ITISON",
 "Value":54341,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2614,7 +3091,7 @@
 "LabelAnno":"None"},
 
 "1995":{
-"Label":"MOVE_TO_TRACK",
+"Label":"MYSEEK",
 "Value":55243,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2663,49 +3140,49 @@
 "LabelAnno":"None"},
 
 "1914":{
-"Label":"D2_READ_HEAD_D5",
+"Label":"RDA1",
 "Value":55162,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1924":{
-"Label":"D2_READ_HEAD_AA",
+"Label":"RDA2",
 "Value":55172,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1935":{
-"Label":"D2_READ_HEAD_96",
+"Label":"RDA3",
 "Value":55183,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1919":{
-"Label":"D2_WAIT_FOR_D5",
+"Label":"RDASN1",
 "Value":55167,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1948":{
-"Label":"WAIT_44_BYTE1",
+"Label":"RDA4",
 "Value":55196,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1956":{
-"Label":"WAIT_44_BYTE2",
+"Label":"RDA5",
 "Value":55204,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1946":{
-"Label":"READ_NXT_HDR_BYTE",
+"Label":"RDAFLD",
 "Value":55194,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2719,14 +3196,14 @@
 "LabelAnno":"None"},
 
 "1907":{
-"Label":"D2_WAIT_HEADER",
+"Label":"RDASYN",
 "Value":55155,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1903":{
-"Label":"D2_READ_HEADER",
+"Label":"RDADR16",
 "Value":55151,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2803,7 +3280,7 @@
 "LabelAnno":"None"},
 
 "1678":{
-"Label":"NIBBLIZE62",
+"Label":"PRENIB16",
 "Value":54926,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -2999,28 +3476,28 @@
 "LabelAnno":"None"},
 
 "2483":{
-"Label":"D2FORMAT",
+"Label":"FORMDSK",
 "Value":55731,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1974":{
-"Label":"D2_HDWAIT_TRAIL1",
+"Label":"RDA6",
 "Value":55222,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1984":{
-"Label":"D2_HDWAIT_TRAIL2",
+"Label":"RDA7",
 "Value":55232,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1993":{
-"Label":"CLC_AND_RET",
+"Label":"RDEXIT",
 "Value":55241,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -3055,28 +3532,28 @@
 "LabelAnno":"None"},
 
 "1695":{
-"Label":"D2_WRDATAPAGE",
+"Label":"PRENIBPAGE",
 "Value":54943,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1682":{
-"Label":"ZERO_2BITS_LP",
+"Label":"PRENIB1",
 "Value":54930,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1692":{
-"Label":"NIB62_LOOP",
+"Label":"PRENIB2",
 "Value":54940,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1694":{
-"Label":"NIB62_LOOP2",
+"Label":"PRENIB3",
 "Value":54942,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -3111,14 +3588,14 @@
 "LabelAnno":"None"},
 
 "1192":{
-"Label":"RWSECTOR",
+"Label":"TRYTRK",
 "Value":54440,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"},
 
 "1131":{
-"Label":"SAVEDRIVE",
+"Label":"DRVSEL",
 "Value":54379,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -3190,6 +3667,216 @@
 "1768":{
 "Label":"MSW2",
 "Value":55016,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1148":{
+"Label":"NOWAIT",
+"Value":54396,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1139":{
+"Label":"SEEKW",
+"Value":54387,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1159":{
+"Label":"NOTFORMAT",
+"Value":54407,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2003":{
+"Label":"MYSEEK2",
+"Value":55251,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2018":{
+"Label":"WASD0",
+"Value":55266,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2032":{
+"Label":"ISDRV1",
+"Value":55280,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2035":{
+"Label":"SEEK",
+"Value":55283,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2127":{
+"Label":"SEEKRTS",
+"Value":55375,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2048":{
+"Label":"SEEK2",
+"Value":55296,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2109":{
+"Label":"SEEKEND",
+"Value":55357,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2113":{
+"Label":"SETPHASE",
+"Value":55361,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2116":{
+"Label":"CLRPHASE",
+"Value":55364,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2067":{
+"Label":"OUT",
+"Value":55315,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2072":{
+"Label":"MINTST",
+"Value":55320,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2078":{
+"Label":"MAXTST",
+"Value":55326,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2083":{
+"Label":"STEP2",
+"Value":55331,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2244":{
+"Label":"MOTOF",
+"Value":55492,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2246":{
+"Label":"CONWAIT",
+"Value":55494,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1178":{
+"Label":"MOTORREADY",
+"Value":54426,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1185":{
+"Label":"CHECKRDTRKOP",
+"Value":54433,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1199":{
+"Label":"TRYTRK2",
+"Value":54447,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1204":{
+"Label":"TRYADR",
+"Value":54452,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1246":{
+"Label":"RDRIGHT",
+"Value":54494,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1212":{
+"Label":"TRYADR2",
+"Value":54460,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1217":{
+"Label":"RECAL",
+"Value":54465,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1276":{
+"Label":"DRVERR",
+"Value":54524,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1774":{
+"Label":"SETTRK",
+"Value":55022,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1282":{
+"Label":"RTTRK",
+"Value":54530,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1240":{
+"Label":"RESEEK",
+"Value":54488,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1323":{
+"Label":"WRIT",
+"Value":54571,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"}},
@@ -3615,6 +4302,14 @@
 "Label":"SLOT_INFO",
 "Part":"Low"}},
 
+"1064":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SEEKCNT",
+"Part":"Low"}},
+
 "1070":{
 "Length":3,
 "Format":"NumericLE",
@@ -3628,7 +4323,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"DELAYINNER",
+"Label":"MONTIMEL",
 "Part":"Low"}},
 
 "1103":{
@@ -3636,7 +4331,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"DELAYOUTER",
+"Label":"MONTIMEH",
 "Part":"Low"}},
 
 "1108":{
@@ -3652,7 +4347,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"D2DRIVE",
+"Label":"DRIVNO",
 "Part":"Low"}},
 
 "1151":{
@@ -3687,12 +4382,20 @@
 "Label":"DSKOP_RDTRK",
 "Part":"Low"}},
 
+"1229":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SEEKCNT",
+"Part":"Low"}},
+
 "1246":{
 "Length":2,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"HEADER_VOLUME",
+"Label":"VOLUME",
 "Part":"Low"}},
 
 "1248":{
@@ -3708,7 +4411,23 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"HEADER_TRACK",
+"Label":"TRACK",
+"Part":"Low"}},
+
+"1269":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SEEKCNT",
+"Part":"Low"}},
+
+"1305":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"T0",
 "Part":"Low"}},
 
 "1333":{
@@ -3891,12 +4610,36 @@
 "Label":"IWM_Q7_OFF",
 "Part":"Low"}},
 
+"1699":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"NBUF1",
+"Part":"Low"}},
+
+"1703":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"NBUF1",
+"Part":"Low"}},
+
 "1744":{
 "Length":3,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"DISK_BUFF",
+"Part":"Low"}},
+
+"1748":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"T0",
 "Part":"Low"}},
 
 "1762":{
@@ -3915,12 +4658,20 @@
 "Label":"MONTIMEH",
 "Part":"Low"}},
 
+"1795":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DRV1TRK",
+"Part":"Low"}},
+
 "1837":{
 "Length":2,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"ZP_TEMP1",
+"Label":"IDX",
 "Part":"Low"}},
 
 "1844":{
@@ -3931,12 +4682,28 @@
 "Label":"NIBL",
 "Part":"Low"}},
 
+"1847":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IDX",
+"Part":"Low"}},
+
 "1849":{
 "Length":3,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"TWO_BIT_DATA",
+"Label":"NBUF2",
+"Part":"Low"}},
+
+"1854":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IDX",
 "Part":"Low"}},
 
 "1861":{
@@ -3945,6 +4712,14 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"NIBL",
+"Part":"Low"}},
+
+"1864":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"IDX",
 "Part":"Low"}},
 
 "1877":{
@@ -3960,7 +4735,23 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"D2_CHECK_SUM",
+"Label":"CSUM",
+"Part":"Low"}},
+
+"1954":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LAST",
+"Part":"Low"}},
+
+"1961":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"LAST",
 "Part":"Low"}},
 
 "1963":{
@@ -3969,6 +4760,70 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"HEADER_CHECKSUM",
+"Part":"Low"}},
+
+"2008":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DRV1TRK",
+"Part":"Low"}},
+
+"2032":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"DRV1TRK",
+"Part":"Low"}},
+
+"2046":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRKCNT",
+"Part":"Low"}},
+
+"2051":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRIOR",
+"Part":"Low"}},
+
+"2072":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRKCNT",
+"Part":"Low"}},
+
+"2076":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRKCNT",
+"Part":"Low"}},
+
+"2093":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRIOR",
+"Part":"Low"}},
+
+"2105":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRKCNT",
 "Part":"Low"}},
 
 "2122":{
@@ -4021,6 +4876,22 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"HEADER_SECTOR",
+"Part":"Low"}},
+
+"2453":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"NBUF2",
+"Part":"Low"}},
+
+"2460":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"NBUF2",
 "Part":"Low"}},
 
 "2467":{
