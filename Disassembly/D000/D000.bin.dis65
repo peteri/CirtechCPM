@@ -25,6 +25,23 @@
 "ExtensionScriptFileIdentifiers":["RT:Apple/ProDOS8.cs",
 "RT:Apple/VisHiRes.cs"],
 "ProjectSyms":{
+"AA":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"timing constant",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"AA",
+"Value":62,
+"Source":"Project",
+"Type":"Constant",
+"LabelAnno":"None"},
+
 "CHAR_OP_INI":{
 "DataDescriptor":{
 "Length":1,
@@ -756,6 +773,40 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"NSECT":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Sector number",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"NSECT",
+"Value":63,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"NVOL":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"NVOL",
+"Value":65,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "PARA_ACKIN":{
 "DataDescriptor":{
 "Length":1,
@@ -1028,6 +1079,23 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"SLOTABS":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SLOTABS",
+"Value":1656,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "SLOTTEMP":{
 "DataDescriptor":{
 "Length":1,
@@ -1041,6 +1109,23 @@
 "MultiMask":null,
 "Label":"SLOTTEMP",
 "Value":43,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"SLOTZ":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"SLOTZ",
+"Value":39,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -1147,6 +1232,23 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"TRK":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"TRK",
+"Value":68,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "TRKCNT":{
 "DataDescriptor":{
 "Length":1,
@@ -1194,6 +1296,23 @@
 "MultiMask":null,
 "Label":"VOLUME",
 "Value":47,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"WTEMP":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"WTEMP",
+"Value":38,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -1682,7 +1801,19 @@
 "1326":"If no errors",
 "1328":"Disk is write protected.",
 "1331":"Always taken",
-"1555":"Write sync bytes",
+"1536":"Anticipate wrpot err.",
+"1537":"For zero page access.",
+"1539":"For non-zero page.",
+"1545":"Sense wprot flag.",
+"1548":"If high, then err.",
+"1553":"For zero-page access",
+"1555":"sync data.",
+"1557":"(5) Write 1st nibl.",
+"1560":"(4)",
+"1563":"(3)",
+"1564":"(4) Critical timing!",
+"1565":"(2)",
+"1566":"(2) for 5 nibls.",
 "1576":"Write data header bytes",
 "1648":"Write checksum",
 "1651":"Write trailer bytes",
@@ -4586,12 +4717,28 @@
 "SubFormat":"None",
 "SymbolRef":null},
 
+"1537":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SLOTZ",
+"Part":"Low"}},
+
 "1545":{
 "Length":3,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"IWM_Q7_OFF",
+"Part":"Low"}},
+
+"1553":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"WTEMP",
 "Part":"Low"}},
 
 "1557":{
