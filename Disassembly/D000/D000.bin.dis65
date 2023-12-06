@@ -42,6 +42,23 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"BLANKCH":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Blank character.",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"BLANKCH",
+"Value":38,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "CHAR_OP_INI":{
 "DataDescriptor":{
 "Length":1,
@@ -1949,6 +1966,12 @@
 "1766":"NOT SAME AS RWTS",
 "1769":"Done \u0027N\u0027 intervals?",
 "1771":"(A-reg counts)",
+"1774":"Preserve destination track",
+"1778":"Get drive # into carry",
+"1779":"into (DRIVNO)",
+"1781":"Setup Y-reg",
+"1785":"Track is held * 2",
+"1788":"If on drive 1(1), DRIVNO minus ",
 "1799":"\u0027Must find\u0027 count",
 "1801":"If can\u0027t find marks",
 "1802":"Then exit with carry set.",
@@ -2078,10 +2101,44 @@
 "2148":"(4) back to write mode.",
 "2151":"(3) for delay",
 "2152":"(4)",
+"2153":"(12) For 40 uSec nibls.",
+"2156":"(12)",
+"2159":"(5) Write nibl.",
+"2162":"(4) (back to write mode)",
+"2165":"(2) For delay",
+"2166":"(2) Next of \u0027N\u0027 nibls.",
+"2167":"(3) *** NO PAGE CROSS! ***",
 "2169":"(2) Adr Mark 1.",
+"2171":"(15, 9, 6) Write it.",
 "2174":"(2) Adr Mark 2.",
+"2176":"(15, 9, 6) Write it.",
 "2179":"(2) 16-sector adr mark 3.",
+"2181":"(15, 9, 6) Write it.",
 "2184":"(3)",
+"2186":"(14,9,6) Write NVOL (odd, then even bits.)",
+"2189":"(3) Write track number",
+"2191":"(14,9,6) (odd, then even bits.)",
+"2194":"(3) Write sector number.",
+"2196":"(14,9,6) (odd, then even bits.)",
+"2199":"(3)",
+"2201":"(3) Form adr field checksum.",
+"2203":"(3)",
+"2205":"(3) Save for even bits",
+"2206":"(2) Align odd bits",
+"2207":"(3) Set clock bits.",
+"2209":"(5) Write checksum odd bits.",
+"2212":"(4) back to write mode.",
+"2216":"(2) set clock bits.",
+"2218":"(17, 9, 6) Write them.",
+"2221":"End mark 1.",
+"2223":"(15, 9, 6) Write it.",
+"2226":"End mark 2.",
+"2228":"(15, 9, 6) Write it.",
+"2231":"End mark 3.",
+"2233":"(15, 9, 6) \u0027Write turn off\u0027",
+"2236":"Indicate no Wr Prot Err.",
+"2237":"Out of write mode",
+"2240":"To read mode.",
 "2244":"Delay 100 uSec per count",
 "2255":"Count up to $0000",
 "2258":"(3) Preserve for even bits.",
@@ -2101,6 +2158,15 @@
 "2278":"(5) Write nibl.",
 "2281":"(4)",
 "2284":"(6) Return",
+"2285":"Looks like this searches for a card type in Acc",
+"2287":"Slot is 6",
+"2289":"Skip it",
+"2291":"Found the card type we\u0027re looking for?",
+"2294":"Yes, rotate left....",
+"2297":"Next slot",
+"2299":"Remove callers address",
+"2301":"Exit via error.",
+"2304":"Set acc to Slot * 16",
 "2328":"Sector number, 0 to 15",
 "2330":"128 NIBs prior sector 0",
 "2332":"To insure no blank spot betw 15 \u0026 0",
@@ -2736,6 +2802,24 @@
 "Text":"****************************************************\r\n* VERIFY ROUTINE                                   *\r\n* VERIFIES THAT THE FIRST SECTOR ENCOUNTERED IS    *\r\n* SECTOR 0, AND THAT ALL 16 SECTORS ARE READABLE   *\r\n* WITH MINIMAL RETRIES. (2 REVOLUTIONS MAXIMUM)    *\r\n* IF FIRST SECTOR IS NOT SECTOR 0 THEN THE         *\r\n* CURRENT NUMBER OF SELF-SYNC NIBLS IS DECR\u0027D BY   *\r\n* 1 (IF ALREADY LESS THAN 16) OR BY 2. THEN SECTOR *\r\n* 15 IS LOCATED SO AS TO POSITION THE NEW TRACK    *\r\n* REWRITE.                                         *\r\n* IF UNABLE TO READ ANY SECTOR THEN THE ENTIRE     *\r\n* TRACK IS REWRITTEN.                              *\r\n* AFTER VERIFYING TRACK 0, THE NUMBER OF SELF-SYNC *\r\n* NIBLS, NSYNC, IS DECR\u0027D BY 2 (IF STILL 16 OR     *\r\n* GREATER).                                        *\r\n****************************************************",
 "BoxMode":false,
 "MaxWidth":80,
+"BackgroundColor":0},
+
+"2209":{
+"Text":"(Precise timing, 32 cycles per nibl)",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1774":{
+"Text":"This subroutine sets the slot dependent track location.",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2285":{
+"Text":"\r\nUnused code anywhere in this BIOS\r\nLooks like it searches for card type\r\nin the slots, skipping slot 6. \r\n ",
+"BoxMode":true,
+"MaxWidth":40,
 "BackgroundColor":0}},
 
 "Notes":{
@@ -4497,6 +4581,41 @@
 "Value":55532,
 "Source":"User",
 "Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1795":{
+"Label":"ONDRV1",
+"Value":55043,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"1798":{
+"Label":"SETRTS",
+"Value":55046,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2296":{
+"Label":"SKIPSL6",
+"Value":55544,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2304":{
+"Label":"FOUNDCARD",
+"Value":55552,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2287":{
+"Label":"D2NXTSLT",
+"Value":55535,
+"Source":"User",
+"Type":"GlobalAddr",
 "LabelAnno":"None"}},
 
 "OperandFormats":{
@@ -4594,11 +4713,27 @@
 "Label":"SCRLINEH",
 "Part":"Low"}},
 
+"425":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"BLANKCH",
+"Part":"Low"}},
+
 "432":{
 "Length":2,
 "Format":"NumericLE",
 "SubFormat":"Decimal",
 "SymbolRef":null},
+
+"438":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"BLANKCH",
+"Part":"Low"}},
 
 "446":{
 "Length":2,
@@ -5506,6 +5641,22 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"IWM_Q7_ON",
+"Part":"Low"}},
+
+"2189":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRK",
+"Part":"Low"}},
+
+"2201":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRK",
 "Part":"Low"}},
 
 "2237":{
