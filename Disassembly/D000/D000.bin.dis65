@@ -39,7 +39,7 @@
 "Label":"AA",
 "Value":62,
 "Source":"Project",
-"Type":"Constant",
+"Type":"ExternalAddr",
 "LabelAnno":"None"},
 
 "CHAR_OP_INI":{
@@ -654,6 +654,23 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"FOUND":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Table of found sectors during format",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"FOUND",
+"Value":57175,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "HEADER_CHECKSUM":{
 "DataDescriptor":{
 "Length":1,
@@ -701,6 +718,23 @@
 "MultiMask":null,
 "Label":"LAST",
 "Value":38,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
+"MAXTRK":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"MAXTRK",
+"Value":61,
 "Source":"Project",
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
@@ -2033,14 +2067,129 @@
 "2122":"Flip the phase",
 "2125":"Restore X-reg",
 "2127":"And return",
+"2128":"Motor off",
+"2131":"Flag write protect",
+"2133":"Set carry and go home",
+"2135":"Into \u0027Wr prot sense\u0027 mode",
+"2138":"Sense it (NEG=protected)",
+"2141":"Error exit if protected.",
+"2143":"Self-sync nibl.",
+"2145":"Write first nibl.",
+"2148":"(4) back to write mode.",
+"2151":"(3) for delay",
+"2152":"(4)",
+"2169":"(2) Adr Mark 1.",
+"2174":"(2) Adr Mark 2.",
+"2179":"(2) 16-sector adr mark 3.",
+"2184":"(3)",
 "2244":"Delay 100 uSec per count",
 "2255":"Count up to $0000",
-"2499":"TRL",
+"2258":"(3) Preserve for even bits.",
+"2259":"(2) align odd bits.",
+"2260":"(3) Set clock bits",
+"2262":"(5) Write nibl.",
+"2265":"(4)",
+"2268":"(4) Recover even bits",
+"2269":"(2)",
+"2270":"(2) For delay",
+"2271":"(2)",
+"2272":"(2) Set clock bits.",
+"2274":"(2) (17,9,6) Entry",
+"2275":"(2) (15,9,6) Entry",
+"2276":"(3) For",
+"2277":"(4) delay.",
+"2278":"(5) Write nibl.",
+"2281":"(4)",
+"2284":"(6) Return",
+"2328":"Sector number, 0 to 15",
+"2330":"128 NIBs prior sector 0",
+"2332":"To insure no blank spot betw 15 \u0026 0",
+"2334":"Current num of gap self-sync nibls",
+"2336":"Write gap and adr field",
+"2339":"Err if write protected",
+"2344":"Was branch if write protected",
+"2345":"in original RWTS code",
+"2346":"Next of 16 sectors",
+"2352":"Continue if not done",
+"2356":"Set 16 bytes of",
+"2358":"sector found table",
+"2360":"to $30 (Mark them)",
+"2369":"Delay 50 uSec for every",
+"2371":"(12) Self sync nibl",
+"2374":"(12) Expected to insure",
+"2377":"(12) proper gap prior sector 0",
+"2380":"(3) Note this code is possibly wrong ",
+"2381":"(4) as the jsr is to the SEC",
+"2382":"(2) rather the RTS in RWTS source",
+"2383":"(2)",
+"2384":"(3)",
+"2386":"Read next address field",
+"2389":"Err, locate sect 15 and rewrite trk.",
+"2391":"Was it sector 0",
+"2393":"Yes, now verify data field",
+"2397":"Decr NSYNC by 1 if less than",
+"2399":"16, by 2 if not less",
+"2405":"If less than 5, unrecoverable",
+"2407":"err, else rewrite after data fld 15",
+"2409":"Extremely fast or severe error",
+"2411":"Read an address field",
+"2414":"Retry if error",
+"2416":"Read data field",
+"2419":"(Good)",
+"2421":"Next of 48 sector tries.",
+"2424":"(Keep trying)",
+"2426":"Read address field",
+"2429":"Err, try up to 128 times.",
+"2431":"Sector that was read.",
+"2433":"Sector 15?",
+"2435":"No, continue searching",
+"2437":"Read data field",
+"2440":"Write track from here if no err.",
+"2442":"$FF to $7F, 128 tries.",
+"2445":"Try for sect 15 again",
+"2449":"Set carry to indicate error",
+"2450":"Return to formatter",
+"2451":"This is sector read",
+"2453":"already found?",
+"2456":"Yes, ignore it.",
+"2460":"Indicate this sect now found",
+"2463":"Found 16 sectors?",
+"2465":"No, look for next.",
+"2469":"If track and NSYNC \u003e 16",
+"2471":"(Num gap sync nibls)",
+"2473":"Then subtract 2 from NSYBC",
+"2475":"To avoid retries on later trks.",
+"2481":"Indicate no error.",
+"2482":"Return.",
+"2483":"Wait for motor to come up to speed",
+"2486":"Copy volume number",
+"2489":"For formatter",
+"2491":"Set z-pag loc to $AA for",
+"2493":"Time dependent references",
+"2497":"Track number, 0 to 34",
 "2501":"Clear NBUFS to write sectors",
 "2503":"Different values from RWTS",
-"2506":"Probably $E5 for empty CP/M",
+"2509":"$E5 shr 2 for empty CP/M directory ",
+"2517":"Set the max track to format",
 "2523":"Fake like on track 42",
 "2528":"Begin with 40 self-sync nibls.",
+"2532":"Goto next track",
+"2535":"Write and verify track",
+"2538":"Error go home",
+"2540":"Upto 48 sector retries",
+"2542":"to find sector 0",
+"2545":"Anticpate \u0027unable to format\u0027",
+"2546":"Done 48 retries?",
+"2549":"If so, \u0027Unable to format\u0027 err.",
+"2551":"Read adr field",
+"2554":"Retry if err",
+"2556":"Check sector that was read.",
+"2558":"Continue searching if not sect 0",
+"2560":"Now read data field",
+"2563":"Continue search if err.",
+"2565":"Increment track number",
+"2569":"Continue if less than 25",
+"2573":"Return back success",
 "2579":"FORMDONE",
 "2591":"Save data buffer page value for writes",
 "2597":"Save data buffer page value for reads",
@@ -2519,6 +2668,72 @@
 
 "1293":{
 "Text":"*\r\n* Hooray! We got the right sector!\r\n*",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2483":{
+"Text":"****************************\r\n*                          *\r\n*  FORMAT DISK AND RETURN  *\r\n*                          *\r\n****************************",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2586":{
+"Text":"\r\nDo a read or write on a whole track\r\n ",
+"BoxMode":true,
+"MaxWidth":40,
+"BackgroundColor":0},
+
+"2714":{
+"Text":"Get the current slot number into Y",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2702":{
+"Text":"Table of on timings for the stepper motor",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1349":{
+"Text":"Table of off timings for the stepper motor",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1362":{
+"Text":"Table for nibble conversion to disk",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"1333":{
+"Text":"CPM logical sector to physical disk sector number",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2244":{
+"Text":"\r\nWait time for motor to come up to speed before starting to write to disk, finishing off any time left over.\r\n ",
+"BoxMode":true,
+"MaxWidth":40,
+"BackgroundColor":0},
+
+"2310":{
+"Text":"ProDOS logical sector to physical disk translation table",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2326":{
+"Text":"******************************\r\n*                            *\r\n*   WRITE TRACK SUBROUTINE   *\r\n*                            *\r\n******************************",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2354":{
+"Text":"****************************************************\r\n* VERIFY ROUTINE                                   *\r\n* VERIFIES THAT THE FIRST SECTOR ENCOUNTERED IS    *\r\n* SECTOR 0, AND THAT ALL 16 SECTORS ARE READABLE   *\r\n* WITH MINIMAL RETRIES. (2 REVOLUTIONS MAXIMUM)    *\r\n* IF FIRST SECTOR IS NOT SECTOR 0 THEN THE         *\r\n* CURRENT NUMBER OF SELF-SYNC NIBLS IS DECR\u0027D BY   *\r\n* 1 (IF ALREADY LESS THAN 16) OR BY 2. THEN SECTOR *\r\n* 15 IS LOCATED SO AS TO POSITION THE NEW TRACK    *\r\n* REWRITE.                                         *\r\n* IF UNABLE TO READ ANY SECTOR THEN THE ENTIRE     *\r\n* TRACK IS REWRITTEN.                              *\r\n* AFTER VERIFYING TRACK 0, THE NUMBER OF SELF-SYNC *\r\n* NIBLS, NSYNC, IS DECR\u0027D BY 2 (IF STILL 16 OR     *\r\n* GREATER).                                        *\r\n****************************************************",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0}},
@@ -4135,6 +4350,153 @@
 "Value":55697,
 "Source":"User",
 "Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2334":{
+"Label":"WSECT",
+"Value":55582,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2336":{
+"Label":"WSECT0",
+"Value":55584,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2135":{
+"Label":"WADR16",
+"Value":55383,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2363":{
+"Label":"CLRFOUND",
+"Value":55611,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2371":{
+"Label":"S0DELAY",
+"Value":55619,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2426":{
+"Label":"S15LOC",
+"Value":55674,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2442":{
+"Label":"NOTS15",
+"Value":55690,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2416":{
+"Label":"VDATA",
+"Value":55664,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2447":{
+"Label":"VERR",
+"Value":55695,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2411":{
+"Label":"VSECT",
+"Value":55659,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2421":{
+"Label":"VERR1",
+"Value":55669,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2451":{
+"Label":"SECTOK",
+"Value":55699,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2481":{
+"Label":"WEXIT1",
+"Value":55729,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2450":{
+"Label":"WEXIT3",
+"Value":55698,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2128":{
+"Label":"WRPROTERR",
+"Value":55376,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2153":{
+"Label":"WSYNC1",
+"Value":55401,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2243":{
+"Label":"WADRTS1",
+"Value":55491,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2275":{
+"Label":"WNIBL2",
+"Value":55523,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2258":{
+"Label":"WBYTE",
+"Value":55506,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2274":{
+"Label":"WNIBLA",
+"Value":55522,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2284":{
+"Label":"WBYTERTS",
+"Value":55532,
+"Source":"User",
+"Type":"GlobalAddr",
 "LabelAnno":"None"}},
 
 "OperandFormats":{
@@ -5166,12 +5528,26 @@
 "SubFormat":"None",
 "SymbolRef":null},
 
+"2330":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"2363":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"FOUND",
+"Part":"Low"}},
+
 "2391":{
 "Length":2,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"HEADER_SECTOR",
+"Label":"SECTOR",
 "Part":"Low"}},
 
 "2453":{
@@ -5179,7 +5555,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"NBUF2",
+"Label":"FOUND",
 "Part":"Low"}},
 
 "2460":{
@@ -5187,7 +5563,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"NBUF2",
+"Label":"FOUND",
 "Part":"Low"}},
 
 "2467":{
@@ -5195,7 +5571,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"PRDOOS_BUFPTRL",
+"Label":"TRK",
 "Part":"Low"}},
 
 "2493":{
@@ -5233,6 +5609,22 @@
 "SymbolRef":null},
 
 "2530":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRK",
+"Part":"Low"}},
+
+"2565":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRK",
+"Part":"Low"}},
+
+"2569":{
 "Length":2,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
