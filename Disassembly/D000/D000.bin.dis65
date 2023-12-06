@@ -790,6 +790,23 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
+"NSYNC":{
+"DataDescriptor":{
+"Length":1,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"Comment":"Num gasp self-sync nibls.",
+"HasWidth":false,
+"Direction":"ReadWrite",
+"MultiMask":null,
+"Label":"NSYNC",
+"Value":69,
+"Source":"Project",
+"Type":"ExternalAddr",
+"LabelAnno":"None"},
+
 "NVOL":{
 "DataDescriptor":{
 "Length":1,
@@ -1814,9 +1831,55 @@
 "1564":"(4) Critical timing!",
 "1565":"(2)",
 "1566":"(2) for 5 nibls.",
-"1576":"Write data header bytes",
-"1648":"Write checksum",
-"1651":"Write trailer bytes",
+"1568":"(3) Exact timing.",
+"1569":"(4) Exact timing.",
+"1570":"(13,9,6) Write SYNC",
+"1573":"(2)",
+"1574":"(2*) MUST NOT cross page!",
+"1576":"(2) 1st data mark.",
+"1578":"(15,9,6)",
+"1581":"(2) 2nd data mark.",
+"1583":"(15,9,6)",
+"1586":"(2) 3rd data mark.",
+"1588":"(15,9,6)",
+"1591":"(2) Clear checksum",
+"1592":"(2) NBUF2 index",
+"1594":"(3) Always. No Page Cross!!",
+"1596":"(4) Prior 6=bit nibl.",
+"1599":"(5) XOR with current",
+"1602":"(2) index to 7-bit nibl",
+"1603":"(4) Must not cross page!",
+"1606":"(3) Critical timing!",
+"1608":"(5) Write nibl.",
+"1611":"(4)",
+"1614":"(2) Next nibl.",
+"1615":"(2*) Must not cross page!",
+"1617":"(3) Prior nibl from buf6.",
+"1619":"(2) Critical timing.",
+"1620":"(4) XOR NBUF1 nibl.",
+"1623":"(2) Index to 7-bit nibl.",
+"1624":"(4)",
+"1627":"(4) Timing critical",
+"1630":"(5) Write nibl.",
+"1633":"(4)",
+"1636":"(4) Prior 6-bit nibl.",
+"1639":"(2) Next NBUF1 nibl.",
+"1640":"(2*) Must not cross page!",
+"1642":"(2) Last nibl as chksum",
+"1643":"(4) Index to 7-bit nibl.",
+"1646":"(3)",
+"1648":"(6,9,6) Write checksum",
+"1651":"(2) DM4, bit slip mark.",
+"1653":"(15,9,6) Write it",
+"1656":"(2) DM5, bit slip mark.",
+"1658":"(15,9,6) Write it",
+"1661":"(2) DM6, bit slip mark.",
+"1663":"(15,9,6) Write it",
+"1666":"(2) Turn-off byte.",
+"1668":"(15,9,6) Write it",
+"1671":"Out of write mode",
+"1674":"to read mode",
+"1677":"Return from write",
 "1678":"Clear out the two bit table",
 "1682":"Clear it",
 "1686":"Loop until done",
@@ -1829,12 +1892,11 @@
 "1706":"Put left overs into six bit data",
 "1710":"Out of two bit data?",
 "1713":"Done all 256 bytes?",
-"1716":"2 Cycles - Provide different delays",
-"1717":"3 cycles - delays to produce",
-"1718":"4 cycles correct timeing",
-"1719":"5 cycles - Write load",
-"1722":"5 cycles - write byte",
-"1725":"6 cycles - return to caller ",
+"1716":"(2) 9 cycles, then write.",
+"1717":"(3) 7 cycles, then write.",
+"1718":"(4)",
+"1719":"(5) Nibl write sub.",
+"1722":"(4) Clobbers acc, not carry.",
 "1726":"User data buf IDX.",
 "1728":"Init NBUF2 Index.",
 "1730":"NBUF IDX $55 to $0",
@@ -1973,6 +2035,13 @@
 "2127":"And return",
 "2244":"Delay 100 uSec per count",
 "2255":"Count up to $0000",
+"2499":"TRL",
+"2501":"Clear NBUFS to write sectors",
+"2503":"Different values from RWTS",
+"2506":"Probably $E5 for empty CP/M",
+"2523":"Fake like on track 42",
+"2528":"Begin with 40 self-sync nibls.",
+"2579":"FORMDONE",
 "2591":"Save data buffer page value for writes",
 "2597":"Save data buffer page value for reads",
 "2603":"Save CPM sector translate",
@@ -2298,8 +2367,8 @@
 "MaxWidth":80,
 "BackgroundColor":0},
 
-"1576":{
-"Text":"data header",
+"1602":{
+"Text":"(NBUF2 MUST be on page boundary for timing!!)",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0},
@@ -2317,7 +2386,7 @@
 "BackgroundColor":0},
 
 "1716":{
-"Text":"Write data every 32 cycles\r\n\r\nTypical call sequence\r\n  2 2 cycles - LDA #D5\r\n  8 6 cycles - JSR WRITE9\r\n 10 2 cycles - CLC\r\n 13 3 cycles - PHA\r\n 17 4 cycles - PLA\r\n 22 5 cycles - STA $C08B,x\r\n 26 4 cycles - ORA $C08C,X\r\n 32 6 cycles - RTS",
+"Text":"**************************************\r\n* 7-BIT NIBL WRITE SUBRS  A-REG OR\u0027D *\r\n* PRIOR EXIT CARRY CLEARED           *\r\n**************************************",
 "BoxMode":false,
 "MaxWidth":80,
 "BackgroundColor":0},
@@ -2377,8 +2446,8 @@
 "BackgroundColor":0},
 
 "1536":{
-"Text":"Write sector data out",
-"BoxMode":true,
+"Text":"************************************\r\n* WRITE SUBR (16-SECTOR FORMAT)    *\r\n************************************\r\n* WRITES DATA FROM NBUF1 AND NBUF2 *\r\n* CONVERTING 6-BIT TO 7-BIT NIBLS  *\r\n* VIA \u0027NIBL\u0027 TABLE.                *\r\n* FIRST NBUF2, HIGH TO LOW. THEN   *\r\n* NBUF1,  LOW TO HIGH.             *\r\n* ---- ON ENTRY ----               *\r\n* X-REG: SLOTNUM TIMES $10.        *\r\n* NBUF1 AND NBUF2 HOLD NIBLS       *\r\n* FROM  PRENIBL SUBR. (00ABCDEF)   *\r\n* ---- ON EXIT -----               *\r\n* CARRY SET IF ERROR.              *\r\n*  (W PROT VIOLATION)              *\r\n* IF NO ERROR:                     *\r\n* A-REG UNCERTAIN X-REG UNCHANGED. *\r\n* Y-REG HOLDS $00. CARRY CLEAR.    *\r\n* SLOTABS, SLOTZ, AND WTEMP USED.  *\r\n* ---- ASSUMES ----                *\r\n* 1 USEC CYCLE TIME                *\r\n************************************",
+"BoxMode":false,
 "MaxWidth":40,
 "BackgroundColor":0},
 
@@ -3607,7 +3676,7 @@
 "LabelAnno":"None"},
 
 "2483":{
-"Label":"FORMDSK",
+"Label":"DSKFORM",
 "Value":55731,
 "Source":"User",
 "Type":"GlobalAddr",
@@ -4008,6 +4077,62 @@
 "1323":{
 "Label":"WRIT",
 "Value":54571,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2503":{
+"Label":"CLRNBUF2",
+"Value":55751,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2511":{
+"Label":"CLRNBUF1",
+"Value":55759,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2530":{
+"Label":"FORMTRK",
+"Value":55778,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2326":{
+"Label":"WTRACK16",
+"Value":55574,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2579":{
+"Label":"FORMDONE",
+"Value":55827,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2577":{
+"Label":"FORMERR",
+"Value":55825,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2545":{
+"Label":"FINDS0",
+"Value":55793,
+"Source":"User",
+"Type":"GlobalAddr",
+"LabelAnno":"None"},
+
+"2449":{
+"Label":"WEXIT2",
+"Value":55697,
 "Source":"User",
 "Type":"GlobalAddr",
 "LabelAnno":"None"}},
@@ -4749,6 +4874,30 @@
 "Label":"IWM_Q7_ON",
 "Part":"Low"}},
 
+"1606":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SLOTZ",
+"Part":"Low"}},
+
+"1617":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"WTEMP",
+"Part":"Low"}},
+
+"1646":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SLOTZ",
+"Part":"Low"}},
+
 "1671":{
 "Length":3,
 "Format":"NumericLE",
@@ -5047,6 +5196,48 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"PRDOOS_BUFPTRL",
+"Part":"Low"}},
+
+"2493":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"AA",
+"Part":"Low"}},
+
+"2499":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRK",
+"Part":"Low"}},
+
+"2501":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Hex",
+"SymbolRef":null},
+
+"2517":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"2521":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Decimal",
+"SymbolRef":null},
+
+"2530":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"TRK",
 "Part":"Low"}},
 
 "2594":{

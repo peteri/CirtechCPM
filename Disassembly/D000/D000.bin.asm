@@ -7,6 +7,7 @@
                    CHAR_OP_RD      .eq     $0e    {const}    ;Character IO Read (same as pascal offset)
                    CHAR_OP_WR      .eq     $0f    {const}    ;Character IO Write (same as pascal offset)
                    CHAR_OP_ST      .eq     $10    {const}    ;Character IO Status (same as pascal offset)
+                   AA              .eq     $3e    {const}    ;timing constant
                    SCRLINEL        .eq     $20               ;Address of current line in $400
                    SCRLINEH        .eq     $21               ;Screen address high
                    ESCAPE_STATE    .eq     $22               ;State for ESCAPE leadin
@@ -17,8 +18,10 @@
                    LAST            .eq     $26
                    T0              .eq     $26
                    TRKCNT          .eq     $26
+                   WTEMP           .eq     $26
                    CSUM            .eq     $27
                    PRIOR           .eq     $27
+                   SLOTZ           .eq     $27
                    CURSORY         .eq     $29               ;Cursor Y (80 col)
                    TRKN            .eq     $2a               ;Seek destination track
                    SLOTTEMP        .eq     $2b
@@ -30,12 +33,13 @@
                    DRIVNO          .eq     $35               ;Hi bit set if drive 2 for Disk II
                    MON_A1H         .eq     $3d               ;general purpose
                    MON_A2L         .eq     $3e               ;general purpose
-                   MON_A2H         .eq     $3f               ;general purpose
-                   MON_A3H         .eq     $41               ;general purpose
+                   NSECT           .eq     $3f               ;Sector number
+                   NVOL            .eq     $41
                    PRODOS_CMD      .eq     $42
                    PRODOS_UNITNUM  .eq     $43
                    PRDOOS_BUFPTRL  .eq     $44
-                   PRODOS_BUFPTRH  .eq     $45               ;Prodos buffer pointer high
+                   TRK             .eq     $44
+                   NSYNC           .eq     $45               ;Num gasp self-sync nibls.
                    MONTIMEL        .eq     $46
                    PRODOS_BLKNUM   .eq     $46
                    MONTIMEH        .eq     $47
@@ -56,7 +60,7 @@
                    RETRYCNT        .eq     $0578
                    STSBYTE         .eq     $05b8             ;SSC Char
                    DISKSLOTCX      .eq     $05f8             ;Disk slot $60
-                   SCRNHOLE4       .eq     $0678  {addr/8}   ;text page 1 screen holes
+                   SLOTABS         .eq     $0678
                    RECALCNT        .eq     $06f8
                    DISK_BUFF       .eq     $0800
                    SET80COL        .eq     $c001             ;W use PAGE2 for aux mem (80STOREON)
@@ -683,7 +687,7 @@ d47c: ad 88 03     NOWAIT          lda     DISK_OP           ;Examine disk opera
 d47f: c9 03                        cmp     #DSKOP_FMT
 d481: d0 04                        bne     NOTFORMAT         ;Not format
 d483: 28                           plp                       ;Get back motor status
-d484: 4c b3 d9                     jmp     FORMDSK           ;Do the format
+d484: 4c b3 d9                     jmp     DSKFORM           ;Do the format
 
 d487: ad 80 03     NOTFORMAT       lda     DISK_TRKL         ;Goto the track
 d48a: 20 cb d7                     jsr     MYSEEK
@@ -804,75 +808,94 @@ d5e0: e0 e1 e2 e3+                 .bulk   $e0,$e1,$e2,$e3,$e4,$29,$2a,$2b
 d5e8: e8 2c 2d 2e+                 .bulk   $e8,$2c,$2d,$2e,$2f,$30,$31,$32
 d5f0: f0 f1 33 34+                 .bulk   $f0,$f1,$33,$34,$35,$36,$37,$38
 d5f8: f8 39 3a 3b+                 .bulk   $f8,$39,$3a,$3b,$3c,$3d,$3e,$3f
-                   ****************************************
-                   * Write sector data out                *
-                   ****************************************
-d600: 38           WRITE16         sec
-d601: 86 27                        stx     CSUM
-d603: 8e 78 06                     stx     SCRNHOLE4
+                   ; ************************************
+                   ; * WRITE SUBR (16-SECTOR FORMAT)    *
+                   ; ************************************
+                   ; * WRITES DATA FROM NBUF1 AND NBUF2 *
+                   ; * CONVERTING 6-BIT TO 7-BIT NIBLS  *
+                   ; * VIA 'NIBL' TABLE.                *
+                   ; * FIRST NBUF2, HIGH TO LOW. THEN   *
+                   ; * NBUF1,  LOW TO HIGH.             *
+                   ; * ---- ON ENTRY ----               *
+                   ; * X-REG: SLOTNUM TIMES $10.        *
+                   ; * NBUF1 AND NBUF2 HOLD NIBLS       *
+                   ; * FROM  PRENIBL SUBR. (00ABCDEF)   *
+                   ; * ---- ON EXIT -----               *
+                   ; * CARRY SET IF ERROR.              *
+                   ; *  (W PROT VIOLATION)              *
+                   ; * IF NO ERROR:                     *
+                   ; * A-REG UNCERTAIN X-REG UNCHANGED. *
+                   ; * Y-REG HOLDS $00. CARRY CLEAR.    *
+                   ; * SLOTABS, SLOTZ, AND WTEMP USED.  *
+                   ; * ---- ASSUMES ----                *
+                   ; * 1 USEC CYCLE TIME                *
+                   ; ************************************
+d600: 38           WRITE16         sec                       ;Anticipate wrpot err.
+d601: 86 27                        stx     SLOTZ             ;For zero page access.
+d603: 8e 78 06                     stx     SLOTABS           ;For non-zero page.
 d606: bd 8d c0                     lda     IWM_Q6_ON,x
-d609: bd 8e c0                     lda     IWM_Q7_OFF,x
-d60c: 30 7c                        bmi     WEXIT
+d609: bd 8e c0                     lda     IWM_Q7_OFF,x      ;Sense wprot flag.
+d60c: 30 7c                        bmi     WEXIT             ;If high, then err.
 d60e: ad 00 df                     lda     NBUF2
-d611: 85 26                        sta     COUNT
-d613: a9 ff                        lda     #$ff              ;Write sync bytes
-d615: 9d 8f c0                     sta     IWM_Q7_ON,x
-d618: 1d 8c c0                     ora     IWM_Q6_OFF,x
-d61b: 48                           pha
-d61c: 68                           pla
-d61d: ea                           nop
-d61e: a0 04                        ldy     #$04
-d620: 48           WSYNC           pha
-d621: 68                           pla
-d622: 20 b5 d6                     jsr     WNIBL7
-d625: 88                           dey
-d626: d0 f8                        bne     WSYNC
-                   ; data header
-d628: a9 d5                        lda     #$d5              ;Write data header bytes
-d62a: 20 b4 d6                     jsr     WNIBL9
-d62d: a9 aa                        lda     #$aa
-d62f: 20 b4 d6                     jsr     WNIBL9
-d632: a9 ad                        lda     #$ad
-d634: 20 b4 d6                     jsr     WNIBL9
-d637: 98                           tya
-d638: a0 56                        ldy     #$56
-d63a: d0 03                        bne     WDATA1
+d611: 85 26                        sta     WTEMP             ;For zero-page access
+d613: a9 ff                        lda     #$ff              ;sync data.
+d615: 9d 8f c0                     sta     IWM_Q7_ON,x       ;(5) Write 1st nibl.
+d618: 1d 8c c0                     ora     IWM_Q6_OFF,x      ;(4)
+d61b: 48                           pha                       ;(3)
+d61c: 68                           pla                       ;(4) Critical timing!
+d61d: ea                           nop                       ;(2)
+d61e: a0 04                        ldy     #$04              ;(2) for 5 nibls.
+d620: 48           WSYNC           pha                       ;(3) Exact timing.
+d621: 68                           pla                       ;(4) Exact timing.
+d622: 20 b5 d6                     jsr     WNIBL7            ;(13,9,6) Write SYNC
+d625: 88                           dey                       ;(2)
+d626: d0 f8                        bne     WSYNC             ;(2*) MUST NOT cross page!
+d628: a9 d5                        lda     #$d5              ;(2) 1st data mark.
+d62a: 20 b4 d6                     jsr     WNIBL9            ;(15,9,6)
+d62d: a9 aa                        lda     #$aa              ;(2) 2nd data mark.
+d62f: 20 b4 d6                     jsr     WNIBL9            ;(15,9,6)
+d632: a9 ad                        lda     #$ad              ;(2) 3rd data mark.
+d634: 20 b4 d6                     jsr     WNIBL9            ;(15,9,6)
+d637: 98                           tya                       ;(2) Clear checksum
+d638: a0 56                        ldy     #$56              ;(2) NBUF2 index
+d63a: d0 03                        bne     WDATA1            ;(3) Always. No Page Cross!!
 
-d63c: b9 00 df     WDATA0          lda     NBUF2,y
-d63f: 59 ff de     WDATA1          eor     NBUF2-1,y
-d642: aa                           tax
-d643: bd 52 d5                     lda     NIBL,x
-d646: a6 27                        ldx     CSUM
-d648: 9d 8d c0                     sta     IWM_Q6_ON,x
-d64b: bd 8c c0                     lda     IWM_Q6_OFF,x
-d64e: 88                           dey
-d64f: d0 eb                        bne     WDATA0
-d651: a5 26                        lda     COUNT
-d653: ea                           nop
-d654: 59 00 de     WDATA2          eor     NBUF1,y
-d657: aa                           tax
-d658: bd 52 d5                     lda     NIBL,x
-d65b: ae 78 06                     ldx     SCRNHOLE4
-d65e: 9d 8d c0                     sta     IWM_Q6_ON,x
-d661: bd 8c c0                     lda     IWM_Q6_OFF,x
-d664: b9 00 de                     lda     NBUF1,y
-d667: c8                           iny
-d668: d0 ea                        bne     WDATA2
-d66a: aa                           tax
-d66b: bd 52 d5                     lda     NIBL,x
-d66e: a6 27                        ldx     CSUM
-d670: 20 b7 d6                     jsr     WNIBL             ;Write checksum
-d673: a9 de                        lda     #$de              ;Write trailer bytes
-d675: 20 b4 d6                     jsr     WNIBL9
-d678: a9 aa                        lda     #$aa
-d67a: 20 b4 d6                     jsr     WNIBL9
-d67d: a9 eb                        lda     #$eb
-d67f: 20 b4 d6                     jsr     WNIBL9
-d682: a9 ff                        lda     #$ff
-d684: 20 b4 d6                     jsr     WNIBL9
-d687: bd 8e c0                     lda     IWM_Q7_OFF,x
-d68a: bd 8c c0     WEXIT           lda     IWM_Q6_OFF,x
-d68d: 60                           rts
+d63c: b9 00 df     WDATA0          lda     NBUF2,y           ;(4) Prior 6=bit nibl.
+d63f: 59 ff de     WDATA1          eor     NBUF2-1,y         ;(5) XOR with current
+                   ; (NBUF2 MUST be on page boundary for timing!!)
+d642: aa                           tax                       ;(2) index to 7-bit nibl
+d643: bd 52 d5                     lda     NIBL,x            ;(4) Must not cross page!
+d646: a6 27                        ldx     SLOTZ             ;(3) Critical timing!
+d648: 9d 8d c0                     sta     IWM_Q6_ON,x       ;(5) Write nibl.
+d64b: bd 8c c0                     lda     IWM_Q6_OFF,x      ;(4)
+d64e: 88                           dey                       ;(2) Next nibl.
+d64f: d0 eb                        bne     WDATA0            ;(2*) Must not cross page!
+d651: a5 26                        lda     WTEMP             ;(3) Prior nibl from buf6.
+d653: ea                           nop                       ;(2) Critical timing.
+d654: 59 00 de     WDATA2          eor     NBUF1,y           ;(4) XOR NBUF1 nibl.
+d657: aa                           tax                       ;(2) Index to 7-bit nibl.
+d658: bd 52 d5                     lda     NIBL,x            ;(4)
+d65b: ae 78 06                     ldx     SLOTABS           ;(4) Timing critical
+d65e: 9d 8d c0                     sta     IWM_Q6_ON,x       ;(5) Write nibl.
+d661: bd 8c c0                     lda     IWM_Q6_OFF,x      ;(4)
+d664: b9 00 de                     lda     NBUF1,y           ;(4) Prior 6-bit nibl.
+d667: c8                           iny                       ;(2) Next NBUF1 nibl.
+d668: d0 ea                        bne     WDATA2            ;(2*) Must not cross page!
+d66a: aa                           tax                       ;(2) Last nibl as chksum
+d66b: bd 52 d5                     lda     NIBL,x            ;(4) Index to 7-bit nibl.
+d66e: a6 27                        ldx     SLOTZ             ;(3)
+d670: 20 b7 d6                     jsr     WNIBL             ;(6,9,6) Write checksum
+d673: a9 de                        lda     #$de              ;(2) DM4, bit slip mark.
+d675: 20 b4 d6                     jsr     WNIBL9            ;(15,9,6) Write it
+d678: a9 aa                        lda     #$aa              ;(2) DM5, bit slip mark.
+d67a: 20 b4 d6                     jsr     WNIBL9            ;(15,9,6) Write it
+d67d: a9 eb                        lda     #$eb              ;(2) DM6, bit slip mark.
+d67f: 20 b4 d6                     jsr     WNIBL9            ;(15,9,6) Write it
+d682: a9 ff                        lda     #$ff              ;(2) Turn-off byte.
+d684: 20 b4 d6                     jsr     WNIBL9            ;(15,9,6) Write it
+d687: bd 8e c0                     lda     IWM_Q7_OFF,x      ;Out of write mode
+d68a: bd 8c c0     WEXIT           lda     IWM_Q6_OFF,x      ;to read mode
+d68d: 60                           rts                       ;Return from write
 
                    ; ***************************************
                    ; * PRENIBLIZE SUBR (16-SECTOR FORMAT)  *
@@ -913,23 +936,16 @@ d6b0: 98                           tya
 d6b1: d0 e9                        bne     PRENIB2           ;Done all 256 bytes?
 d6b3: 60                           rts
 
-                   ; Write data every 32 cycles
-                   ; 
-                   ; Typical call sequence
-                   ;   2 2 cycles - LDA #D5
-                   ;   8 6 cycles - JSR WRITE9
-                   ;  10 2 cycles - CLC
-                   ;  13 3 cycles - PHA
-                   ;  17 4 cycles - PLA
-                   ;  22 5 cycles - STA $C08B,x
-                   ;  26 4 cycles - ORA $C08C,X
-                   ;  32 6 cycles - RTS
-d6b4: 18           WNIBL9          clc                       ;2 Cycles - Provide different delays
-d6b5: 48           WNIBL7          pha                       ;3 cycles - delays to produce
-d6b6: 68                           pla                       ;4 cycles correct timeing
-d6b7: 9d 8d c0     WNIBL           sta     IWM_Q6_ON,x       ;5 cycles - Write load
-d6ba: 1d 8c c0                     ora     IWM_Q6_OFF,x      ;5 cycles - write byte
-d6bd: 60                           rts                       ;6 cycles - return to caller 
+                   ; **************************************
+                   ; * 7-BIT NIBL WRITE SUBRS  A-REG OR'D *
+                   ; * PRIOR EXIT CARRY CLEARED           *
+                   ; **************************************
+d6b4: 18           WNIBL9          clc                       ;(2) 9 cycles, then write.
+d6b5: 48           WNIBL7          pha                       ;(3) 7 cycles, then write.
+d6b6: 68                           pla                       ;(4)
+d6b7: 9d 8d c0     WNIBL           sta     IWM_Q6_ON,x       ;(5) Nibl write sub.
+d6ba: 1d 8c c0                     ora     IWM_Q6_OFF,x      ;(4) Clobbers acc, not carry.
+d6bd: 60                           rts
 
                    ; ******************************************
                    ; * POSTNIBLIZE SUBR 16-SECTOR FORMAT      *
@@ -1242,15 +1258,15 @@ d87e: a9 aa                        lda     #$aa
 d880: 20 e3 d8                     jsr     LD8E3
 d883: a9 96                        lda     #$96
 d885: 20 e3 d8                     jsr     LD8E3
-d888: a5 41                        lda     MON_A3H
+d888: a5 41                        lda     NVOL
 d88a: 20 d2 d8                     jsr     LD8D2
 d88d: a5 44                        lda     PRDOOS_BUFPTRL
 d88f: 20 d2 d8                     jsr     LD8D2
-d892: a5 3f                        lda     MON_A2H
+d892: a5 3f                        lda     NSECT
 d894: 20 d2 d8                     jsr     LD8D2
-d897: a5 41                        lda     MON_A3H
+d897: a5 41                        lda     NVOL
 d899: 45 44                        eor     PRDOOS_BUFPTRL
-d89b: 45 3f                        eor     MON_A2H
+d89b: 45 3f                        eor     NSECT
 d89d: 48                           pha
 d89e: 4a                           lsr     A
 d89f: 05 3e                        ora     MON_A2L
@@ -1318,32 +1334,32 @@ d905: 60                           rts
 d906: 00 02 04 06+ PD_SECT_TRAN    .bulk   $00,$02,$04,$06,$08,$0a,$0c,$0e
 d90e: 01 03 05 07+                 .bulk   $01,$03,$05,$07,$09,$0b,$0d,$0f
 
-d916: a9 00        LD916           lda     #$00
-d918: 85 3f                        sta     MON_A2H
+d916: a9 00        WTRACK16        lda     #$00
+d918: 85 3f                        sta     NSECT
 d91a: a0 80                        ldy     #$80
 d91c: d0 02                        bne     LD920
 
-d91e: a4 45        LD91E           ldy     PRODOS_BUFPTRH
+d91e: a4 45        LD91E           ldy     NSYNC
 d920: 20 57 d8     LD920           jsr     LD857
 d923: b0 c7                        bcs     LD8EC
 d925: 20 00 d6                     jsr     WRITE16
 d928: ea                           nop
 d929: ea                           nop
-d92a: e6 3f                        inc     MON_A2H
-d92c: a5 3f                        lda     MON_A2H
+d92a: e6 3f                        inc     NSECT
+d92c: a5 3f                        lda     NSECT
 d92e: c9 10                        cmp     #$10
 d930: 90 ec                        bcc     LD91E
 d932: a0 0f                        ldy     #$0f
-d934: 84 3f                        sty     MON_A2H
+d934: 84 3f                        sty     NSECT
 d936: a9 30                        lda     #$30
 d938: 8d 78 05                     sta     RETRYCNT
 d93b: 99 57 df     LD93B           sta     $df57,y
 d93e: 88                           dey
 d93f: 10 fa                        bpl     LD93B
-d941: a4 45                        ldy     PRODOS_BUFPTRH
-d943: 20 91 d9     LD943           jsr     LD991
-d946: 20 91 d9                     jsr     LD991
-d949: 20 91 d9                     jsr     LD991
+d941: a4 45                        ldy     NSYNC
+d943: 20 91 d9     LD943           jsr     WEXIT2
+d946: 20 91 d9                     jsr     WEXIT2
+d949: 20 91 d9                     jsr     WEXIT2
 d94c: 48                           pha
 d94d: 68                           pla
 d94e: ea                           nop
@@ -1354,10 +1370,10 @@ d955: b0 23                        bcs     LD97A
 d957: a5 2d                        lda     $2d
 d959: f0 15                        beq     LD970
 d95b: a9 10                        lda     #$10
-d95d: c5 45                        cmp     PRODOS_BUFPTRH
-d95f: a5 45                        lda     PRODOS_BUFPTRH
+d95d: c5 45                        cmp     NSYNC
+d95f: a5 45                        lda     NSYNC
 d961: e9 01                        sbc     #$01
-d963: 85 45                        sta     PRODOS_BUFPTRH
+d963: 85 45                        sta     NSYNC
 d965: c9 05                        cmp     #$05
 d967: b0 11                        bcs     LD97A
 d969: 90 24                        bcc     LD98F
@@ -1374,11 +1390,11 @@ d97f: a5 2d                        lda     SECTOR
 d981: c9 0f                        cmp     #$0f
 d983: d0 05                        bne     LD98A
 d985: 20 07 d7                     jsr     READ16
-d988: 90 8c                        bcc     LD916
+d988: 90 8c                        bcc     WTRACK16
 d98a: ce 78 05     LD98A           dec     RETRYCNT
 d98d: d0 eb                        bne     LD97A
 d98f: a9 01        LD98F           lda     #$01
-d991: 38           LD991           sec
+d991: 38           WEXIT2          sec
 d992: 60           LD992           rts
 
 d993: a4 2d        LD993           ldy     SECTOR
@@ -1386,64 +1402,64 @@ d995: b9 57 df                     lda     NBUF2+87,y
 d998: 30 db                        bmi     LD975
 d99a: a9 ff                        lda     #$ff
 d99c: 99 57 df                     sta     NBUF2+87,y
-d99f: c6 3f                        dec     MON_A2H
+d99f: c6 3f                        dec     NSECT
 d9a1: 10 c8                        bpl     LD96B
 d9a3: a5 44                        lda     PRDOOS_BUFPTRL
 d9a5: d0 0a                        bne     LD9B1
-d9a7: a5 45                        lda     PRODOS_BUFPTRH
+d9a7: a5 45                        lda     NSYNC
 d9a9: c9 10                        cmp     #$10
 d9ab: 90 e5                        bcc     LD992
-d9ad: c6 45                        dec     PRODOS_BUFPTRH
-d9af: c6 45                        dec     PRODOS_BUFPTRH
+d9ad: c6 45                        dec     NSYNC
+d9af: c6 45                        dec     NSYNC
 d9b1: 18           LD9B1           clc
 d9b2: 60                           rts
 
-d9b3: 20 c4 d8     FORMDSK         jsr     MOTOF
+d9b3: 20 c4 d8     DSKFORM         jsr     MOTOF
 d9b6: ad 87 03                     lda     DISK_VOL
-d9b9: 85 41                        sta     MON_A3H
+d9b9: 85 41                        sta     NVOL
 d9bb: a9 aa                        lda     #$aa
-d9bd: 85 3e                        sta     MON_A2L
+d9bd: 85 3e                        sta     AA
 d9bf: a0 56                        ldy     #$56
 d9c1: a9 00                        lda     #$00
-d9c3: 85 44                        sta     PRDOOS_BUFPTRL
-d9c5: a9 2a                        lda     #$2a
-d9c7: 99 ff de     LD9C7           sta     NBUF2-1,y
-d9ca: 88                           dey
-d9cb: d0 fa                        bne     LD9C7
+d9c3: 85 44                        sta     TRK               ;TRL
+d9c5: a9 2a                        lda     #$2a              ;Clear NBUFS to write sectors
+d9c7: 99 ff de     CLRNBUF2        sta     NBUF2-1,y         ;Different values from RWTS
+d9ca: 88                           dey                       ;Probably $E5 for empty CP/M
+d9cb: d0 fa                        bne     CLRNBUF2
 d9cd: a9 39                        lda     #$39
-d9cf: 99 00 de     LD9CF           sta     NBUF1,y
+d9cf: 99 00 de     CLRNBUF1        sta     NBUF1,y
 d9d2: 88                           dey
-d9d3: d0 fa                        bne     LD9CF
-d9d5: a9 23                        lda     #$23
+d9d3: d0 fa                        bne     CLRNBUF1
+d9d5: a9 23                        lda     #35
 d9d7: 85 3d                        sta     MON_A1H
-d9d9: a9 2a                        lda     #$2a
-d9db: 20 ee d6                     jsr     SETTRK
+d9d9: a9 2a                        lda     #42
+d9db: 20 ee d6                     jsr     SETTRK            ;Fake like on track 42
 d9de: a9 28                        lda     #$28
-d9e0: 85 45                        sta     PRODOS_BUFPTRH
-d9e2: a5 44        LD9E2           lda     PRDOOS_BUFPTRL
+d9e0: 85 45                        sta     NSYNC             ;Begin with 40 self-sync nibls.
+d9e2: a5 44        FORMTRK         lda     TRK
 d9e4: 20 cb d7                     jsr     MYSEEK
-d9e7: 20 16 d9                     jsr     LD916
-d9ea: b0 27                        bcs     LDA13
+d9e7: 20 16 d9                     jsr     WTRACK16
+d9ea: b0 27                        bcs     FORMDONE
 d9ec: a9 30                        lda     #$30
 d9ee: 8d 78 05                     sta     RETRYCNT
-d9f1: 38           LD9F1           sec
+d9f1: 38           FINDS0          sec
 d9f2: ce 78 05                     dec     RETRYCNT
-d9f5: f0 1a                        beq     LDA11
+d9f5: f0 1a                        beq     FORMERR
 d9f7: 20 6f d7                     jsr     RDADR16
-d9fa: b0 f5                        bcs     LD9F1
+d9fa: b0 f5                        bcs     FINDS0
 d9fc: a5 2d                        lda     SECTOR
-d9fe: d0 f1                        bne     LD9F1
+d9fe: d0 f1                        bne     FINDS0
 da00: 20 07 d7                     jsr     READ16
-da03: b0 ec                        bcs     LD9F1
+da03: b0 ec                        bcs     FINDS0
 da05: e6 44                        inc     PRDOOS_BUFPTRL
 da07: a5 3d                        lda     MON_A1H
 da09: c5 44                        cmp     PRDOOS_BUFPTRL
-da0b: d0 d5                        bne     LD9E2
+da0b: d0 d5                        bne     FORMTRK
 da0d: a9 00                        lda     #$00
-da0f: f0 02                        beq     LDA13
+da0f: f0 02                        beq     FORMDONE
 
-da11: a9 01        LDA11           lda     #$01
-da13: 8d 89 03     LDA13           sta     DISK_ERR
+da11: a9 01        FORMERR         lda     #$01
+da13: 8d 89 03     FORMDONE        sta     DISK_ERR          ;FORMDONE
 da16: bd 88 c0                     lda     IWM_MOTOR_OFF,x
 da19: 60                           rts
 
@@ -1616,7 +1632,7 @@ db5c: 85 42                        sta     PRODOS_CMD        ;Set the command
 db5e: a9 08                        lda     #$08              ;Whole track?
 db60: 8d ac db                     sta     PD_TRACK_OP_CNT
 db63: ad 82 03                     lda     DISK_TRK_ADDR     ;Get disk data pointer
-db66: 85 45                        sta     PRODOS_BUFPTRH
+db66: 85 45                        sta     NSYNC
 db68: a9 00                        lda     #$00
 db6a: 8d 81 03                     sta     DISK_SECT         ;We're doing the whole track
 db6d: 85 44                        sta     PRDOOS_BUFPTRL
@@ -1629,8 +1645,8 @@ db7a: ee 82 03                     inc     DISK_TRK_ADDR
 db7d: e6 46                        inc     MONTIMEL          ;Bounce the block number along
 db7f: d0 02                        bne     PD_BLK_NO_WRAP
 db81: e6 47                        inc     PRODOS_BLKNUM+1
-db83: e6 45        PD_BLK_NO_WRAP  inc     PRODOS_BUFPTRH    ;Do the ProDOS address
-db85: e6 45                        inc     PRODOS_BUFPTRH
+db83: e6 45        PD_BLK_NO_WRAP  inc     NSYNC             ;Do the ProDOS address
+db85: e6 45                        inc     NSYNC
 db87: ce ac db                     dec     PD_TRACK_OP_CNT   ;Do the loop
 db8a: d0 e6                        bne     PD_TRACK_OP_LOOP
 db8c: 60                           rts
