@@ -32,7 +32,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"timing constant",
+"Comment":"WRADR16 - Timing constant",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -134,7 +134,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"RDADR16 - \u0027Must find\u0027 count",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -151,7 +151,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"RDADR16 - Four bytes.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -168,7 +168,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"RDADR16 - Checksum byte.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -236,7 +236,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"SEEK - Current track on entry",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -263,18 +263,18 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
-"D2_SAVETRAN":{
+"D2SAVETRAN":{
 "DataDescriptor":{
 "Length":2,
 "Format":"NumericLE",
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Disk II save sector translation",
 "HasWidth":true,
 "Direction":"ReadWrite",
 "MultiMask":null,
-"Label":"D2_SAVETRAN",
+"Label":"D2SAVETRAN",
 "Value":57193,
 "Source":"Project",
 "Type":"ExternalAddr",
@@ -287,7 +287,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Disk II save read page",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -304,7 +304,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Disk II save write data page",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -321,7 +321,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Data for 6510 based serial card",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -355,7 +355,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Disk buffer",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -712,7 +712,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"READ16 - Index into (BUF).",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -729,7 +729,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"RDADR16 - \u0027Odd bit\u0027 nibls.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -746,7 +746,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Maximum track for format",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -763,7 +763,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"MSWAIT - Motor on time counter high",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -780,7 +780,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"MSWAIT - Motor on time counter low",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -831,7 +831,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"Sector number",
+"Comment":"WRADR16 - Sector number",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -848,7 +848,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"Num gasp self-sync nibls.",
+"Comment":"FORMAT - Num gap self-sync nibls.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -865,7 +865,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"WRADR16 - Volume number",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -882,7 +882,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Apple parallel card acknowledge status",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -899,7 +899,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Apple parallel card data out.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -916,7 +916,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"PRODOS - Buffer pointer low",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -933,7 +933,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"SEEK - Prior halftrack.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -950,7 +950,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"PRODOS - Block number",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -967,7 +967,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"Prodos buffer pointer high",
+"Comment":"PRODOS - buffer pointer high",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -984,7 +984,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"PRODOS - Command",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1001,7 +1001,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"PRODOS - Unit number",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1018,7 +1018,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"# Recalibrates -1",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1035,7 +1035,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Retry counter",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1120,7 +1120,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"# Reseeks before recalibrate",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1137,7 +1137,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Map of slot to card type",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1154,7 +1154,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"WRITE16 - Slot num non-z-pag loc.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1171,7 +1171,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"SEEK - Slot num times $10",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1188,7 +1188,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"WRITE16 - Slot num z-pag loc.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1239,7 +1239,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Status for 6510 based serial card",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1273,7 +1273,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"Temp for POSTNBL16",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1307,7 +1307,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"WRADR16 - Track number",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1324,7 +1324,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"SEEK - Halftrks moved count.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1341,7 +1341,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"Seek destination track",
+"Comment":"SEEK - desired track.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1375,7 +1375,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"",
+"Comment":"WRITE16 - Temp for data at Nbuf2,0.",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -5816,7 +5816,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"D2_SAVETRAN",
+"Label":"D2SAVETRAN",
 "Part":"Low"}},
 
 "2615":{

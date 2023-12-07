@@ -26,35 +26,35 @@
                    CURSOR_STATE    .eq     $23               ;Bit 7 high if cursor on screen
                    CURSORX         .eq     $25               ;Cursor X (80 col)
                    BLANKCH         .eq     $26               ;Blank character.
-                   IDX             .eq     $26
-                   LAST            .eq     $26
-                   T0              .eq     $26
-                   TRKCNT          .eq     $26
-                   WTEMP           .eq     $26
-                   CSUM            .eq     $27
-                   PRIOR           .eq     $27
-                   SLOTZ           .eq     $27
+                   IDX             .eq     $26               ;READ16 - Index into (BUF).
+                   LAST            .eq     $26               ;RDADR16 - 'Odd bit' nibls.
+                   T0              .eq     $26               ;Temp for POSTNBL16
+                   TRKCNT          .eq     $26               ;SEEK - Halftrks moved count.
+                   WTEMP           .eq     $26               ;WRITE16 - Temp for data at Nbuf2,0.
+                   CSUM            .eq     $27               ;RDADR16 - Checksum byte.
+                   PRIOR           .eq     $27               ;SEEK - Prior halftrack.
+                   SLOTZ           .eq     $27               ;WRITE16 - Slot num z-pag loc.
                    CURSORY         .eq     $29               ;Cursor Y (80 col)
-                   TRKN            .eq     $2a               ;Seek destination track
-                   SLOTTEMP        .eq     $2b
+                   TRKN            .eq     $2a               ;SEEK - desired track.
+                   SLOTTEMP        .eq     $2b               ;SEEK - Slot num times $10
                    HEADER_CHECKSUM .eq     $2c               ;Checksum for the sector header
                    SECTOR          .eq     $2d               ;Sector from sector header
                    TRACK           .eq     $2e               ;Track from sector header
                    VOLUME          .eq     $2f               ;Volume from sector header
                    MON_INVFLAG     .eq     $32               ;text mask (255=normal, 127=flash, 63=inv)
                    DRIVNO          .eq     $35               ;Hi bit set if drive 2 for Disk II
-                   MAXTRK          .eq     $3d
-                   AA              .eq     $3e               ;timing constant
-                   NSECT           .eq     $3f               ;Sector number
-                   NVOL            .eq     $41
-                   PRODOS_CMD      .eq     $42
-                   PRODOS_UNITNUM  .eq     $43
-                   PRDOOS_BUFPTRL  .eq     $44
-                   TRK             .eq     $44
-                   NSYNC           .eq     $45               ;Num gasp self-sync nibls.
-                   MONTIMEL        .eq     $46
-                   PRODOS_BLKNUM   .eq     $46
-                   MONTIMEH        .eq     $47
+                   MAXTRK          .eq     $3d               ;Maximum track for format
+                   AA              .eq     $3e               ;WRADR16 - Timing constant
+                   NSECT           .eq     $3f               ;WRADR16 - Sector number
+                   NVOL            .eq     $41               ;WRADR16 - Volume number
+                   PRODOS_CMD      .eq     $42               ;PRODOS - Command
+                   PRODOS_UNITNUM  .eq     $43               ;PRODOS - Unit number
+                   PRDOOS_BUFPTRL  .eq     $44               ;PRODOS - Buffer pointer low
+                   TRK             .eq     $44               ;WRADR16 - Track number
+                   NSYNC           .eq     $45               ;FORMAT - Num gap self-sync nibls.
+                   MONTIMEL        .eq     $46               ;MSWAIT - Motor on time counter low
+                   PRODOS_BLKNUM   .eq     $46               ;PRODOS - Block number
+                   MONTIMEH        .eq     $47               ;MSWAIT - Motor on time counter high
                    DISK_TRKL       .eq     $0380             ;Disk track low (From Z80)
                    DISK_SECT       .eq     $0381             ;Disk sector (from Z80)
                    DISK_TRK_ADDR   .eq     $0382             ;While track read/write page
@@ -64,17 +64,17 @@
                    DISK_VOL        .eq     $0387             ;Disk volume
                    DISK_OP         .eq     $0388             ;Disk operation
                    DISK_ERR        .eq     $0389             ;Disk Error back
-                   SLOT_INFO       .eq     $03b8
-                   CURTRK          .eq     $0478
+                   SLOT_INFO       .eq     $03b8             ;Map of slot to card type
+                   CURTRK          .eq     $0478             ;SEEK - Current track on entry
                    DRV1TRK         .eq     $0478             ;Drive 1 track
                    DRV2TRK         .eq     $04f8             ;Drive 2 track
-                   SEEKCNT         .eq     $04f8
-                   RETRYCNT        .eq     $0578
+                   SEEKCNT         .eq     $04f8             ;# Reseeks before recalibrate
+                   RETRYCNT        .eq     $0578             ;Retry counter
                    STSBYTE         .eq     $05b8             ;SSC Char
                    DISKSLOTCX      .eq     $05f8             ;Disk slot $60
-                   SLOTABS         .eq     $0678
-                   RECALCNT        .eq     $06f8
-                   DISK_BUFF       .eq     $0800
+                   SLOTABS         .eq     $0678             ;WRITE16 - Slot num non-z-pag loc.
+                   RECALCNT        .eq     $06f8             ;# Recalibrates -1
+                   DISK_BUFF       .eq     $0800             ;Disk buffer
                    SET80COL        .eq     $c001             ;W use PAGE2 for aux mem (80STOREON)
                    SET80VID        .eq     $c00d             ;W enable 80-column display mode
                    SETALTCHAR      .eq     $c00f             ;W use alternate char set
@@ -82,7 +82,7 @@
                    TXTPAGE1        .eq     $c054             ;RW display page 1
                    TXTPAGE2        .eq     $c055             ;RW display page 2 (or read/write aux mem)
                    IWM_PH0_OFF     .eq     $c080             ;IWM phase 0 off
-                   PARA_DATAOUT    .eq     $c080
+                   PARA_DATAOUT    .eq     $c080             ;Apple parallel card data out.
                    IWM_MOTOR_OFF   .eq     $c088             ;IWM motor off
                    IWM_MOTOR_ON    .eq     $c089             ;IWM motor on
                    IWM_DRIVE_1     .eq     $c08a             ;IWM select drive 1
@@ -91,10 +91,10 @@
                    IWM_Q6_OFF      .eq     $c08c             ;IWM read
                    IWM_Q6_ON       .eq     $c08d             ;IWM WP-sense
                    IWM_Q7_OFF      .eq     $c08e             ;IWM WP-sense/read
-                   STATUS6510      .eq     $c08e
-                   DATA6510        .eq     $c08f
+                   STATUS6510      .eq     $c08e             ;Status for 6510 based serial card
+                   DATA6510        .eq     $c08f             ;Data for 6510 based serial card
                    IWM_Q7_ON       .eq     $c08f             ;IWM write
-                   PARA_ACKIN      .eq     $c0c1
+                   PARA_ACKIN      .eq     $c0c1             ;Apple parallel card acknowledge status
                    SCC_INIT        .eq     $c800             ;Super serial card init
                    SSC_READ        .eq     $c84d             ;Super serial card read routine
                    SSC_WRITE       .eq     $c9aa             ;Super serial card write routine
@@ -102,9 +102,9 @@
                    NBUF1           .eq     $de00             ;Six bit data bytes
                    NBUF2           .eq     $df00             ;56 bytes of 2 bit data
                    FOUND           .eq     $df57             ;Table of found sectors during format
-                   D2SAVWRDTAPG    .eq     $df67
-                   D2SAVRDDTAPG    .eq     $df68
-                   D2_SAVETRAN     .eq     $df69  {addr/2}
+                   D2SAVWRDTAPG    .eq     $df67             ;Disk II save write data page
+                   D2SAVRDDTAPG    .eq     $df68             ;Disk II save read page
+                   D2SAVETRAN      .eq     $df69  {addr/2}   ;Disk II save sector translation
 
                    ********************************************************************************
                    *                                                                              *
@@ -1561,9 +1561,9 @@ da22: 8d 67 df                     sta     D2SAVWRDTAPG
 da25: ad d2 d6                     lda     POSTNBPAGE+2      ;Save data buffer page value for reads
 da28: 8d 68 df                     sta     D2SAVRDDTAPG
 da2b: ad 07 d5                     lda     DOSECTTRAN+1      ;Save CPM sector translate
-da2e: 8d 69 df                     sta     D2_SAVETRAN
+da2e: 8d 69 df                     sta     D2SAVETRAN
 da31: ad 08 d5                     lda     DOSECTTRAN+2
-da34: 8d 6a df                     sta     D2_SAVETRAN+1
+da34: 8d 6a df                     sta     D2SAVETRAN+1
 da37: a9 d9                        lda     #>PD_SECT_TRAN    ;Swap to Prodos sector translate
 da39: 8d 08 d5                     sta     DOSECTTRAN+2
 da3c: a9 06                        lda     #<PD_SECT_TRAN
@@ -1591,9 +1591,9 @@ da75: ad 67 df     D2TRACKOPEX     lda     D2SAVWRDTAPG      ;Put back data buff
 da78: 8d a1 d6                     sta     PRENIBPAGE+2
 da7b: ad 68 df                     lda     D2SAVRDDTAPG      ;Put back data buffer pages for reads
 da7e: 8d d2 d6                     sta     POSTNBPAGE+2
-da81: ad 69 df                     lda     D2_SAVETRAN       ;Put back CPM sector translate
+da81: ad 69 df                     lda     D2SAVETRAN        ;Put back CPM sector translate
 da84: 8d 07 d5                     sta     DOSECTTRAN+1
-da87: ad 6a df                     lda     D2_SAVETRAN+1
+da87: ad 6a df                     lda     D2SAVETRAN+1
 da8a: 8d 08 d5                     sta     DOSECTTRAN+2
 da8d: 60                           rts
 
