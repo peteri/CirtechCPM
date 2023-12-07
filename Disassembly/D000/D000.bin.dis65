@@ -712,7 +712,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"; Fix me",
+"Comment":"",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -2439,9 +2439,9 @@
 
 "LongComments":{
 "-2147483647":{
-"Text":"6502bench SourceGen v1.8.5",
-"BoxMode":false,
-"MaxWidth":80,
+"Text":"Disassembly of the D000 code loaded from disk\r\nby Cirtech CP/M plus for the Apple //e.\r\n\r\nBinary   (C) Copyright 1985 Cirtech\r\nComments (C) Copyright 2023 Peter Ibbotson\r\nRWTS     (C) Copyright 1983 Apple\r\n\r\nNote for RWTS routine comments and labels from the Apple DOS3.3C source code PDF file has been used where the code matches.\r\n\r\nDisassembled using 6502bench SourceGen v1.8.5",
+"BoxMode":true,
+"MaxWidth":64,
 "BackgroundColor":0},
 
 "2766":{
@@ -2820,6 +2820,18 @@
 "Text":"\r\nUnused code anywhere in this BIOS\r\nLooks like it searches for card type\r\nin the slots, skipping slot 6. \r\n ",
 "BoxMode":true,
 "MaxWidth":40,
+"BackgroundColor":0},
+
+"2135":{
+"Text":"************************************************************\r\n* WRITE ADR FIELD SUBROUTINE (16-SECTOR FORMAT)            *\r\n* WRITES SPECIFIED NUMBER OF 40-USEC (10-BIT) SELF-SYNC    *\r\n* NIBLS, ADR FIELDS 16-SECTOR START MARKS ($D5,$AA,$96),   *\r\n* BODY (VOLUME, TRACK, SECTOR, CHECKSUM), END FIELD MARKS, *\r\n* AND THE WRITE TURN-OFF NIBL.                             *\r\n************************************************************\r\n* ------- ON ENTRY -------                                 *\r\n* THE LOCATIONS VOLUME, TRK, AND NSECT MUST CONTAIN THE    *\r\n* DESIRED VOLUME, TRACK, AND SECTOR VALUES DESIRED.        *\r\n* THE PROPER DRIVE MUST BE ENABLED AND UP TO SPEED IN      *\r\n* READ MODE (Q7L, Q6L).                                    *\r\n* X-REG CONTAINS SLOTNUM TIMES 16.                         *\r\n* Y-REG CONTAINS NUMBER OF SELF-SYNC NIBLS DESIRED MINUS 1.*\r\n* (0 FOR 256 NIBLS)                                        *\r\n************************************************************\r\n* ------- REQUIRES -------                                 *\r\n* 1 USEC CYCLE                                             *\r\n************************************************************\r\n* ------- CAUTION --------                                 *\r\n* MOST OF THIS CODE IS TIME  CRITICAL. OBSERVE ALL         *\r\n* \u0027NO PAGE CROSS!\u0027 WARNINGS ON BRANCHES.                   *\r\n************************************************************",
+"BoxMode":false,
+"MaxWidth":80,
+"BackgroundColor":0},
+
+"2258":{
+"Text":"\r\nWrite a byte routine during formatting in 4-4 format\r\n ",
+"BoxMode":false,
+"MaxWidth":80,
 "BackgroundColor":0}},
 
 "Notes":{
