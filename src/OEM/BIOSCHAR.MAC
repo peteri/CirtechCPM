@@ -15,6 +15,9 @@
 ;*  $0E = Read character                                                       *
 ;*  $0F = Write character                                                      *
 ;*  $10 = Get status                                                           *
+;*                                                                             *
+;* Binary   (C) Copyright 1985 Cirtech                                         *
+;* Comments (C) Copyright 2023 Peter Ibbotson                                  *
 ;*******************************************************************************
 		INCLUDE EQUATES.MAC
 		CSEG
