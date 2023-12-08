@@ -104,8 +104,8 @@ DISK_ERR	EQU  $0389		; Disk Error back
 SLOT_INFO	EQU  $03b8		; Card slot information
 DISK_ROUT	EQU  $03dc		; Disk routine to call
 CURTRK		EQU  $0478		; SEEK - Current track on entry
-DRV1TRK		EQU  $0478		; Drive 1 track
-DRV2TRK		EQU  $04f8		; Drive 2 track
+DRV1TRK		EQU  $0478		; Drive 1 track (array)
+DRV2TRK		EQU  $04f8		; Drive 2 track (array)
 SEEKCNT		EQU  $04f8		; # Reseeks before recalibrate
 RETRYCNT	EQU  $0578		; Retry counter
 STSBYTE		EQU  $05b8		; SSC Char
@@ -131,7 +131,6 @@ D2SAVETRAN	EQU  $df69		; Disk II save sector translation
 MON_INIT	EQU  $fb2f		; screen initialization
 MON_PRERR	EQU  $ff2d		; print "ERR" and sound bell
 MON_SAVE	EQU  $ff4a		; save 6502 registers to $45-49
-F8ROMSAVE	EQU  $ff4a		; Save registers from ROM
 MON_MONZ	EQU  $ff69		; reset and enter monitor
 		; Misc constants
 ESC		EQU  1BH		; Escape character

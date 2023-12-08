@@ -164,7 +164,7 @@ VECTOR6502	lda  LCBANK2		; $3C0
 		jsr  $0000		; $3CF 6502 routine?
 		sta  ROMIN		; $3D2 STA so we don't overwrite it
 		sei			; $3D5
-		jsr  F8ROMSAVE		; $3D6 Save away the registers
+		jsr  MON_SAVE		; $3D6 Save away the registers
 		jmp  $03c0		; $3D9 Back to z80 land
 		.z80
 VECTORZ80:	xor  a

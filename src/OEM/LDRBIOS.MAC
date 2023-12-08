@@ -987,7 +987,7 @@ move:		ex   de,hl
 		JSR  $0000		; 6502 routine to call
 		STA  ROMIN
 		SEI
-		JSR  F8ROMSAVE
+		JSR  MON_SAVE
 		JMP  $3C0		; back to Z80
 ;
 ; Call into 0D400 Disk code in 6502 land
