@@ -26,6 +26,7 @@
                    CURSOR_STATE    .eq     $23               ;Bit 7 high if cursor on screen
                    CURSORX         .eq     $25               ;Cursor X (80 col)
                    BLANKCH         .eq     $26               ;Blank character.
+                   COUNT           .eq     $26               ;RDADR16 - 'Must find' count
                    IDX             .eq     $26               ;READ16 - Index into (BUF).
                    LAST            .eq     $26               ;RDADR16 - 'Odd bit' nibls.
                    T0              .eq     $26               ;Temp for POSTNBL16
@@ -37,10 +38,10 @@
                    CURSORY         .eq     $29               ;Cursor Y (80 col)
                    TRKN            .eq     $2a               ;SEEK - desired track.
                    SLOTTEMP        .eq     $2b               ;SEEK - Slot num times $10
-                   HEADER_CHECKSUM .eq     $2c               ;Checksum for the sector header
-                   SECTOR          .eq     $2d               ;Sector from sector header
-                   TRACK           .eq     $2e               ;Track from sector header
-                   VOLUME          .eq     $2f               ;Volume from sector header
+                   CSSTV           .eq     $2c               ;RDADR16 - Four bytes.
+                   SECTOR          .eq     $2d               ;RDADR16 - Sector from sector header
+                   TRACK           .eq     $2e               ;RDADR16 - Track from sector header
+                   VOLUME          .eq     $2f               ;RDADR16 - Volume from sector header
                    MON_INVFLAG     .eq     $32               ;text mask (255=normal, 127=flash, 63=inv)
                    DRIVNO          .eq     $35               ;Hi bit set if drive 2 for Disk II
                    MAXTRK          .eq     $3d               ;Maximum track for format
@@ -52,6 +53,7 @@
                    PRDOOS_BUFPTRL  .eq     $44               ;PRODOS - Buffer pointer low
                    TRK             .eq     $44               ;WRADR16 - Track number
                    NSYNC           .eq     $45               ;FORMAT - Num gap self-sync nibls.
+                   PRODOS_BUFPTRH  .eq     $45               ;PRODOS - buffer pointer high
                    MONTIMEL        .eq     $46               ;MSWAIT - Motor on time counter low
                    PRODOS_BLKNUM   .eq     $46               ;PRODOS - Block number
                    MONTIMEH        .eq     $47               ;MSWAIT - Motor on time counter high
@@ -73,6 +75,7 @@
                    STSBYTE         .eq     $05b8             ;SSC Char
                    DISKSLOTCX      .eq     $05f8             ;Disk slot $60
                    SLOTABS         .eq     $0678             ;WRITE16 - Slot num non-z-pag loc.
+                   SCRNHOLE5       .eq     $06f8  {addr/8}   ;text page 1 screen holes
                    RECALCNT        .eq     $06f8             ;# Recalibrates -1
                    DISK_BUFF       .eq     $0800             ;Disk buffer
                    SET80COL        .eq     $c001             ;W use PAGE2 for aux mem (80STOREON)
@@ -1128,10 +1131,10 @@ d76e: 60                           rts                       ;From READ16 or RDA
                    ; * 1 USEC CYCLE TIME                        *
                    ; ********************************************
 d76f: a0 fc        RDADR16         ldy     #$fc
-d771: 84 26                        sty     BLANKCH           ;'Must find' count
+d771: 84 26                        sty     COUNT             ;'Must find' count
 d773: c8           RDASYN          iny
 d774: d0 04                        bne     RDA1              ;Low order of count.
-d776: e6 26                        inc     BLANKCH           ;(2K nibls to find
+d776: e6 26                        inc     COUNT             ;(2K nibls to find
 d778: f0 f3                        beq     RDERR             ;adr mark, else err)
 d77a: bd 8c c0     RDA1            lda     IWM_Q6_OFF,x      ;Read nibl.
 d77d: 10 fb                        bpl     RDA1              ;*** NO PAGE CROSS! ***
@@ -1158,7 +1161,7 @@ d7a2: 85 26                        sta     LAST              ;Save for later
 d7a4: bd 8c c0     RDA5            lda     IWM_Q6_OFF,x      ;Read 'Even bit' nibl.
 d7a7: 10 fb                        bpl     RDA5              ;*** NO PAGE CROSS! ***
 d7a9: 25 26                        and     LAST              ;Merge odd and even bytes
-d7ab: 99 2c 00                     sta     HEADER_CHECKSUM,y ;Store data byte
+d7ab: 99 2c 00                     sta     CSSTV,y           ;Store data byte
 d7ae: 45 27                        eor     CSUM              ;XOR checksum
 d7b0: 88                           dey
 d7b1: 10 e7                        bpl     RDAFLD            ;Loop on 4 data bytes
@@ -1725,7 +1728,7 @@ db5c: 85 42                        sta     PRODOS_CMD        ;Set the command
 db5e: a9 08                        lda     #$08              ;Whole track?
 db60: 8d ac db                     sta     PD_TRACK_OP_CNT
 db63: ad 82 03                     lda     DISK_TRK_ADDR     ;Get disk data pointer
-db66: 85 45                        sta     NSYNC
+db66: 85 45                        sta     PRODOS_BUFPTRH
 db68: a9 00                        lda     #$00
 db6a: 8d 81 03                     sta     DISK_SECT         ;We're doing the whole track
 db6d: 85 44                        sta     PRDOOS_BUFPTRL
@@ -1735,7 +1738,7 @@ db72: 20 2a db                     jsr     PD_CALL_DRIVER
 db75: b0 c1                        bcs     PD_EXIT           ;Flag we had an error
 db77: ee 82 03                     inc     DISK_TRK_ADDR     ;Add 512 bytes to destination / source
 db7a: ee 82 03                     inc     DISK_TRK_ADDR
-db7d: e6 46                        inc     MONTIMEL          ;Bounce the block number along
+db7d: e6 46                        inc     PRODOS_BLKNUM     ;Bounce the block number along
 db7f: d0 02                        bne     PD_BLK_NO_WRAP
 db81: e6 47                        inc     PRODOS_BLKNUM+1
 db83: e6 45        PD_BLK_NO_WRAP  inc     NSYNC             ;Do the ProDOS address
@@ -1749,11 +1752,11 @@ db90: 85 47                        sta     PRODOS_BLKNUM+1
 db92: ad 80 03                     lda     DISK_TRKL
 db95: a2 03                        ldx     #$03
 db97: 0a           BLK_MULT_2      asl     A                 ;Multiply by two
-db98: 26 47                        rol     MONTIMEH
+db98: 26 47                        rol     PRODOS_BLKNUM+1
 db9a: ca                           dex
 db9b: d0 fa                        bne     BLK_MULT_2
 db9d: 0d 81 03                     ora     DISK_SECT         ;Add sector
-dba0: 85 46                        sta     MONTIMEL
+dba0: 85 46                        sta     PRODOS_BLKNUM
 dba2: 60                           rts
 
 dba3: 04           SMARTDRV_PARAM  .dd1    $04
@@ -1947,7 +1950,7 @@ dbad: 00 00 00 00+                 .fill   83,$00
 0b00: 20 06 0b     JSRSCCINIT      jsr     PAGEINROM         ;Bring in the SSC ROM
 0b03: 4c 00 c8                     jmp     SCC_INIT          ;Call the init routine
 
-0b06: 8e f8 06     PAGEINROM       stx     RECALCNT          ;Mark us as using rom space
+0b06: 8e f8 06     PAGEINROM       stx     SCRNHOLE5         ;Mark us as using rom space
 0b09: 8a                           txa
 0b0a: a8                           tay
 0b0b: a9 00        PAGEINROM2      lda     #$00              ;Value over written by other code

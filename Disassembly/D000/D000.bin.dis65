@@ -688,23 +688,6 @@
 "Type":"ExternalAddr",
 "LabelAnno":"None"},
 
-"HEADER_CHECKSUM":{
-"DataDescriptor":{
-"Length":1,
-"Format":"NumericLE",
-"SubFormat":"Hex",
-"SymbolRef":null},
-
-"Comment":"Checksum for the sector header",
-"HasWidth":false,
-"Direction":"ReadWrite",
-"MultiMask":null,
-"Label":"HEADER_CHECKSUM",
-"Value":44,
-"Source":"Project",
-"Type":"ExternalAddr",
-"LabelAnno":"None"},
-
 "IDX":{
 "DataDescriptor":{
 "Length":1,
@@ -1103,7 +1086,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"Sector from sector header",
+"Comment":"RDADR16 - Sector from sector header",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1290,7 +1273,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"Track from sector header",
+"Comment":"RDADR16 - Track from sector header",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -1358,7 +1341,7 @@
 "SubFormat":"Hex",
 "SymbolRef":null},
 
-"Comment":"Volume from sector header",
+"Comment":"RDADR16 - Volume from sector header",
 "HasWidth":false,
 "Direction":"ReadWrite",
 "MultiMask":null,
@@ -5535,6 +5518,22 @@
 "Label":"NIBL",
 "Part":"Low"}},
 
+"1905":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"COUNT",
+"Part":"Low"}},
+
+"1910":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"COUNT",
+"Part":"Low"}},
+
 "1946":{
 "Length":2,
 "Format":"NumericLE",
@@ -5564,7 +5563,7 @@
 "Format":"NumericLE",
 "SubFormat":"Symbol",
 "SymbolRef":{
-"Label":"HEADER_CHECKSUM",
+"Label":"CSSTV",
 "Part":"Low"}},
 
 "2008":{
@@ -5927,6 +5926,22 @@
 "Label":"DISK_TRK_ADDR",
 "Part":"Low"}},
 
+"2918":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRODOS_BUFPTRH",
+"Part":"Low"}},
+
+"2941":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRODOS_BLKNUM",
+"Part":"Low"}},
+
 "2945":{
 "Length":2,
 "Format":"NumericLE",
@@ -5936,6 +5951,22 @@
 "Part":"Low"}},
 
 "2960":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRODOS_BLKNUM",
+"Part":"Low"}},
+
+"2968":{
+"Length":2,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"PRODOS_BLKNUM",
+"Part":"Low"}},
+
+"2976":{
 "Length":2,
 "Format":"NumericLE",
 "SubFormat":"Symbol",
@@ -6183,6 +6214,14 @@
 "SubFormat":"Symbol",
 "SymbolRef":{
 "Label":"SSC_WRITE",
+"Part":"Low"}},
+
+"3334":{
+"Length":3,
+"Format":"NumericLE",
+"SubFormat":"Symbol",
+"SymbolRef":{
+"Label":"SCRNHOLE5",
 "Part":"Low"}},
 
 "3344":{
