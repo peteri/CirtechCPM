@@ -13,26 +13,42 @@ SCRLINEH	EQU  $21		; Screen address high
 ESC_STATE	EQU  $22		; State for ESCAPE leadin
 CUR_STATE	EQU  $23		; Bit 7 high if cursor on screen
 CURSORX		EQU  $25		; Cursor X (80 col)
-ZP_TEMP1	EQU  $26		; Zero page temporary
 DATA_PTR	EQU  $26
-D2_CHECK_SUM	EQU  $27		; Disk ][ check sum
+BLANKCH		EQU  $26		; Blank character.
+COUNT		EQU  $26		; RDADR16 - 'Must find' count
+IDX		EQU  $26		; READ16 - Index into (BUF).
+LAST		EQU  $26		; RDADR16 - 'Odd bit' nibls.
+T0		EQU  $26		; Temp for POSTNBL16
+TRKCNT		EQU  $26		; SEEK - Halftrks moved count.
+WTEMP		EQU  $26		; WRITE16 - Temp for data at Nbuf2,0.
+CSUM		EQU  $27		; RDADR16 - Checksum byte.
+PRIOR		EQU  $27		; SEEK - Prior halftrack.
+SLOTZ		EQU  $27		; WRITE16 - Slot num z-pag loc.
 CURSORY		EQU  $29		; Cursor Y (80 col)
-HEADER_CHECKSUM	EQU  $2c		; Checksum for the sector header
-HEADER_SECTOR	EQU  $2d
-HEADER_TRACK	EQU  $2e		; Track from sector header
-HEADER_VOLUME	EQU  $2f
+TRKN		EQU  $2a		; SEEK - desired track.
+SLOTTEMP	EQU  $2b		; SEEK - Slot num times $10
+CSSTV		EQU  $2c		; RDADR16 - Four bytes.
+SECTOR		EQU  $2d		; RDADR16 - Sector from sector header
+TRACK		EQU  $2e		; RDADR16 - Track from sector header
+VOLUME		EQU  $2f		; RDADR16 - Volume from sector header
 MON_INVFLAG	EQU  $32		; text mask (255=normal, 127=flash, 63=inv)
+DRIVNO		EQU  $35		; Hi bit set if drive 2 for Disk II
+MAXTRK		EQU  $3d		; Maximum track for format
 ROM_SECT2READ	EQU  $3d		; Disk II sector to read
-MON_A1H		EQU  $3d		; general purpose
-MON_A2L		EQU  $3e		; general purpose
-MON_A2H		EQU  $3f		; general purpose
-MON_A3H		EQU  $41		; general purpose
+AA		EQU  $3e		; WRADR16 - Timing constant
+NSECT		EQU  $3f		; WRADR16 - Sector number
+NVOL		EQU  $41		; WRADR16 - Volume number
 BOOT_TRACK	EQU  $41		; BOOT_TRACK to read
-PRODOS_CMD	EQU  $42
-PRODOS_UNITNUM	EQU  $43
-PRDOOS_BUFPTRL	EQU  $44
-PRODOS_BUFPTRH	EQU  $45		; Prodos buffer pointer high
-PRODOS_BLKNUM	EQU  $46
+PRODOS_CMD	EQU  $42		; PRODOS - Command
+PRODOS_UNITNUM	EQU  $43		; PRODOS - Unit number
+PRDOOS_BUFPTRL	EQU  $44		; PRODOS - Buffer pointer low
+TRK		EQU  $44		; WRADR16 - Track number
+NSYNC		EQU  $45		; FORMAT - Num gap self-sync nibls.
+PRODOS_BUFPTRH	EQU  $45		; PRODOS - buffer pointer high
+MONTIMEL	EQU  $46		; MSWAIT - Motor on time counter low
+PRODOS_BLKNUM	EQU  $46		; PRODOS - Block number
+MONTIMEH	EQU  $47		; MSWAIT - Motor on time counter high
+
 ACC_6502	EQU  $45		; 6502 Acc
 X_6502		EQU  $46		; 6502 X reg
 Y_6502		EQU  $47		; 6502 Y reg
@@ -87,13 +103,17 @@ DISK_OP		EQU  $0388		; Disk operation
 DISK_ERR	EQU  $0389		; Disk Error back
 SLOT_INFO	EQU  $03b8		; Card slot information
 DISK_ROUT	EQU  $03dc		; Disk routine to call
+CURTRK		EQU  $0478		; SEEK - Current track on entry
+DRV1TRK		EQU  $0478		; Drive 1 track (array)
+DRV2TRK		EQU  $04f8		; Drive 2 track (array)
+SEEKCNT		EQU  $04f8		; # Reseeks before recalibrate
+RETRYCNT	EQU  $0578		; Retry counter
 STSBYTE		EQU  $05b8		; SSC Char
-SCRNHOLE0	EQU  $0478		; text page 1 screen holes
-SCRNHOLE1	EQU  $04f8		; text page 1 screen holes
-SCRNHOLE2	EQU  $0578		; text page 1 screen holes
 DISKSLOTCX	EQU  $05f8		; Disk slot $60
-SCRNHOLE4	EQU  $0678		; text page 1 screen holes
-SCRNHOLE5	EQU  $06f8		; text page 1 screen hole 5
+SLOTABS		EQU  $0678		; WRITE16 - Slot num non-z-pag loc.
+SCRNHOLE5	EQU  $06f8		; text page 1 screen holes
+RECALCNT	EQU  $06f8		; # Recalibrates -1
+DISK_BUFF	EQU  $0800		; Disk buffer
 DISKREADSECT	EQU  $c05c		; ROM Disk read sector routine
 SCC_INIT	EQU  $c800		; Super serial card init
 SSC_READ	EQU  $c84d		; Super serial card read routine
@@ -102,12 +122,15 @@ CLRROM		EQU  $cfff		; disable slot C8 ROM
 TOG_CURJMP	EQU  $d000		; Address in video BIOS
 PRT_STACK_CHAR	EQU  $d003		; Address in video BIOS
 BIOSDISK	EQU  $d400		; BIOS disk address
-SIX_BIT_DATA	EQU  $de00		; Six bit data bytes
-TWO_BIT_DATA	EQU  $df00		; 56 bytes of 2 bit data
+NBUF1		EQU  $de00		; Six bit data bytes
+NBUF2		EQU  $df00		; 56 bytes of 2 bit data
+FOUND		EQU  $df57		; Table of found sectors during format
+D2SAVWRDTAPG	EQU  $df67		; Disk II save write data page
+D2SAVRDDTAPG	EQU  $df68		; Disk II save read page
+D2SAVETRAN	EQU  $df69		; Disk II save sector translation
 MON_INIT	EQU  $fb2f		; screen initialization
 MON_PRERR	EQU  $ff2d		; print "ERR" and sound bell
 MON_SAVE	EQU  $ff4a		; save 6502 registers to $45-49
-F8ROMSAVE	EQU  $ff4a		; Save registers from ROM
 MON_MONZ	EQU  $ff69		; reset and enter monitor
 		; Misc constants
 ESC		EQU  1BH		; Escape character

@@ -15,10 +15,14 @@
 ;*  $0E = Read character                                                       *
 ;*  $0F = Write character                                                      *
 ;*  $10 = Get status                                                           *
+;*                                                                             *
+;* Binary   (C) Copyright 1985 Cirtech                                         *
+;* Comments (C) Copyright 2023 Peter Ibbotson                                  *
 ;*******************************************************************************
 		INCLUDE EQUATES.MAC
 		CSEG
 		.6502
+		.phase $0a00
 ; Entry point
 CHAR_IO_OPER:	cld			; Clear decimal mode
 		pha			; Put acc on stack
@@ -193,4 +197,5 @@ PAGEINROM2:	lda  #$00		; Value over written by other code
 READROMSLOT:	lda  $c100		; Read from our rom to bring in $C800
 		rts
 		DS   080H,01AH
+		.dephase
 		END

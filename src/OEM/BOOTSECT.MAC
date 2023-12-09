@@ -10,8 +10,8 @@
 ;********************************************************************************
 		INCLUDE EQUATES.MAC
 		CSEG			; Absolute segment
-		ORG  0H			; Start at zero
 		.6502			; Into 6502 mode
+		.phase $800
 		db   $01		; Disk II boot sector count to read
 		stx  SLOTX16		; Slot ($60 for disk ii in slot 6)
 		txa
@@ -164,7 +164,7 @@ VECTOR6502	lda  LCBANK2		; $3C0
 		jsr  $0000		; $3CF 6502 routine?
 		sta  ROMIN		; $3D2 STA so we don't overwrite it
 		sei			; $3D5
-		jsr  F8ROMSAVE		; $3D6 Save away the registers
+		jsr  MON_SAVE		; $3D6 Save away the registers
 		jmp  $03c0		; $3D9 Back to z80 land
 		.z80
 VECTORZ80:	xor  a
@@ -261,4 +261,5 @@ BPRODOS_CMD	db   $01		; Prodos command copied $42
 BPRODOS_UNITNUM	db   $00		; Prodos unit number copied $43
 BPRODOS_BUFPTR	dw   $d000
 BPRODOS_BLKNUM	dw   $0001
+		.dephase
 		END
