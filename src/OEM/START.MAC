@@ -1,0 +1,33 @@
+		.Z80
+		TAB	EQU	9
+		LF	EQU	10
+		CR	EQU	13
+		BDOS	EQU	0005H		;CP/M BDOS ENTRY POINT
+		ld   c,9
+		ld   de,MSG
+		jp   BDOS
+MSG:		DB   CR, LF
+		DS   10, ' '		;Draw top line.
+		DS   53, '_'
+ 		DB   CR, LF
+		DS   9, ' '		;Box line 2
+		DB   '|'
+		DS   53, ' '
+		DB   '|'
+ 		DB   CR, LF
+		DS   9, ' '		;Box line 3
+ 		DB   "|  Welcome to the CIRTECH Apple //e CP/M PLUS System  |"
+ 		DB   CR, LF
+		DS   9, ' '		;Box line 5
+		DB   '|'
+		DS   53, '_'
+		DB   '|'
+ 		DB   CR, LF, LF
+		DB   "To get Help, insert the SYSTEM UTILITIES Disk and type",CR,LF,LF
+		DB   TAB,TAB,TAB,TAB,"HELP ?",CR,LF,LF
+ 		DB   TAB,TAB,TAB,"then press < RETURN >.",CR,LF,LF
+ 		DB   "To prevent this message appearing when you boot this disk, delete (ERA) the",CR,LF
+		DB   "file called 'PROFILE.SUB' from this disk (see the manual for information on",CR,LF
+		DB   "Automatic programs).",CR,LF
+		DB   '$'
+		END

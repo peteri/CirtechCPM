@@ -43,6 +43,7 @@ Write-Host 'Building files'
 .\M80.ps1 BIOSCHAR
 .\M80.ps1 SCB
 .\M80.ps1 BIOS
+.\M80.ps1 START
 # Annoyingly the linker doesn't return errors
 # however the file comparisons will blow up.
 Write-Host 'Linking'
@@ -53,6 +54,7 @@ C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSVID.BIN[NR,NL]=BIOSVID
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSDISK.BIN[NR,NL]=BIOSDISK
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK CPMLDR.BIN[L1100,NL]=CPMLDR,LDRBIOS
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BNKBIOS3[b,NR,NL]=BIOS,SCB
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK START[NR,NL]=START
 # move the Banked BIOS into the gencpm folder and run it.
 move-item BNKBIOS3.SPR -Destination gencpm 
 Write-host 'Running GENCPM'
@@ -62,6 +64,7 @@ Set-location -Path ..
 Write-host ' '
 # move files into the binaries folder and some cleanup
 move-item *.BIN -Destination .\binaries
+move-item *.COM -Destination .\binaries
 move-item gencpm\CPM3.SYS -Destination .\binaries
 move-item gencpm\BNKBIOS3.SPR -Destination .\binaries
 copy-item -Path .\comparison\CCP.COM -Destination binaries\CCP.COM
@@ -84,6 +87,8 @@ Write-Host 'Comparing binaries for CPMLDR'
 fc.exe /b binaries\CPMLDR.BIN comparison\CPMLDR.BIN
 Write-Host 'Comparing binaries for CPM3.SYS'
 fc.exe /b binaries\CPM3.SYS comparison\CPM3.SYS
+Write-Host 'Comparing binaries for START.COM'
+fc.exe /b binaries\START.COM system\START.COM
 dotnet run --project ../../tools/CpmDsk -- create --disk-image binaries/system.dsk --binaries-folder ./binaries
 dotnet run --project ../../tools/CpmDsk -- add system/*.* --disk-image binaries/system.dsk
 dotnet run --project ../../tools/CpmDsk -- remove cpm3.sys --disk-image binaries/system.dsk
