@@ -45,10 +45,11 @@ remove-item binaries\*.*
 remove-item utility\*.*
 remove-item system\*.*
 # extract files from the cirtech drive (help + patchers)
-Set-location -Path ../utility
+Set-location -Path utility
 dotnet run --project ../../../tools/CpmDsk -- extract *.* --disk-image "../../../DiskImages/CIRTECH CPM PLUS UTILITY.DSK" 
 Set-location -Path ../system
 dotnet run --project ../../../tools/CpmDsk -- extract *.* --disk-image "../../../DiskImages/CIRTECH CPM PLUS SYSTEM.DSK" 
+Set-location -Path ..
 Write-Host 'Building files'
 # For M80 we can wrap in powershell script and catch and errors by
 # teeing output to a file and looking for No Fatal Error(s)
