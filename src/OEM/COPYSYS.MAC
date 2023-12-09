@@ -1,59 +1,141 @@
 		.Z80
 ;************************************************
 ;*						*
+;*	COPYSYS					*
+;*	Copy the system files from one disk	*
+;*	to another.				*
 ;*						*
-;*						*
+;* Binary   (C) Copyright 1986 Cirtech          *
+;* Comments (C) Copyright 2023 Peter Ibbotson   *
 ;************************************************
-BDOS		EQU  05H
+		INCLUDE EQUATES.MAC
 BELL		EQU  07H
-LF		EQU  0AH
-CR		EQU  0DH
-ESC		EQU  1BH
-START:		ld   de,RELOCSTART
-		ld   hl,RELOCADR
+START:		ld   de,RELOCSTART	; Relocate ourselves
+		ld   hl,RELOCADR	; To higher up in memory
 		ld   bc,RELOCEND-RELOCSTART
 		ldir
-		jp   RELOCSTART
+		jp   RELOCSTART		; Call our jump
 RELOCADR:			
 		.PHASE 0AF00H
-RELOCSTART:	jp   START2
+RELOCSTART:	jp   START2		; Skip past messages
 		DB   "(C) CIRTECH UK Ltd. 1986"
-		; AF1B
 MSGWELCOME:	DB   ESC,'*',ESC,'(',CR,LF,LF,LF
 		DB   " System disk Copy Program (C) CIRTECH (UK) Ltd. 1986  Issue 1.02"
 		DB   ESC,')','$'
-		; AF66
-		DB   CR,LF,LF,BELL
+MSGDISKERR:	DB   CR,LF,LF,BELL
 		DB   "A disk error has occurred, returning to system.$"
-		; AF9A
-		DB   CR,LF,LF,LF
+MSGOPDONE:	DB   CR,LF,LF,LF
 		DB   "Operation completed okay.$"
-		; AF88
-		DB   CR,LF,LF,BELL
+MSGNOSPACE:	DB   CR,LF,LF,BELL
 		DB   "No space on disk, erase some files or try another disk"
-		DB   CR,LF,LF,BELL
+MSGINVDRV:	DB   CR,LF,LF,BELL
 		DB   "Invalid drive identifier.$"
-		; B010
-		DB   CR,LF,LF,BELL
+MSGNOTSYS:	DB   CR,LF,LF,BELL
 		DB   "That is not a system disk, it does not have the file CPM3.SYS on it.$"
-		; B059
-		DB   CR,LF,LF
+MSGSRCDISK:	DB   CR,LF,LF
 		DB   "Which drive is the SOURCE system disk in ?$"
-		; B087
-		DB   CR,LF,LF
+MSGINSSRCDSK:	DB   CR,LF,LF
 		DB   "Insert SOURCE disk and press any key.$"
-		; B0B0
-		DB   CR,LF,LF
+MSGDSTDISK:	DB   CR,LF,LF
 		DB   "Which drive is the DESTINATION disk in ?$"
-		; B0DC
-		DB   CR,LF,LF
+MSGINSDSTDSK:	DB   CR,LF,LF
 		DB   "Insert DESTINATION disk in drive and press any key.$"
 		; B113
 		DB   CR,LF,LF,BELL
 		DB   "The system tracks are already in use."
 		DB   CR,LF
 		DB   "Copy all the files on this disk to a new disk and try again.$"
-START2:	    	ld   de,MSGWELCOME
+START2:	    	ld   de,MSGWELCOME	; Say hello
+		call MSGDE
+		ld   c,GETDRV		; Get the current disk drive
+		call BDOS
+GETSRCDRV:	ld   de,MSGSRCDISK
+		call GETDRVLTR
+		jr   c,GETSRCDRV
+		ld   de,MSGINSSRCDSK
+		call $B2FF
+		call CPYDRV
+		ld   c,$05
+		call $B2D3
+		ld   c,$0F
+		call $B2CD
+		or   a
+		jr   z,SRCDSKOK
+		ld   de,MSGNOTSYS	; Tell user 
+		call MSGCONIN		; and get a key press
+		or   20H		; convert to lower case
+		cp   'y'		; another go?
+		jp   z,GETSRCDRV	; Loop around
+		jp   EXIT		; Nope, exit
+SRCDSKOK:	
+
+
+		ld   de,MSGOPDONE
+EXITMSG:	call MSGDE		; Display message
+EXIT:		ld   a,(CURDRV)		; Reset drive back
+		ld   e,a
+		call $B309
+		jp   BOOT		; Back to CP/M
+		;B31A
+;*******************************************************
+; MSGCONIN - Display message in DE and get a character *	
+; Entry DE = Message to display                        *
+; Exit  A = Key pressed by user                        *
+;*******************************************************
+MSGCONIN:	call MSGDE
+		ld   c,CONI
+		call BDOS
+		ret
+GETDRVLTR:	call MSGCONIN
+		or   20H
+		sub  'a'
+		ret  c
+		cp   10H
+		ccf
+		ret
+DOSETDMA:	ld   c,SETDMAOFF
+		jp   BDOS		
+BIOSDISKOP:	ld   (ZDISK_OP),a
+		ld   hl,ZDISK_ROUT
+		ld   (ZROUT_6502),hl
+		ld   hl,(ZCARD_Z80)
+		ld   (hl),a
+		ld   a,(ZDISK_ERR)
+		or   a
+		ret  z	
+		pop  hl
+		pop  hl
+		ld   de,MSGDISKERR
+		jp   EXIT_MSG
+		; FCB for CPM3.SYS
+CPM3SYSFCB:	DB   00H		; Drive
+		DB  'CPM3    SYS'	; Filename+type
+		DB   00H,00H,00H,00H	; EX,S1,S2,RC
+		DS   10H,00h		; AL (16 bytes)
+		DB   00H,00H,00H,00H	; CR,R0,R1,R2
+		; Directory entry for boot tracks.
+SYSDIRENT:	DB   000h
+		DB   'system  '
+		DB   't' + 80H, 'r' + 80H, 'k' + 80H
+		DB   000H,000H,000H,060H
+		DB   080H,081H,082H,083H,084H,085H,086H,087H
+		DB   088H,089H,08AH,08BH,000H,000H,000H,000H
+CURDRV:		DB   00
+XXXX:		DB   00		
+;
+; Print message pointed to by DE to console
+;		
+MSGDE:		ld   c,PRSTR
+		jp   BDOS
+;
+; Copy drive from main ram into CP/M TPA
+;		
+CPYDRV:		ld   hl,ZDISK_DRV
+		ld   (ZRDMAINRAM),a
+		ld   a,(hl)
+		ld   (ZRDCARDRAM),a
+		ld   (hl),a
+		ret
 RELOCEND:
 		.DEPHASE		
 		END
