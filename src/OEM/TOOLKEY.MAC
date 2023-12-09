@@ -12,7 +12,7 @@ HIBYTE		MACRO MSG
 		ENDIF
 		ENDM
 		ENDM
-		aseg
+		cseg
 		org  0
 		; Lives at $0C00 0FC00H
 		HIBYTE " __________ CIRTECH ToolKey _____________ "

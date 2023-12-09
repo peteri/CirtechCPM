@@ -46,11 +46,11 @@ Write-Host 'Building files'
 # Annoyingly the linker doesn't return errors
 # however the file comparisons will blow up.
 Write-Host 'Linking'
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BOOTSECT.BIN[L0800,NR,NL]=BOOTSECT
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK TOOLKEY.BIN[L0000,NR,NL]=TOOLKEY
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSCHAR.BIN[L0A00,NR,NL]=BIOSCHAR
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSVID.BIN[LD000,NR,NL]=BIOSVID
-C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSDISK.BIN[LD400,NR,NL]=BIOSDISK
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BOOTSECT.BIN[NR,NL]=BOOTSECT
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK TOOLKEY.BIN[NR,NL]=TOOLKEY
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSCHAR.BIN[NR,NL]=BIOSCHAR
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSVID.BIN[NR,NL]=BIOSVID
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BIOSDISK.BIN[NR,NL]=BIOSDISK
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK CPMLDR.BIN[L1100,NL]=CPMLDR,LDRBIOS
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BNKBIOS3[b,NR,NL]=BIOS,SCB
 # move the Banked BIOS into the gencpm folder and run it.

@@ -8,6 +8,7 @@
 		INCLUDE EQUATES.MAC
 		CSEG
 		.6502
+		.phase $d000
 ;*******************************************************************************
 ;*                                                                             *
 ;* Routines to handle the 80 Column card                                       *
@@ -505,4 +506,5 @@ ESC_CHAR_TRANS:	DB   $8c		; Ctrl-L - Form feed
 		DB   $8b		; Ctrl-K - Clear to end of screen
 		DB   $9d		; Ctrl-] - Clear to end of line
 GOTO_Y:		DB   $00		; Goto YX cursor Y
+		.dephase
 		END

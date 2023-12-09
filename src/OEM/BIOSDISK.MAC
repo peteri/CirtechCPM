@@ -15,6 +15,7 @@
 		INCLUDE EQUATES.MAC
 		cseg
 		.6502
+		.phase $d400
 		lda  DISK_DRV		; Get the drive ($60 for S6,D1)
 		and  #$7f		; Mask off drive (ProDOS style)
 		sta  DISKSLOTCX
@@ -931,12 +932,9 @@ D2TRACKOPER:	lda  #$00
 		sta  D2SAVETRAN
 		lda  DOSECTTRAN+2
 		sta  D2SAVETRAN+1
-		; NOTE: This should be PD_SECT_TRAN
-		; but for some reason M80 / LINK80
-		; Seems not like using > <
-		lda  #$D9	; Swap to Prodos sector translate
+		lda  #>PD_SECT_TRAN	; Swap to Prodos sector translate
 		sta  DOSECTTRAN+2
-		lda  #$06
+		lda  #<PD_SECT_TRAN
 		sta  DOSECTTRAN+1
 		lda  DISK_TRK_ADDR	; Set up data pointers
 		sta  PRENIBPAGE+2
@@ -1135,4 +1133,5 @@ SMARTDRV_BLOCKNUM:
 PD_TRACK_OP_CNT:
 		DB   $00
 		ds   83,$00
+		.dephase
 		END
