@@ -1,0 +1,292 @@
+;********************************
+;*                              *
+;*     6502 constants           *
+;*                              *
+;********************************
+		.6502
+		; Zero page addresses
+SECT2READ	EQU  $00		; sector we're going to read
+SLOTX16		EQU  $01		; Boot slot times sixteen
+SLOTX		EQU  $04		; SLOTX
+SCRLINEL	EQU  $20		; Address of current line in $400
+SCRLINEH	EQU  $21		; Screen address high
+ESC_STATE	EQU  $22		; State for ESCAPE leadin
+CUR_STATE	EQU  $23		; Bit 7 high if cursor on screen
+CURSORX		EQU  $25		; Cursor X (80 col)
+DATA_PTR	EQU  $26
+BLANKCH		EQU  $26		; Blank character.
+COUNT		EQU  $26		; RDADR16 - 'Must find' count
+IDX		EQU  $26		; READ16 - Index into (BUF).
+LAST		EQU  $26		; RDADR16 - 'Odd bit' nibls.
+T0		EQU  $26		; Temp for POSTNBL16
+TRKCNT		EQU  $26		; SEEK - Halftrks moved count.
+WTEMP		EQU  $26		; WRITE16 - Temp for data at Nbuf2,0.
+CSUM		EQU  $27		; RDADR16 - Checksum byte.
+PRIOR		EQU  $27		; SEEK - Prior halftrack.
+SLOTZ		EQU  $27		; WRITE16 - Slot num z-pag loc.
+CURSORY		EQU  $29		; Cursor Y (80 col)
+TRKN		EQU  $2a		; SEEK - desired track.
+SLOTTEMP	EQU  $2b		; SEEK - Slot num times $10
+CSSTV		EQU  $2c		; RDADR16 - Four bytes.
+SECTOR		EQU  $2d		; RDADR16 - Sector from sector header
+TRACK		EQU  $2e		; RDADR16 - Track from sector header
+VOLUME		EQU  $2f		; RDADR16 - Volume from sector header
+MON_INVFLAG	EQU  $32		; text mask (255=normal, 127=flash, 63=inv)
+DRIVNO		EQU  $35		; Hi bit set if drive 2 for Disk II
+MAXTRK		EQU  $3d		; Maximum track for format
+ROM_SECT2READ	EQU  $3d		; Disk II sector to read
+AA		EQU  $3e		; WRADR16 - Timing constant
+NSECT		EQU  $3f		; WRADR16 - Sector number
+NVOL		EQU  $41		; WRADR16 - Volume number
+BOOT_TRACK	EQU  $41		; BOOT_TRACK to read
+PRODOS_CMD	EQU  $42		; PRODOS - Command
+PRODOS_UNITNUM	EQU  $43		; PRODOS - Unit number
+PRDOOS_BUFPTRL	EQU  $44		; PRODOS - Buffer pointer low
+TRK		EQU  $44		; WRADR16 - Track number
+NSYNC		EQU  $45		; FORMAT - Num gap self-sync nibls.
+PRODOS_BUFPTRH	EQU  $45		; PRODOS - buffer pointer high
+MONTIMEL	EQU  $46		; MSWAIT - Motor on time counter low
+PRODOS_BLKNUM	EQU  $46		; PRODOS - Block number
+MONTIMEH	EQU  $47		; MSWAIT - Motor on time counter high
+
+ACC_6502	EQU  $45		; 6502 Acc
+X_6502		EQU  $46		; 6502 X reg
+Y_6502		EQU  $47		; 6502 Y reg
+FLAG_6502	EQU  $48		; 6502 flag
+		; Hardware addresses
+KBD		EQU  $c000
+SET80COL	EQU  $c001		; W use PAGE2 for aux mem (80STOREON)
+RDMAINRAM	EQU  $c002
+RDCARDRAM	EQU  $c003
+WRMAINRAM	EQU  $c004
+WRCARDRAM	EQU  $c005
+SETSTDZP	EQU  $c008		; Set standard zero page
+SETALTZP	EQU  $c009		; Set alternate zero page
+SET80VID	EQU  $c00d		; W enable 80-column display mode
+SETALTCHAR	EQU  $c00f		; W use alternate char set
+KBDSTRB		EQU  $c010
+PARA_DATAOUT	EQU  $c080		; Apple parallel card data out
+SPKR		EQU  $c030		; RW toggle speaker
+TXTPAGE1	EQU  $c054		; RW display page 1
+TXTPAGE2	EQU  $c055		; RW display page 2 (or read/write aux mem)
+BUTN1		EQU  $c062		; Joystick Button 1 aka Closed Apple
+ROMIN		EQU  $c081		; 6502 bring back roms
+LCBANK2		EQU  $c083		; RWx2 read/write RAM bank 2
+LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
+STATUS6510	EQU  $c08e		; Status port for 6510 cards
+DATA6510	EQU  $c08f		; Data port for 6510 cards
+PARA_ACKIN	EQU  $c0c1		; Apple parallel port ack in
+Z80CARD		EQU  $c400		; Address of Z80 card
+CLRROM		EQU  $cfff		; disable slot C8 ROM
+		; IWM hardware addresses
+IWM_PH0_OFF	EQU  $c080		; IWM phase 0 off
+IWM_PH1_OFF	EQU  $c082		; IWM phase 1 off
+IWM_PH1_ON	EQU  $c083		; IWM phase 1 on
+IWM_PH2_ON	EQU  $c085		; IWM phase 2 on
+IWM_MOTOR_OFF	EQU  $c088		; IWM motor off
+IWM_MOTOR_ON	EQU  $c089		; IWM motor on
+IWM_DRIVE_1	EQU  $c08a		; IWM select drive 1
+IWM_DRIVE_2	EQU  $c08b		; IWM select drive 2
+IWM_Q6_OFF	EQU  $c08c		; IWM read
+IWM_Q6_ON	EQU  $c08d		; IWM WP-sense
+IWM_Q7_OFF	EQU  $c08e		; IWM WP-sense/read
+IWM_Q7_ON	EQU  $c08f		; IWM write
+		; Absolute addresses
+DISK_TRKL	EQU  $0380		; Disk track low (From Z80)
+DISK_SECT	EQU  $0381		; Disk sector (from Z80)
+DISK_TRK_ADDR	EQU  $0382		; While track read/write page
+DISK_DRV	EQU  $0384		; Drive to use from CPM (Slot)
+DISK_ACTD	EQU  $0385		; Current active disk ][ drive
+DISK_TRKH	EQU  $0386		; Disk track high (from Z80)
+DISK_VOL	EQU  $0387		; Disk volume
+DISK_OP		EQU  $0388		; Disk operation
+DISK_ERR	EQU  $0389		; Disk Error back
+SLOT_INFO	EQU  $03b8		; Card slot information
+DISK_ROUT	EQU  $03dc		; Disk routine to call
+CURTRK		EQU  $0478		; SEEK - Current track on entry
+DRV1TRK		EQU  $0478		; Drive 1 track (array)
+DRV2TRK		EQU  $04f8		; Drive 2 track (array)
+SEEKCNT		EQU  $04f8		; # Reseeks before recalibrate
+RETRYCNT	EQU  $0578		; Retry counter
+STSBYTE		EQU  $05b8		; SSC Char
+DISKSLOTCX	EQU  $05f8		; Disk slot $60
+SLOTABS		EQU  $0678		; WRITE16 - Slot num non-z-pag loc.
+SCRNHOLE5	EQU  $06f8		; text page 1 screen holes
+RECALCNT	EQU  $06f8		; # Recalibrates -1
+DISK_BUFF	EQU  $0800		; Disk buffer
+DISKREADSECT	EQU  $c05c		; ROM Disk read sector routine
+SCC_INIT	EQU  $c800		; Super serial card init
+SSC_READ	EQU  $c84d		; Super serial card read routine
+SSC_WRITE	EQU  $c9aa		; Super serial card write routine
+CLRROM		EQU  $cfff		; disable slot C8 ROM
+TOG_CURJMP	EQU  $d000		; Address in video BIOS
+PRT_STACK_CHAR	EQU  $d003		; Address in video BIOS
+BIOSDISK	EQU  $d400		; BIOS disk address
+NBUF1		EQU  $de00		; Six bit data bytes
+NBUF2		EQU  $df00		; 56 bytes of 2 bit data
+FOUND		EQU  $df57		; Table of found sectors during format
+D2SAVWRDTAPG	EQU  $df67		; Disk II save write data page
+D2SAVRDDTAPG	EQU  $df68		; Disk II save read page
+D2SAVETRAN	EQU  $df69		; Disk II save sector translation
+MON_INIT	EQU  $fb2f		; screen initialization
+MON_PRERR	EQU  $ff2d		; print "ERR" and sound bell
+MON_SAVE	EQU  $ff4a		; save 6502 registers to $45-49
+MON_MONZ	EQU  $ff69		; reset and enter monitor
+		; Misc constants
+ESC		EQU  1BH		; Escape character
+CR		EQU  0DH		; Carriage return
+LF		EQU  0AH		; Line feed
+DSKOP_RD	EQU  01H		; Disk operation Read
+DSKOP_WR	EQU  02H		; Disk operation Write
+DSKOP_FMT	EQU  03H		; Disk operation Format
+DSKOP_WRTRK	EQU  04H		; Disk operation Write Track
+DSKOP_RDTRK	EQU  05H		; Disk operation Read Track
+CHAR_OP_INI	EQU  $0d		; Character IO Init (same as pascal offset)
+CHAR_OP_RD	EQU  $0e		; Character IO Read (same as pascal offset)
+CHAR_OP_WR	EQU  $0f		; Character IO Write (same as pascal offset)
+CHAR_OP_ST	EQU  $10		; Character IO Status (same as pascal offset)
+;********************************
+;*                              *
+;*     Z80 constants            *
+;*                              *
+;********************************
+		.z80
+;
+; DPB constants
+;
+DPB_SPT		EQU  00H		; SPT number of 128 records per track
+DPB_BSH		EQU  02H		; BSH Block shift factor
+DPB_BLM		EQU  03H		; BLM Block mask
+DPB_EXM		EQU  04H		; EXM extant mask
+DPB_DSM		EQU  05H		; DSM Blocks on drive
+DPB_DRM		EQU  07H		; DRM Number of directory entries
+DPB_AL0		EQU  09H		; AL0 reserved blocks for directory
+DPB_AL1		EQU  0AH		; AL1
+DPB_CKS		EQU  0BH		; CKS size of directory check vector
+DPB_OFF		EQU  0DH		; OFF reserved tracks
+DPB_PSH		EQU  0FH		; PSH Physical Shift
+DPB_PHM		EQU  10H		; PHM Physical Mask
+DPBLEN		EQU  11H		; Length of Disk parameter block
+;
+; DPH constants
+;
+DPH_XLT		EQU  00H		; Logical to physical table 0,1
+DPH_0_		EQU  02H		; BDOS Scratch - 2,3,4,5, 6,7,8,9, A
+DPH_MF		EQU  0BH		; Media flag - B
+DPH_DPB		EQU  0CH		; Pointer to Disk Parameter Block - C,D
+DPH_CSV		EQU  0EH		; CSV - E,F
+DPH_ALV		EQU  10H		; Allocation vector - 10,11
+DPH_DIRBCB	EQU  12H		; DIRBCB - 12,13
+DPH_DTABCB	EQU  14H		; DTABCB - 14,15
+DPH_HASH	EQU  16H		; hash - 16, 17
+DPH_HBANK	EQU  18H		; 18
+DPHLEN		EQU  19H
+;
+; BCB constants
+;
+BCBLEN		EQU  0FH		; Length of a BCB
+BCB_DRV		EQU  00H		; Disk drive associated with record - 0
+BCB_REC		EQU  01H		; Record position of current content - 1,2,3
+BCB_WFLG	EQU  04H		; Contains data not written to disk - 4
+BCB_SCRATCH	EQU  05H		; Scratch byte - 5
+BCB_TRACK	EQU  06H		; Disk track - 6,7
+BCB_SECTOR	EQU  08H		; Disk sector - 8,9
+BCB_BUFADDR	EQU  0AH		; Buffer address - 10,11
+BCB_BANK	EQU  0CH		; Buffer bank - 12
+BCB_LINK	EQU  0DH		; Link to next BCB - 13,14
+;
+; Memory constants
+;
+DRVTBL		EQU  05E00H		; 05E00H - Table of DPH for drives
+LDRDPBTBL	EQU  DRVTBL-(4*DPBLEN)	; 05DBCH - four DPB created by LDRBIOS
+DRVMAP		EQU  DRVTBL+(2*10H)	; 05E20H - Map of CPM drives to apple drives
+DIRBCB		EQU  DRVMAP+(2*6)	; 05E2CH - Start of Directory BCB chain.
+DTABCB		EQU  DIRBCB+2+6*(BCBLEN+0200H) ; 06A88H - Start of Data deblocking BCB chain.
+FREEMEM		EQU  DTABCB+2+2*(BCBLEN+0200H) ; 06EA8H - FREEMEM for Disk ALV / CKS
+BDOSSTART	EQU  07400H		; BDOS start address
+;
+; 6502 soft switches as seen from Z80
+;
+ZC0		EQU  0E000H-0C000H	; Z80 -> 6502 hardware offset
+ZKBD		EQU  ZC0 + KBD
+ZRDMAINRAM	EQU  ZC0 + RDMAINRAM
+ZRDCARDRAM	EQU  ZC0 + RDCARDRAM
+ZWRMAINRAM	EQU  ZC0 + WRMAINRAM	; Write to main ram ($200-$BFFF)
+ZWRCARDRAM	EQU  ZC0 + WRCARDRAM	; Write to 80 col card ram ($200-$BFFF)
+ZSETSTDZP	EQU  ZC0 + SETSTDZP	; Set standard zero page
+ZSETALTZP	EQU  ZC0 + SETALTZP	; Set alternate zero page
+ZKBDSTRB	EQU  ZC0 + KBDSTRB
+ZTXTPAGE1	EQU  ZC0 + TXTPAGE1	; RW display page 1
+ZTXTPAGE2	EQU  ZC0 + TXTPAGE2	; RW display page 2 (or read/write aux mem)
+ZBUTN1		EQU  ZC0 + BUTN1	; Joystick Button 1 aka Closed Apple
+ZLCBANK2	EQU  ZC0 + LCBANK2	; Language card bank 2
+ZLCBANK1	EQU  ZC0 + LCBANK1	; Language card bank 1
+
+;
+; 6502 Zero page stuff seen from Z80
+;
+Z00		EQU  0F000H		; Z80 -> 6502 hardware ofset for $0000-$0FFF
+ZSLOTX		EQU  Z00 + SLOTX	; Boot slot 1..7
+ZESC_STATE	EQU  Z00 + ESC_STATE	; Escape lead in state
+ZCUR_STATE	EQU  Z00 + CUR_STATE	; Bit 7 high if cursor on screen
+ZPRODOS_CMD	EQU  Z00 + PRODOS_CMD	; Prodos command
+ZPRODOS_UNITNUM	EQU  Z00 + PRODOS_UNITNUM ; Prodos unit number
+ZACC_6502	EQU  Z00 + ACC_6502	; 6502 Acc
+ZX_6502		EQU  Z00 + X_6502	; 6502 X reg
+ZY_6502		EQU  Z00 + Y_6502	; 6502 Y reg
+ZFLAG_6502	EQU  Z00 + FLAG_6502	; 6502 flag
+;
+; 6502 stuff in 0300 range as seen from Z80
+;
+PAGE300Z80	EQU  0F300H		; Page 300
+SCRLINES	EQU  0F312H		; Screen lines table going up
+ZDISK_TRKL	EQU  Z00 + DISK_TRKL	; Disk track low
+ZDISK_SECT	EQU  Z00 + DISK_SECT	; Disk sector
+ZDISK_TRK_ADDR	EQU  Z00 + DISK_TRK_ADDR
+ZDISK_DRV	EQU  Z00 + DISK_DRV	; Disk drive slot (060)
+ZDISK_ACTD	EQU  Z00 + DISK_ACTD	; Disk active drive
+ZDISK_TRKH	EQU  Z00 + DISK_TRKH	; Disk track high
+ZDISK_OP	EQU  Z00 + DISK_OP	; Disk operation
+ZDISK_ERR	EQU  Z00 + DISK_ERR	; Disk Result
+ZSLOT_INFO	EQU  Z00 + SLOT_INFO	; Slot info
+ZROUT_6502	EQU  0F3D0H		; 6502 routine to call
+ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
+ZIO_STATUS	EQU  0F3EBH		; Io status, bit 2=key press ready
+ZDISK_BUFF	EQU  0F800H		; Disk buffer for BIOS
+;
+; Constants for TOOLKEY pop up
+;
+LEFTEDGE	EQU  9			; Left edge of window
+SCRL8		EQU  Z00 + 0428H + LEFTEDGE
+SCRL9		EQU  Z00 + 04A8H + LEFTEDGE
+SCRL10		EQU  Z00 + 0528H + LEFTEDGE
+SCRL11		EQU  Z00 + 05A8H + LEFTEDGE
+SCRL12		EQU  Z00 + 0628H + LEFTEDGE
+;
+; Messages for the toolkey popup (see src\boot\toolkey.mac)
+;
+MSG_TOOLKEY	EQU  0FC00H		; Message box for toolkey
+MSG_FORMAT	EQU  0FCD2H		; Format disk in which drive
+MSG_INSDISK	EQU  0FCF8H		; Insert disk in drive and press rtn
+MSG_FMTING	EQU  0FD1EH		; Formatting
+MSG_FORMOK	EQU  0FD44H		; Format successful, do again
+ERR_DSKERR	EQU  0FD6AH		; Disk error
+ERR_WRPRO	EQU  0FD90H		; Write protected error
+MSG_GETSRC	EQU  0FDB6H		; Which drive is source
+MSG_GETDST	EQU  0FDDCH		; Which drive is dest
+MSG_INSDSKS	EQU  0FE02H		; Insert disks
+MSG_DUPLIC	EQU  0FE28H		; Duplicating disk
+MSG_DUPOK	EQU  0FE4EH		; Operation sucessful, do again
+MSG_SRCDSK	EQU  0FE74H		; Insert source disk
+MSG_DSTDSK	EQU  0FE9AH		; Insert destination disk
+MSG_WRNGDSK	EQU  0FEC0H		; Incompatible drives
+;
+; Misc constants
+;
+WBOOTJP		EQU  00000H		; CP/M warm boot
+BDOSJP		EQU  00005H		; CP/M BDOS call
+CCP		EQU  00100H		; CCP entry
+WARMCOPYLEN	EQU  05CFFH		; Warm copy length
+ISRBUFFST	EQU  0B000H		; Both ISR buffers start at same address
+LSTBUFEND	EQU  0E000H		; LST buffer is 12K
+AUXBUFEND	EQU  0C000H		; Aux buffer is 4K
