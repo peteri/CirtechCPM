@@ -1,0 +1,44 @@
+		.Z80
+		BDOS	EQU	05H
+		BELL	EQU	07H
+		LF	EQU	0AH
+		CR	EQU	0DH
+		ESC	EQU	1BH
+		DS   11H
+		DB   "(C) CIRTECH UK Ltd. 1986"
+		; 0129H
+		DB   ESC,'*',ESC,'(',CR,LF,LF,LF
+		DB   "System disk Copy Program (C) CIRTECH (UK) Ltd. 1986  Issue 1.02"
+		DB   ESC,')','$'
+		; 0174
+		DB   CR,LF,LF,BELL
+		DB   "A disk error has occurred, returning to system.$"
+		; 01A8
+		DB   CR,LF,LF,LF
+		DB   "Operation completed okay.$"
+		; 01C6
+		DB   CR,LF,LF,BELL
+		DB   "No space on disk, erase some files or try another disk"
+		DB   CR,LF,LF,BELL
+		DB   "Invalid drive identifier.$"
+		; 021E
+		DB   CR,LF,LF,BELL
+		DB   "That is not a system disk, it does not have the file CPM3.SYS on it.$"
+		; 0267
+		DB   CR,LF,LF
+		DB   "Which drive is the SOURCE system disk in ?$"
+		; 0295
+		DB   CR,LF,LF
+		DB   "Insert SOURCE disk and press any key.$"
+		; 2BE
+		DB   CR,LF,LF
+		DB   "Which drive is the DESTINATION disk in ?$"
+		; 2EA
+		DB   CR,LF,LF
+		DB   "Insert DESTINATION disk in drive and press any key.$"
+		; 321
+		DB   CR,LF,LF,BELL
+		DB   "The system tracks are already in use."
+		DB   CR,LF
+		DB   "Copy all the files on this disk to a new disk and try again.$"
+		END
