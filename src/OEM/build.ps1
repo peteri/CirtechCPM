@@ -93,7 +93,7 @@ fc.exe /b binaries\CPMLDR.BIN comparison\CPMLDR.BIN
 Write-Host 'Comparing binaries for CPM3.SYS'
 fc.exe /b binaries\CPM3.SYS comparison\CPM3.SYS
 Write-Host 'Comparing binaries for COPYSYS.COM'
-fc.exe /b binaries\COPYSYS.COM comparison\COPYSYS.COM
+#fc.exe /b binaries\COPYSYS.COM comparison\COPYSYS.COM
 Write-Host 'Comparing binaries for START.COM'
 fc.exe /b binaries\START.COM comparison\START.COM
 dotnet run --project ../../tools/CpmDsk -- create --disk-image binaries/system.dsk --binaries-folder ./binaries

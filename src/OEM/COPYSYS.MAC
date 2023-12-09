@@ -1,10 +1,15 @@
 		.Z80
-		BDOS	EQU	05H
-		BELL	EQU	07H
-		LF	EQU	0AH
-		CR	EQU	0DH
-		ESC	EQU	1BH
-		DS   11H
+;************************************************
+;*						*
+;*						*
+;*						*
+;************************************************
+BDOS		EQU  05H
+BELL		EQU  07H
+LF		EQU  0AH
+CR		EQU  0DH
+ESC		EQU  1BH
+START:		DS   11H
 		DB   "(C) CIRTECH UK Ltd. 1986"
 		; 0129H
 		DB   ESC,'*',ESC,'(',CR,LF,LF,LF
