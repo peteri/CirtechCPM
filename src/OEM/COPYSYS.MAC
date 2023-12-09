@@ -9,41 +9,51 @@ BELL		EQU  07H
 LF		EQU  0AH
 CR		EQU  0DH
 ESC		EQU  1BH
-START:		DS   11H
+START:		ld   de,RELOCSTART
+		ld   hl,RELOCADR
+		ld   bc,RELOCEND-RELOCSTART
+		ldir
+		jp   RELOCSTART
+RELOCADR:			
+		.PHASE 0AF00H
+RELOCSTART:	jp   START2
 		DB   "(C) CIRTECH UK Ltd. 1986"
-		; 0129H
-		DB   ESC,'*',ESC,'(',CR,LF,LF,LF
-		DB   "System disk Copy Program (C) CIRTECH (UK) Ltd. 1986  Issue 1.02"
+		; AF1B
+MSGWELCOME:	DB   ESC,'*',ESC,'(',CR,LF,LF,LF
+		DB   " System disk Copy Program (C) CIRTECH (UK) Ltd. 1986  Issue 1.02"
 		DB   ESC,')','$'
-		; 0174
+		; AF66
 		DB   CR,LF,LF,BELL
 		DB   "A disk error has occurred, returning to system.$"
-		; 01A8
+		; AF9A
 		DB   CR,LF,LF,LF
 		DB   "Operation completed okay.$"
-		; 01C6
+		; AF88
 		DB   CR,LF,LF,BELL
 		DB   "No space on disk, erase some files or try another disk"
 		DB   CR,LF,LF,BELL
 		DB   "Invalid drive identifier.$"
-		; 021E
+		; B010
 		DB   CR,LF,LF,BELL
 		DB   "That is not a system disk, it does not have the file CPM3.SYS on it.$"
-		; 0267
+		; B059
 		DB   CR,LF,LF
 		DB   "Which drive is the SOURCE system disk in ?$"
-		; 0295
+		; B087
 		DB   CR,LF,LF
 		DB   "Insert SOURCE disk and press any key.$"
-		; 2BE
+		; B0B0
 		DB   CR,LF,LF
 		DB   "Which drive is the DESTINATION disk in ?$"
-		; 2EA
+		; B0DC
 		DB   CR,LF,LF
 		DB   "Insert DESTINATION disk in drive and press any key.$"
-		; 321
+		; B113
 		DB   CR,LF,LF,BELL
 		DB   "The system tracks are already in use."
 		DB   CR,LF
 		DB   "Copy all the files on this disk to a new disk and try again.$"
+START2:	    	ld   de,MSGWELCOME
+RELOCEND:
+		.DEPHASE		
 		END
