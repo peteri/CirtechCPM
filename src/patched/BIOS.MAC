@@ -307,26 +307,7 @@ SIGNONMSG:	DB   ESC,'*',CR,LF
 		DB   '         ',ESC,'(','  CP/M Plus Version 3.0  for the Apple //e  ',CR,LF,ESC,')'
 		DB   '         ',ESC,'(','    (C)  CIRTECH 1985       Release 1.07    ',CR,LF,ESC,')'
 		DB   CR,LF,0
-;
-; Secondary check for Cirtech card, called
-; when we output to either LST or AUX
-;
-CARDCHECK2:	ld   hl,0787BH		; Code at A47D check if we're on a Cirtech card
-		ld   c,(hl)		; Save byte for later
-		ld   de,CC6502_2+1000H	; 6502 routine
-		ld   (ZROUT_6502),de
-		ld   de,(ZCARD_Z80)	; de=E401
-		inc  de
-		inc  de			; de=E403
-		ld   (de),a		; Off to 6502 land with odd address mapping
-		ld   a,(hl)		; Get back overwritten byte
-		ld   (hl),c		; Put back original byte
-		cp   076H		; Go home if our byte was overwritten
-		ret  z
-		ld   (ZROUT_6502),hl	; Byte not overwritten
-		lddr			; Trash the world
-		lddr
-BIOSTK:		DS   05AH		; Slightly odd size for the stack
+BIOSTK:		DS   078H		; Slightly odd size for the stack
 					; Not sure if it's computed or I've missed
 					; some data addresses....
 BIOSTOS:
@@ -659,7 +640,6 @@ SIGNONLOOP:	ld   c,a		; Get a character
 		ld   a,(hl)
 		or   a
 		jr   nz,SIGNONLOOP	; Loop until done.
-		call CARDCHECK		; Check if this Cirtech hardware
 		jp   B_WBOOT		; Go to warm boot
 CARD_TYPES:	DB   'NOCRD ',00H,00	; 00 Card type 00
 		DB   'UNKWN ',00H,00	; 08 Card type 01
@@ -790,13 +770,6 @@ DRVISDISK2:	and  07FH		; Mask off the unit
 		ld   a,(hl)		; get the drive type
 		cp   02H		; Set zero flag for Disk II drives
 		ret
-; Code supposed to be called by card check routine lives at 0A8B8H $B8B8
-; unclear if this is actually run, suspect it is with an address
-; mapper still running and the dec $a800 is really dec $8800
-		.6502
-CC6502:		dec  $a800
-		rts
-		.z80
 ;============================================================
 ; BIOS Func 8 - HOME
 ; Move the current to track 0
@@ -940,19 +913,6 @@ USERF_0A:	push hl
 		ldir
 		ld   (ZWRMAINRAM),a
 		ret
-;
-; Called from A47D
-;
-; Another bit of check if we're running on a Cirtech
-; card, we are should be writing $76 to $7b78, this
-; gets called on every psuedo ISR call to get a character
-; from the buffers.
-;
-		.6502
-CC6502_2:	lda  #$76		; code at $B8EB or 0A8EBH
-		sta  USERF		; Write HALT in USERF
-		rts			; but the adress should be +$1000
-		.Z80
 ;============================================================
 ; Vector output
 ; Entry
@@ -1296,7 +1256,6 @@ ISRLSTMORE:	ld   a,(LSTSLOT)	; Get the list slot
 		call SLOUTST2		; Check the status
 		or   a
 		jr   z,ISRCHKAUX	; Busy go check aux
-		call CARDCHECK2
 		ld   hl,(LSTBFOUT)	; Get our output byte
 		ld   (ZSETALTZP),a	; Swap to AUX language card
 		ld   c,(hl)		; Get character
@@ -1328,7 +1287,6 @@ AUXHASDATA:	ld   a,(AUXSLOT)	; Get the slot for aux
 		call SLOUTST2		; Check AUX status
 		or   a
 		jr   z,PISR_EXIT
-		call CARDCHECK2
 		ld   hl,(AUXBFOUT)
 		ld   (ZSETALTZP),a	; Language card to AUX banks
 		ld   a,(ZLCBANK1)	; Swap to other bank
@@ -1891,32 +1849,5 @@ DEVINI:		xor  a
 ININOTCONS:	ld   b,c		; Copy device to b
 		ld   a,CHAR_OP_INI	; Do the initialise operations
 		jp   CON_BIOS		; Exit via BIOS code
-;
-; Check the card code
-; Call the code at A8B8 (6502 code b8b8)
-; This looks like:
-;
-; CC6502:    dec  $a800         ; 9800 from Z80 side
-;            rts
-;
-CARDCHECK:	ld   hl,07800H		; two pages into the BDOS (contains 00)
-		ld   b,(hl)		; save value into b
-		ld   c,0
-		ld   (hl),c		; put a zero back into location
-		ld   de,CC6502+01000H	; Tell the 6502 to jump to code that decrements A800
-		ld   (ZROUT_6502),de
-		ld   de,(ZCARD_Z80)	; Get card address (0E401H)
-		inc  de			; Add one to it 0E402H
-		ld   (de),a		; On a softcard, jump to 6502, not sure for Cirtech
-					; Strong suspicion it changes the mapping from
-					; 6502->Z80
-		ld   c,(hl)		; 6502 decremented this value? c=FF
-		ld   (hl),b		; put back saved value
-		inc  c			; if right value decremented c=0 after increment
-		ret  z			; Go home
-		ld   (ZROUT_6502),hl	; Trash 6502 routine
-		ldir			; DE=E402,HL=7800,BC=0000
-		ldir
-; Default IO vectors at AF45
 DEFIOVEC:	DW   08000H,08000H,0000H,0000H,0000H
 		END

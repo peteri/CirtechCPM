@@ -18,7 +18,7 @@ $systemFiles=@(
 'RomWBW/DATE.COM',
 'RomWBW/PIP.COM',
 'RomWBW/DEVICE.COM',
-'binaries/PROFILE.SUB',
+'system/PROFILE.SUB',
 'RomWBW/SHOW.COM',
 'RomWBW/DIR.COM',
 'RomWBW/ERASE.COM',
