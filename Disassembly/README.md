@@ -197,7 +197,7 @@ The only really tricky piece of code is the bit that deals with Escape followed 
 Disk driver is from $D400 - $DBFF
 Buffer is $800-$9FF (512 bytes)
 
-Currently the Smart Drive code is disassembled, ProDOS and regular RWTS code still has more work to do.
+Currently the Smart Drive and ProDOS code use comments I have written but the RWTS uses the comments and labels from the DOS3.3C source code release from Apple where the code is the same.
 
 ### Slot / Card driver
 Code is copied in $A00-$BFF by the boot routine from $DC00
