@@ -9,7 +9,8 @@
 #
 $systemFiles=@(
 'binaries/CPM3.SYS',
-'binaries/COPYSYS.COM',
+# Change COPYSYS to binaries once done.
+'system/COPYSYS.COM',
 'RomWBW/SET.COM',
 'RomWBW/PUT.COM',
 'RomWBW/RENAME.COM',

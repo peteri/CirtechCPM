@@ -73,8 +73,8 @@ BUTN1		EQU  $c062		; Joystick Button 1 aka Closed Apple
 ROMIN		EQU  $c081		; 6502 bring back roms
 LCBANK2		EQU  $c083		; RWx2 read/write RAM bank 2
 LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
-STATUS6510	EQU  $c08e		; Status port for 6510 cards
-DATA6510	EQU  $c08f		; Data port for 6510 cards
+STAT6850	EQU  $c08e		; Status port for 6850 cards
+DATA6850	EQU  $c08f		; Data port for 6850 cards
 PARA_ACKIN	EQU  $c0c1		; Apple parallel port ack in
 Z80CARD		EQU  $c400		; Address of Z80 card
 CLRROM		EQU  $cfff		; disable slot C8 ROM
@@ -252,7 +252,7 @@ ZSLOT_INFO	EQU  Z00 + SLOT_INFO	; Slot info
 ZROUT_6502	EQU  0F3D0H		; 6502 routine to call
 ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
 ZIO_STATUS	EQU  0F3EBH		; Io status, bit 2=key press ready
-ZDISK_BUFF	EQU  0F800H		; Disk buffer for BIOS
+ZDISK_BUFF	EQU  Z00 + DISK_BUFF	; Disk buffer for BIOS
 ;
 ; Constants for TOOLKEY pop up
 ;

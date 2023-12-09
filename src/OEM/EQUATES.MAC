@@ -252,7 +252,7 @@ ZSLOT_INFO	EQU  Z00 + SLOT_INFO	; Slot info
 ZROUT_6502	EQU  0F3D0H		; 6502 routine to call
 ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
 ZIO_STATUS	EQU  0F3EBH		; Io status, bit 2=key press ready
-ZDISK_BUFF	EQU  0F800H		; Disk buffer for BIOS
+ZDISK_BUFF	EQU  Z00 + DISK_BUFF	; Disk buffer for BIOS
 ;
 ; Constants for TOOLKEY pop up
 ;
