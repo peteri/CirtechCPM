@@ -316,7 +316,7 @@ FORMATRAM:	call WRITEBOOTTRKS	; Write out boot tracks
 		jr   RAMFMTDONE
 ;
 ; Suspect this is a special routine for a Cirtech
-; card (flippy?)
+; card (flipper?)
 ;
 SPECIALRAM:	ld   hl,(JSRSMARTDRV+1)	; Get the smart drive entry point
 		ld   a,l

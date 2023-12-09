@@ -73,8 +73,8 @@ BUTN1		EQU  $c062		; Joystick Button 1 aka Closed Apple
 ROMIN		EQU  $c081		; 6502 bring back roms
 LCBANK2		EQU  $c083		; RWx2 read/write RAM bank 2
 LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
-STATUS6510	EQU  $c08e		; Status port for 6510 cards
-DATA6510	EQU  $c08f		; Data port for 6510 cards
+STAT6850	EQU  $c08e		; Status port for 6850 cards
+DATA6850	EQU  $c08f		; Data port for 6850 cards
 PARA_ACKIN	EQU  $c0c1		; Apple parallel port ack in
 Z80CARD		EQU  $c400		; Address of Z80 card
 CLRROM		EQU  $cfff		; disable slot C8 ROM
