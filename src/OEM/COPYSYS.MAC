@@ -10,12 +10,21 @@
 ;************************************************
 		INCLUDE EQUATES.MAC
 		INCLUDE BDOS.MAC
-BELL		EQU  07H
-DISKII_TYPE	EQU  02H
-BOOT_TRACKS	EQU  03H
-BOOT_TRKDATA	EQU  1100H
-ZBOOT_TRKDATA	EQU  0100H
+BELL		EQU  07H		; Bell character
+DISKII_TYPE	EQU  02H		; Type of a Disk II in a slot.
+BOOT_TRACKS	EQU  03H		; Number of boot tracks
+DIRENT_LEN	EQU  20H		; Length of a directory entry
+MAX_ALLOC	EQU  10H		; Max allocation blocs in a dir entry
+ALLOC_OFFS	EQU  10H		; Offset of block allocation in dir entry
+BOOT_TRKDATA	EQU  01100H		; Where the 6502 reads the boot tracks into
+ZBOOT_TRKDATA	EQU  00100H		; Z80 address of the boot tracks.
+DISKII_DIR	EQU  08100H		; Disk II directory is loaded here
+DISKII_DIRSEC	EQU  08H 		; Disk II directory number of sectors
+DISKII_SECTLEN	EQU  0100H
+DISKII_DIRENT	EQU  040H		; Number of directory entries for Disk II
+		;Where to put the CPM3 System data
 CPM3SYSDATA	EQU  ZBOOT_TRKDATA+(BOOT_TRACKS*16*256)
+SYSALLOCBLOCK	EQU  080H		; System allocation blocks
 START:		ld   de,RELOCSTART	; Relocate ourselves
 		ld   hl,RELOCADR	; To higher up in memory
 		ld   bc,RELOCEND-RELOCSTART
@@ -46,7 +55,7 @@ MSGDSTDISK:	DB   CR,LF,LF
 		DB   "Which drive is the DESTINATION disk in ?$"
 MSGINSDSTDSK:	DB   CR,LF,LF
 		DB   "Insert DESTINATION disk in drive and press any key.$"
-		DB   CR,LF,LF,BELL
+MSGSYSTRKUSED:	DB   CR,LF,LF,BELL
 		DB   "The system tracks are already in use."
 		DB   CR,LF
 		DB   "Copy all the files on this disk to a new disk and try again.$"
@@ -123,9 +132,66 @@ RDNXTCPM3SYS:	ld   de,BLKSIZE
 ; Larger drives don't reuse the boot tracks.
 ;
 ;===============================================
-
-
-		DS 077H
+		; Read in the directory sectors
+		ld   a,BOOT_TRACKS
+		ld   (ZDISK_TRKL),a
+		xor  a
+		ld   (ZDISK_TRKH),a
+		ld   de,DISKII_DIR
+RDNXTDIRSECT:	ld   (ZDISK_SECT),a
+		push af
+		ld   a,DSKOP_RD
+		call BIOSDISKOP
+		ld   hl,ZDISK_BUFF
+		ld   bc,DISKII_SECTLEN
+		ldir
+		pop  af
+		inc  a
+		cp   DISKII_DIRSEC
+		jr   nz,RDNXTDIRSECT
+		ld   hl,DISKII_DIR-DIRENT_LEN		
+		; Scan to make sure nothing has used boot tracks
+		ld   b,0
+NXTDIRENT:	ld   de,DIRENT_LEN
+		add  hl,de
+		ld   a,(hl)
+		cp   10H
+		jr   c,DIRENTUSED
+		ld   (DIRSECTADDR+1),hl
+		jr   SKIPDIRENT
+DIRENTUSED:	push hl
+		ld   de,ALLOC_OFFS
+		add  hl,de
+		ld   c,MAX_ALLOC
+CHKNXTALLOC:	ld   a,(hl)
+		cp   SYSALLOCBLOCK
+		jr   c,NXTALLOC
+		pop  hl
+		ld   de,MSGSYSTRKUSED
+		jp   EXITMSG
+NXTALLOC: 	inc  hl
+		dec  c
+		jr   nz,CHKNXTALLOC
+		pop  hl
+SKIPDIRENT:	inc  b
+		ld   a,DISKII_DIRENT
+		cp   b
+		jr   nz,NXTDIRENT
+		; Create a disk track entry marking boot tracks as used
+DIRSECTADDR:	ld   de,0000H		;Overwritten earlier on
+		ld   hl,SYSDIRENT
+		ld   bc,DIRENT_LEN
+		ldir
+		ld   a,(DIRSECTADDR+2)
+		ld   h,a
+		ld   l,00h
+		sub  HIGH DISKII_DIR
+		ld   (ZDISK_SECT),a
+		ld   de,ZDISK_BUFF
+		ld   bc,DISKII_SECTLEN
+		ldir
+		ld   a,DSKOP_WR
+		call BIOSDISKOP
 ;===============================================
 ;
 ; Either no-one has used the Disk II drive boot tracks

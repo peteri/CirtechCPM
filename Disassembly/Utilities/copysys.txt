@@ -52,63 +52,65 @@ B1EC: CD FF B2 call SETCPM3DRV
 B1EF: CD EB B2 call DRVISDISK2
 B1F2: 20 77    jr   nz,NOTDISK2
 
-
-B1F4: 3E 03    ld   a,$03
-B1F6: 32 80 F3 ld   ($F380),a
+	       ; Read in the directory sectors
+B1F4: 3E 03    ld   a,BOOT_TRACKS
+B1F6: 32 80 F3 ld   (ZDISK_TRKL),a
 B1F9: AF       xor  a
-B1FA: 32 86 F3 ld   ($F386),a
-B1FD: 11 00 81 ld   de,$8100
-B200: 32 81 F3 ld   ($F381),a
+B1FA: 32 86 F3 ld   (ZDISK_TRKH),a
+B1FD: 11 00 81 ld   de,DISKII_DIR
+B200: 32 81 F3 RDNXTDIRSECT:ld   (ZDISK_SECT),a
 B203: F5       push af
-B204: 3E 01    ld   a,$01
+B204: 3E 01    ld   a,DSKOP_RD
 B206: CD 34 B3 call BIOSDISKOP
-B209: 21 00 F8 ld   hl,$F800
-B20C: 01 00 01 ld   bc,$0100
+B209: 21 00 F8 ld   hl,ZDISK_BUFF
+B20C: 01 00 01 ld   bc,DISKII_SECTLEN
 B20F: ED B0    ldir
 B211: F1       pop  af
 B212: 3C       inc  a
-B213: FE 08    cp   $08
-B215: 20 E9    jr   nz,$B200
-B217: 21 E0 80 ld   hl,$80E0
-B21A: 06 00    ld   b,$00
-B21C: 11 20 00 ld   de,$0020
+B213: FE 08    cp   DISKII_DIRSEC
+B215: 20 E9    jr   nz,RDNXTDIRSECT
+B217: 21 E0 80 ld   hl,DISKII_DIR-DIRENT_LEN
+	       ; Scan to make sure nothing has used boot tracks
+B21A: 06 00    ld   b,0
+B21C: 11 20 00 NXTDIRENT:ld   de,DIRENT_LEN
 B21F: 19       add  hl,de
 B220: 7E       ld   a,(hl)
-B221: FE 10    cp   $10
-B223: 38 05    jr   c,$B22A
-B225: 22 49 B2 ld   ($B249),hl
-B228: 18 18    jr   $B242
-B22A: E5       push hl
-B22B: 11 10 00 ld   de,$0010
+B221: FE 10    cp   10H
+B223: 38 05    jr   c,DIRENTUSED
+B225: 22 49 B2 ld   (DIRSECTADDR+1),hl
+B228: 18 18    jr   SKIPDIRENT
+B22A: E5       DIRENTUSED: push hl
+B22B: 11 10 00 ld   de,ALLOC_OFFS
 B22E: 19       add  hl,de
-B22F: 0E 10    ld   c,$10
-B231: 7E       ld   a,(hl)
-B232: FE 80    cp   $80
-B234: 38 07    jr   c,$B23D
+B22F: 0E 10    ld   c,MAX_ALLOC
+B231: 7E       CHKNXTALLOC:ld   a,(hl)
+B232: FE 80    cp   SYSALLOCBLOCK
+B234: 38 07    jr   c,NXTALLOC
 B236: E1       pop  hl
-B237: 11 13 B1 ld   de,$B113
+B237: 11 13 B1 ld   de,MSGSYSTRKUSED
 B23A: C3 C0 B2 jp   EXITMSG
-B23D: 23       inc  hl
+B23D: 23       NXTALLOC: inc  hl
 B23E: 0D       dec  c
-B23F: 20 F0    jr   nz,$B231
+B23F: 20 F0    jr   nz,CHKNXTALLOC
 B241: E1       pop  hl
-B242: 04       inc  b
-B243: 3E 40    ld   a,$40
+B242: 04       SKIPDIRENT: inc  b
+B243: 3E 40    ld   a,DISKII_DIRENT
 B245: B8       cp   b
-B246: 20 D4    jr   nz,$B21C
-B248: 11 00 00 ld   de,$0000
+B246: 20 D4    jr   nz,NXTDIRENT
+	       ; Create a disk track entry marking boot tracks as used
+B248: 11 00 00 DIRSECTADDR: ld   de,0000H		;Overwritten earlier on
 B24B: 21 72 B3 ld   hl,SYSDIRENT
-B24E: 01 20 00 ld   bc,$0020
+B24E: 01 20 00 ld   bc,DIRENT_LEN
 B251: ED B0    ldir
-B253: 3A 4A B2 ld   a,($B24A)
+B253: 3A 4A B2 ld   a,(DIRSECTADDR+2)
 B256: 67       ld   h,a
-B257: 2E 00    ld   l,$00h
-B259: D6 81    sub  $81
-B25B: 32 81 F3 ld   ($F381),a
-B25E: 11 00 F8 ld   de,$F800
-B261: 01 00 01 ld   bc,$0100
+B257: 2E 00    ld   l,00h
+B259: D6 81    sub  HIGH DISKII_DIR
+B25B: 32 81 F3 ld   (ZDISK_SECT),a
+B25E: 11 00 F8 ld   de,ZDISK_BUFF
+B261: 01 00 01 ld   bc,DISKII_SECTLEN
 B264: ED B0    ldir
-B266: 3E 02    ld   a,$02
+B266: 3E 02    ld   a,DSKOP_WR
 B268: CD 34 B3 call BIOSDISKOP
 
 
