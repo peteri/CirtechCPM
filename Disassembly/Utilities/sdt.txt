@@ -1,0 +1,414 @@
+0100: 31 ED 06 ld   sp,006ED
+0103: 3E 07    ld   a,007
+0105: 47       ld   b,a
+0106: 3A 07 00 ld   a,(00007)
+0109: 90       sub  b
+010A: 6F       ld   l,a
+010B: 26 00    ld   h,000
+010D: 29       add  hl,hl
+010E: 3E ED    ld   a,0ED
+0110: CB 7F    bit  7,a
+0112: 20 01    jr   nz,00115
+0114: 23       inc  hl
+0115: 22 B0 06 ld   (006B0),hl
+0118: 1E FF    ld   e,0FF
+011A: 0E 2D    ld   c,02D
+011C: CD 05 00 call BDOS
+011F: 11 ED 06 ld   de,006ED
+0122: 0E 1A    ld   c,01A
+0124: CD 05 00 call BDOS
+0127: 21 AB 06 ld   hl,006AB
+012A: 06 03    ld   b,003
+012C: 36 00    ld   (hl),000
+012E: 23       inc  hl
+012F: 10 FB    djnz 0012C
+0131: 0E 16    ld   c,016
+0133: 06 18    ld   b,018
+0135: CD C2 06 call PRT_B_CTIMES
+0138: 21 4B 03 ld   hl,0034B
+013B: CD B4 06 call PRNULSTR
+013E: 0E 17    ld   c,017
+0140: 06 0A    ld   b,00A
+0142: CD C2 06 call PRT_B_CTIMES
+0145: 21 5E 04 ld   hl,0045E
+0148: CD B4 06 call PRNULSTR
+014B: 21 80 00 ld   hl,00080
+014E: 36 0E    ld   (hl),00E
+0150: EB       ex   de,hl
+0151: D5       push de
+0152: 0E 0A    ld   c,00A
+0154: CD 05 00 call BDOS
+0157: D1       pop  de
+0158: 13       inc  de
+0159: 1A       ld   a,(de)
+015A: B7       or   a
+015B: 21 24 05 ld   hl,00524
+015E: CA 25 03 jp   z,AGAINMSG
+0161: 6F       ld   l,a
+0162: 26 00    ld   h,000
+0164: 19       add  hl,de
+0165: 23       inc  hl
+0166: 36 3D    ld   (hl),03D
+0168: 11 4C 06 ld   de,SRCPFCB
+016B: 0E 98    ld   c,098
+016D: CD 05 00 call BDOS
+0170: 23       inc  hl
+0171: 7C       ld   a,h
+0172: B5       or   l
+0173: 28 E6    jr   z,0015B
+0175: AF       xor  a
+0176: 32 AF 06 ld   (006AF),a
+0179: 32 AE 06 ld   (006AE),a
+017C: 21 86 04 ld   hl,00486
+017F: CD B4 06 call PRNULSTR
+0182: 0E 01    ld   c,001
+0184: CD 05 00 call BDOS
+0187: 11 03 00 ld   de,00003
+018A: 0E 25    ld   c,025
+018C: CD 05 00 call BDOS
+018F: 3A AF 06 ld   a,(006AF)
+0192: B7       or   a
+0193: 20 3F    jr   nz,001D4
+0195: 11 54 06 ld   de,SRCFCB
+0198: 0E 11    ld   c,011
+019A: CD 05 00 call BDOS
+019D: FE FF    cp   0FF
+019F: CA DF 01 jp   z,001DF
+01A2: 87       add  a,a
+01A3: 87       add  a,a
+01A4: 87       add  a,a
+01A5: 87       add  a,a
+01A6: 87       add  a,a
+01A7: 4F       ld   c,a
+01A8: 06 00    ld   b,000
+01AA: 21 ED 06 ld   hl,006ED
+01AD: 09       add  hl,bc
+01AE: 23       inc  hl
+01AF: E5       push hl
+01B0: 11 55 06 ld   de,SRCFCB+1
+01B3: 01 0B 00 ld   bc,0000B
+01B6: ED B0    ldir
+01B8: 11 9C 06 ld   de,FILENAME
+01BB: 01 08 00 ld   bc,00008
+01BE: E1       pop  hl
+01BF: ED B0    ldir
+01C1: 11 A5 06 ld   de,0FILEXT
+01C4: 01 03 00 ld   bc,00003
+01C7: ED B0    ldir
+01C9: 11 78 06 ld   de,DSTFCB
+01CC: 21 54 06 ld   hl,SRCFCB
+01CF: 01 23 00 ld   bc,00023
+01D2: ED B0    ldir
+01D4: 11 54 06 ld   de,SRCFCB
+01D7: 0E 0F    ld   c,00F
+01D9: CD 05 00 call BDOS
+01DC: 3C       inc  a
+01DD: 20 0B    jr   nz,001EA
+01DF: 7C       ld   a,h
+01E0: B7       or   a
+01E1: 21 5A 05 ld   hl,0055A
+01E4: CA 25 03 jp   z,AGAINMSG
+01E7: C3 1F 01 jp   0011F
+01EA: 21 FC 05 ld   hl,005FC
+01ED: CD B4 06 call PRNULSTR
+01F0: 21 9C 06 ld   hl,FILENAME
+01F3: CD B4 06 call PRNULSTR
+01F6: 11 75 06 ld   de,00675
+01F9: 21 AB 06 ld   hl,006AB
+01FC: 01 03 00 ld   bc,00003
+01FF: ED B0    ldir
+0201: 2A B0 06 ld   hl,(006B0)
+0204: 11 ED 06 ld   de,006ED
+0207: E5       push hl
+0208: D5       push de
+0209: 0E 1A    ld   c,01A
+020B: CD 05 00 call BDOS
+020E: 11 54 06 ld   de,SRCFCB
+0211: 0E 14    ld   c,014
+0213: CD 05 00 call BDOS
+0216: FE 01    cp   001
+0218: D1       pop  de
+0219: E1       pop  hl
+021A: 20 05    jr   nz,00221
+021C: 32 AE 06 ld   (006AE),a
+021F: 18 10    jr   00231
+0221: B7       or   a
+0222: C2 1F 01 jp   nz,0011F
+0225: 2B       dec  hl
+0226: E5       push hl
+0227: 21 80 00 ld   hl,00080
+022A: 19       add  hl,de
+022B: EB       ex   de,hl
+022C: E1       pop  hl
+022D: 7C       ld   a,h
+022E: B5       or   l
+022F: 20 D6    jr   nz,00207
+0231: EB       ex   de,hl
+0232: 2A B0 06 ld   hl,(006B0)
+0235: AF       xor  a
+0236: ED 52    sbc  hl,de
+0238: 7C       ld   a,h
+0239: B5       or   l
+023A: 20 06    jr   nz,00242
+023C: 11 54 06 ld   de,SRCFCB
+023F: C3 1D 03 jp   0031D
+0242: 22 B2 06 ld   (006B2),hl
+0245: 11 54 06 ld   de,SRCFCB
+0248: 0E 10    ld   c,010
+024A: CD 05 00 call BDOS
+024D: B7       or   a
+024E: C2 1F 01 jp   nz,0011F
+0251: 21 BA 04 ld   hl,004BA
+0254: CD B4 06 call PRNULSTR
+0257: 0E 01    ld   c,001
+0259: CD 05 00 call BDOS
+025C: 11 03 00 ld   de,00003
+025F: 0E 25    ld   c,025
+0261: CD 05 00 call BDOS
+0264: 3A AF 06 ld   a,(006AF)
+0267: B7       or   a
+0268: 20 49    jr   nz,002B3
+026A: 3C       inc  a
+026B: 32 AF 06 ld   (006AF),a
+026E: 11 78 06 ld   de,DSTFCB
+0271: 0E 0F    ld   c,00F
+0273: CD 05 00 call BDOS
+0276: 3C       inc  a
+0277: 20 06    jr   nz,0027F
+0279: BC       cp   h
+027A: C2 1F 01 jp   nz,0011F
+027D: 18 24    jr   002A3
+027F: 21 EE 04 ld   hl,004EE
+0282: CD B4 06 call PRNULSTR
+0285: 0E 01    ld   c,001
+0287: CD 05 00 call BDOS
+028A: F6 20    or   020
+028C: FE 79    cp   079
+028E: C2 1F 01 jp   nz,0011F
+0291: CD 40 03 call 00340
+0294: 11 78 06 ld   de,DSTFCB
+0297: 0E 13    ld   c,013
+0299: CD 05 00 call BDOS
+029C: B7       or   a
+029D: C2 1F 01 jp   nz,0011F
+02A0: CD 40 03 call 00340
+02A3: 11 78 06 ld   de,DSTFCB
+02A6: 0E 16    ld   c,016
+02A8: CD 05 00 call BDOS
+02AB: 11 78 06 ld   de,DSTFCB
+02AE: 0E 10    ld   c,010
+02B0: CD 05 00 call BDOS
+02B3: 21 24 06 ld   hl,00624
+02B6: CD B4 06 call PRNULSTR
+02B9: 21 9C 06 ld   hl,FILENAME
+02BC: CD B4 06 call PRNULSTR
+02BF: 11 78 06 ld   de,DSTFCB
+02C2: 0E 0F    ld   c,00F
+02C4: CD 05 00 call BDOS
+02C7: 11 99 06 ld   de,00699
+02CA: 21 AB 06 ld   hl,006AB
+02CD: 01 03 00 ld   bc,00003
+02D0: ED B0    ldir
+02D2: 2A B2 06 ld   hl,(006B2)
+02D5: 11 ED 06 ld   de,006ED
+02D8: E5       push hl
+02D9: D5       push de
+02DA: 0E 1A    ld   c,01A
+02DC: CD 05 00 call BDOS
+02DF: 11 78 06 ld   de,DSTFCB
+02E2: 0E 15    ld   c,015
+02E4: CD 05 00 call BDOS
+02E7: D1       pop  de
+02E8: E1       pop  hl
+02E9: B7       or   a
+02EA: 28 06    jr   z,002F2
+02EC: 21 90 05 ld   hl,00590
+02EF: C3 25 03 jp   AGAINMSG
+02F2: 2B       dec  hl
+02F3: E5       push hl
+02F4: 21 80 00 ld   hl,00080
+02F7: 19       add  hl,de
+02F8: EB       ex   de,hl
+02F9: E1       pop  hl
+02FA: 7C       ld   a,h
+02FB: B5       or   l
+02FC: 20 DA    jr   nz,002D8
+02FE: 3A AE 06 ld   a,(006AE)
+0301: B7       or   a
+0302: 20 16    jr   nz,L031A
+0304: 11 AB 06 ld   de,006AB
+0307: 21 99 06 ld   hl,00699
+030A: 01 03 00 ld   bc,00003
+030D: ED B0    ldir
+030F: 11 78 06 ld   de,DSTFCB
+0312: 0E 10    ld   c,CLOSEF
+0314: CD 05 00 call BDOS
+0317: C3 7C 01 jp   0017C
+031A: 11 78 06 ld   de,DSTFCB
+031D: 0E 10    ld   c,CLOSEF
+031F: CD 05 00 call BDOS
+0322: 21 C6 05 ld   hl,MSGOPSUCC ; Tell user it was good
+0325: CD B4 06 call PRNULSTR
+0328: 0E 01    ld   c,CONI	; get a keypress
+032A: CD 05 00 call BDOS
+032D: F6 20    or   020H	; turn to lower case
+032F: FE 79    cp   'y'		; Yes from user
+0331: CA 1F 01 jp   z,DOITAGAIN ; Do it all again
+0334: 06 18    ld   b,24	
+0336: 0E 17    ld   c,CTRLW	; Scroll screen up 
+0338: CD C2 06 call PRT_C_BTIMES
+033B: 0E 00    ld   c,BOOT
+033D: CD 05 00 call BDOS
+0340: 06 17    CLRDSTFCB: ld   b,017H
+0342: 21 84 06 ld   hl,DSTFCB+FCB_EX
+0345: 36 00    CLRDSTFCB1: ld   (hl),0
+0347: 23       inc  hl
+0348: 10 FB    djnz CLRDSTFCB1
+034A: C9       ret
+
+------------- Snip text strings ----------------
+
+064C: 82       add  a,d
+064D: 00       nop
+064E: 54       ld   d,h
+064F: 06 82    ld   b,082
+0651: 00       nop
+0652: 78       ld   a,b
+0653: 06 00    ld   b,000
+0655: 00       nop
+0656: 00       nop
+0657: 00       nop
+0658: 00       nop
+0659: 00       nop
+065A: 00       nop
+065B: 00       nop
+065C: 00       nop
+065D: 00       nop
+065E: 00       nop
+065F: 00       nop
+0660: 00       nop
+0661: 00       nop
+0662: 00       nop
+0663: 00       nop
+0664: 00       nop
+0665: 00       nop
+0666: 00       nop
+0667: 00       nop
+0668: 00       nop
+0669: 00       nop
+066A: 00       nop
+066B: 00       nop
+066C: 00       nop
+066D: 00       nop
+066E: 00       nop
+066F: 00       nop
+0670: 00       nop
+0671: 00       nop
+0672: 00       nop
+0673: 00       nop
+0674: 00       nop
+0675: 00       nop
+0676: 00       nop
+0677: 00       nop
+0678: 00       nop
+0679: 00       nop
+067A: 00       nop
+067B: 00       nop
+067C: 00       nop
+067D: 00       nop
+067E: 00       nop
+067F: 00       nop
+0680: 00       nop
+0681: 00       nop
+0682: 00       nop
+0683: 00       nop
+0684: 00       nop
+0685: 00       nop
+0686: 00       nop
+0687: 00       nop
+0688: 00       nop
+0689: 00       nop
+068A: 00       nop
+068B: 00       nop
+068C: 00       nop
+068D: 00       nop
+068E: 00       nop
+068F: 00       nop
+0690: 00       nop
+0691: 00       nop
+0692: 00       nop
+0693: 00       nop
+0694: 00       nop
+0695: 00       nop
+0696: 00       nop
+0697: 00       nop
+0698: 00       nop
+0699: 00       nop
+069A: 00       nop
+069B: 00       nop
+069C: 20 20    jr   nz,006BE
+069E: 20 20    jr   nz,006C0
+06A0: 20 20    jr   nz,006C2
+06A2: 20 20    jr   nz,006C4
+06A4: 2E 20    ld   l,020
+06A6: 20 20    jr   nz,006C8
+06A8: 20 08    jr   nz,006B2
+06AA: 00       nop
+06AB: 00       nop
+06AC: 00       nop
+06AD: 00       nop
+06AE: 00       nop
+06AF: 00       nop
+06B0: 00       nop
+06B1: 00       nop
+06B2: 00       nop
+06B3: 00       nop
+06B4: 7E       PRNULSTR: ld   a,(hl)
+06B5: B7       or   a
+06B6: C8       ret  z
+06B7: E5       push hl
+06B8: 5F       ld   e,a
+06B9: 0E 06    ld   c,006
+06BB: CD 05 00 call BDOS
+06BE: E1       pop  hl
+06BF: 23       inc  hl
+06C0: 18 F2    jr   PRNULSTR
+06C2: C5       PRT_B_CTIMES: push bc
+06C3: 59       ld   e,c
+06C4: 0E 06    ld   c,006
+06C6: CD 05 00 call BDOS
+06C9: C1       pop  bc
+06CA: 10 F6    djnz PRT_B_CTIMES
+06CC: C9       ret
+06CD: 1A       ld   a,(de)
+06CE: 1A       ld   a,(de)
+06CF: 1A       ld   a,(de)
+06D0: 1A       ld   a,(de)
+06D1: 1A       ld   a,(de)
+06D2: 1A       ld   a,(de)
+06D3: 1A       ld   a,(de)
+06D4: 1A       ld   a,(de)
+06D5: 1A       ld   a,(de)
+06D6: 1A       ld   a,(de)
+06D7: 1A       ld   a,(de)
+06D8: 1A       ld   a,(de)
+06D9: 1A       ld   a,(de)
+06DA: 1A       ld   a,(de)
+06DB: 1A       ld   a,(de)
+06DC: 1A       ld   a,(de)
+06DD: 1A       ld   a,(de)
+06DE: 1A       ld   a,(de)
+06DF: 1A       ld   a,(de)
+06E0: 1A       ld   a,(de)
+06E1: 1A       ld   a,(de)
+06E2: 1A       ld   a,(de)
+06E3: 1A       ld   a,(de)
+06E4: 1A       ld   a,(de)
+06E5: 1A       ld   a,(de)
+06E6: 1A       ld   a,(de)
+06E7: 1A       ld   a,(de)
+06E8: 1A       ld   a,(de)
+06E9: 1A       ld   a,(de)
+06EA: 1A       ld   a,(de)
+06EB: 1A       ld   a,(de)
+06EC: 1A       ld   a,(de)

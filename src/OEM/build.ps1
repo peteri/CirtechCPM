@@ -35,6 +35,7 @@ Set-location -Path ..
 # Copy files into comparison folder
 copy-item -Path .\system\START.COM -Destination .\comparison\START.COM
 copy-item -Path .\system\COPYSYS.COM -Destination .\comparison\COPYSYS.COM
+copy-item -Path .\system\SDT.COM -Destination .\comparison\SDT.COM
 Write-Host 'Building files'
 # For M80 we can wrap in powershell script and catch and errors by
 # teeing output to a file and looking for No Fatal Error(s)
@@ -48,6 +49,7 @@ Write-Host 'Building files'
 .\M80.ps1 BIOS
 .\M80.ps1 COPYSYS
 .\M80.ps1 START
+.\M80.ps1 SDT
 # Annoyingly the linker doesn't return errors
 # however the file comparisons will blow up.
 Write-Host 'Linking'
@@ -60,6 +62,7 @@ C:\tools\ntvcm.exe ..\..\tools\DRI\LINK CPMLDR.BIN[L1100,NL]=CPMLDR,LDRBIOS
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BNKBIOS3[b,NR,NL]=BIOS,SCB
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK COPYSYS[NR,NL]=COPYSYS
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK START[NR,NL]=START
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK SDT[NR,NL]=SDT
 # move the Banked BIOS into the gencpm folder and run it.
 move-item BNKBIOS3.SPR -Destination gencpm 
 Write-host 'Running GENCPM'
@@ -96,6 +99,8 @@ Write-Host 'Comparing binaries for COPYSYS.COM'
 fc.exe /b binaries\COPYSYS.COM comparison\COPYSYS.COM
 Write-Host 'Comparing binaries for START.COM'
 fc.exe /b binaries\START.COM comparison\START.COM
+Write-Host 'Comparing binaries for SDT.COM'
+fc.exe /b binaries\SDT.COM comparison\SDT.COM
 dotnet run --project ../../tools/CpmDsk -- create --disk-image binaries/system.dsk --binaries-folder ./binaries
 dotnet run --project ../../tools/CpmDsk -- add system/*.* --disk-image binaries/system.dsk
 dotnet run --project ../../tools/CpmDsk -- remove cpm3.sys --disk-image binaries/system.dsk

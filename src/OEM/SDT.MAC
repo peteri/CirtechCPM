@@ -1,0 +1,208 @@
+		.Z80
+		INCLUDE BDOS.MAC
+LF		EQU  0ah
+CTRLV		EQU  16h	; Scroll screen down
+CTRLW		EQU  17h	; Scroll screen up
+ESC		EQU  1bh
+FNAMEBUF	EQU  080H	; Buffer for users file name
+FNAMELEN	EQU  2+8+1+3	; Buffer length A:ABCDEFGH.ABC
+DATASTART	EQU  ENDOFCODE+20H
+;********************************************************
+;*                                                      *
+;*     Single disk transfer for Cirtech CP/M plus	*
+;*     Tab test						*
+;*     Longer tab test					* 
+;*							*
+;********************************************************
+		ld   sp,DATASTART	; 32 bytes of stack.
+		ld   a,007
+		ld   b,a
+		ld   a,(BDOS+2)
+		sub  b
+		ld   l,a
+		ld   h,0
+		add  hl,hl
+		ld   a,0EDH
+		bit  7,a
+		jr   nz,SKIPINC
+		inc  hl
+SKIPINC:	ld   (L6B0),hl
+		ld   e,0FFH		; Set hardware error mode
+		ld   c,SETERRMODE	; to be error code in h
+		call BDOS		; no error message printed
+DOITAGAIN:	ld   de,DATASTART
+		ld   c,SETDMAOFF
+		call BDOS
+		ld   hl,FILELEN		; Clear out 24 bit
+		ld   b,3		; file length
+CLRFLENLOOP:	ld   (hl),0
+		inc  hl
+		djnz CLRFLENLOOP
+		ld   c,CTRLV		; Scroll screen down by
+		ld   b,24		; 24 lines
+		call PRT_C_BTIMES
+		ld   hl,MSGSDTBOX	; Get the initial message box
+		call PRNULSTR		; Display on screen
+		ld   c,CTRLW		; Scroll screen up by
+		ld   b,10		; 10 lines
+		call PRT_C_BTIMES	
+		ld   hl,MSGENTFNAME	; Prompt user for file name
+		call PRNULSTR
+		ld   hl,FNAMEBUF	; filename buffer for user to type into
+		ld   (hl),FNAMELEN	; Set max Length
+		ex   de,hl		
+		push de			; Save buffer
+		ld   c,RDSTR		; Read the file name
+		call BDOS
+		pop  de			; bring back the buffer
+		inc  de
+		ld   a,(de)		; get the length the user typed
+		or   a
+INVFNAME:	ld   hl,MSGINVFNAME	; Tell them it's invalid
+		jp   z,AGAINMSG		; Go ask if they want to try again
+		ld   l,a		; Get length into HL
+		ld   h,0
+		add  hl,de		; Add it to buffer
+		inc  hl
+		ld   (hl),'='		; Add an elephant for parser
+		ld   de,SRCPFCB
+		ld   c,PARSEFNAME	; Parse filename into FCB
+		call BDOS
+		inc  hl			; Returns FFFF if name invalid
+		ld   a,h		; Now 0?
+		or   l
+		jr   z,INVFNAME		; Tell user and loop.		
+		xor  a
+		ld   (L6AF),a
+		ld   (L6AE),a
+		ld   hl,MSGSRCDSK	; Ask user for destination disk.
+		call PRNULSTR
+		ld   c,CONI		; Wait for key press
+		call BDOS
+		ld   de,3		; Reset drives A & B
+		ld   c,DRESET
+		call BDOS
+		ld   a,(L6AF)
+		or   a
+		jr   nz,OPENSRCFILE
+		ld   de,SRCFCB
+		ld   c,SFIRST
+		call BDOS
+		cp   0FFH
+		jp   z,SRCCHKERR
+		add  a,a
+		add  a,a
+		add  a,a
+		add  a,a
+		add  a,a
+		ld   c,a
+		ld   b,0
+		ld   hl,DATASTART
+		add  hl,bc
+		inc  hl
+		push hl
+		ld   de,SRCFCB+1
+		ld   bc,0BH
+		ldir
+		ld   de,FILENAME
+		ld   bc,8
+		pop  hl
+		ldir
+		ld   de,FILEEXT
+		ld   bc,3
+		ldir
+		ld   de,DSTFCB
+		ld   hl,SRCFCB
+		ld   bc,FCBLEN-1
+		ldir
+OPENSRCFILE:	ld   de,SRCFCB
+		ld   c,OPENF
+		call BDOS
+		inc  a
+		jr   nz,READSRC
+SRCCHKERR:	ld   a,h
+		or   a
+		ld   hl,MSGNOFILE
+		jp   z,AGAINMSG
+		jp   DOITAGAIN
+READSRC:	ld   hl,MSGWAITREAD
+		call PRNULSTR
+		ld   hl,FILENAME
+		call PRNULSTR
+		ld   de,00675H
+		ld   hl,FILELEN
+		ld   bc,3
+		ldir
+		ds 0119H
+L031A: 		ld   de,DSTFCB
+ 		ld   c,CLOSEF
+ 		call BDOS
+ 		ld   hl,MSGOPSUCC ; Tell user it was good
+AGAINMSG:	call PRNULSTR
+ 		ld   c,CONI	; get a keypress
+ 		call BDOS
+ 		or   020H	; turn to lower case
+ 		cp   'y'		; Yes from user
+ 		jp   z,DOITAGAIN ; Do it all again
+ 		ld   b,24	
+ 		ld   c,CTRLW	; Scroll screen up 
+ 		call PRT_C_BTIMES
+ 		ld   c,BOOT
+ 		call BDOS	; Exit and head home
+CLRDSTFCB:	ld   b,FCBLEN-(FCB_EX+1)
+ 		ld   hl,DSTFCB+FCB_EX
+CLRDSTFCB1:	ld   (hl),0
+ 		inc  hl
+ 		djnz CLRDSTFCB1		
+		ret
+MSGSDTBOX:	DB ESC,"=70"," _________  Single Drive File Transfer __________ ",LF
+		DB ESC,"=70","|                                                |",LF
+		DB ESC,"=70","|                                                |",LF
+		DB ESC,"=70","|                                                |",LF
+		DB ESC,"=70","|________ (C) CIRTECH 1985 Version 1.02 _________|",0
+MSGENTFNAME:	DB ESC,"=+1"," Please enter the Disk File name ->",0
+MSGSRCDSK:	DB ESC,"=+1"," Place  SOURCE  disk in drive and press any key",0
+MSGDSTDSK:	DB ESC,"=+1"," Place  DESTINATION  in drive and press any key",0
+		DB ESC,"=+1","The file already exists. Delete old file (Y/N)? ",8,0
+MSGINVFNAME:	DB ESC,"=+1"," Sorry, Invalid File name.     Try again (Y/N)? ",8,0
+MSGNOFILE:	DB ESC,"=+1"," Sorry, that file isn't there. Try again (Y/N)? ",8,0
+		DB ESC,"=+1"," Sorry, there is a Disk Error. Try again (Y/N)? ",8,0
+MSGOPSUCC:	DB ESC,"=+1"," Operation successful.          Do again (Y/N)? ",8,0
+MSGWAITREAD:	DB ESC,"=+1"," Please wait...... Reading File -> ",0
+MSGWAITWRITE:	DB ESC,"=+1"," Please wait...... Writing File -> ",0
+SRCPFCB:	DW FNAMEBUF+2		; 064c
+		DW SRCFCB
+DSTPFCB:	DW FNAMEBUF+2		; 0650
+		DW DSTFCB
+SRCFCB:		DS FCBLEN,0		; 0654
+DSTFCB:		DS FCBLEN,0		; 0678
+FILENAME:	DB '        .'		; 069c
+FILEEXT:	DB '   '		; 06a5,6,7
+		DB 020H			; 06a8
+		DB 08H			; 06a9
+		DB 0			; 06aa
+FILELEN:	DW 0			; 06AB,C
+		DB 0			; 06AD
+L6AE:		DB 0			; 06AE
+L6AF:		DB 0 			; 06AF
+L6B0:		DW 0			; 06B0
+		DW 0			; 06B2
+PRNULSTR: 	ld   a,(hl)		; 6b4
+		or   a
+		ret  z
+		push hl
+		ld   e,a
+		ld   c,DCONO
+		call BDOS
+		pop  hl
+		inc  hl
+		jr   PRNULSTR
+PRT_C_BTIMES: 	push bc
+		ld   e,c
+		ld   c,DCONO
+		call BDOS
+		pop  bc
+		djnz PRT_C_BTIMES
+		ret
+ENDOFCODE:
+		END

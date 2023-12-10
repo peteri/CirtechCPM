@@ -1,21 +1,29 @@
 ; BDOS EQUATES
 BDOS		equ  05h		; DOS entry point
 BOOT		equ  00h		; reboot for system
-CONI		equ  1h			; console input function
-CONO		equ  2h			; console output function
-PRSTR		equ  9			; console print string function
-SELD		equ  14			; select a disk
-OPENF		equ  15			; disk open function
-CLOSEF		equ  16			; open a file
-DELTEF		equ  19			; delete a file
-DREADF		equ  20			; Read func
-DWRITF		equ  21			; Write func
-MAKEF		equ  22			; Make a file
-GETDRV		equ  25			; return current drive function
-SETDMAOFF	equ  26			; Set DMA
+CONI		equ  1			; 01 - console input function
+CONO		equ  2			; 02 - console output function
+DCONO           equ  6			; 06 - direct console output
+PRSTR		equ  9			; 09 - console print string function
+RDSTR		equ  10			; 0a - Buffered console input
+SELD		equ  14			; 0e - select a disk
+OPENF		equ  15			; 0f - disk open function
+CLOSEF		equ  16			; 10 - close a file
+SFIRST		equ  17			; 11 - Search first
+SNEXT		equ  18			; 12 - Search next
+DELTEF		equ  19			; 13 - delete a file
+DREADF		equ  20			; 14 - Read func
+DWRITF		equ  21			; 15 - Write func
+MAKEF		equ  22			; 16 - Make a file
+GETDRV		equ  25			; 19 - return current drive function
+SETDMAOFF	equ  26			; 1a - Set DMA
+DRESET		equ  37			; 25 - Drive reset
+SETERRMODE	equ  45			; 2d - Set hardware error mode
 DRBIOS		equ  50			; Direct BIOS call function
+PARSEFNAME	equ  152		; 98 - Parse filename
 BLKSIZE		equ  080H		; CP/M read block size
 ERR_EOF		equ  1			; End of file error
 ERR_HARD	equ  0FFH		; Hardware error
 FCB_EX		equ  0CH		; Extent in FCB
 FCB_CR		equ  20H		; Current record in FCB
+FCBLEN		equ  24H		; FCB length
