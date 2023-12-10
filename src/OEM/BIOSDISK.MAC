@@ -1026,9 +1026,9 @@ PD_CHECK_ERR:	ldx  #$00		; Everything happy
 SET_DISK_ERRX:	stx  DISK_ERR
 		rts
 ;********************************
-;*                          *
-;*     Prodos driver code   *
-;*                          *
+;*                              *
+;*     Prodos driver code       *
+;*                              *
 ;********************************
 PRODOS:		txa
 		ora  #$c0
@@ -1071,16 +1071,16 @@ PD_INIT_WR:	lda  #$00		; Zero the high block
 		bne  PD_INIT_WR
 		rts
 ;****************************************************************
-;* We get here if the command is greater than or equal to four.       *
-;* Normal ProDOS commands are                                  *
-;* 0 - Status                                           *
-;* 1 - Read                                             *
-;* 2 - Write                                            *
-;* 3 - Init                                             *
-;* Extended commands (read / write a whole track)              *
-;* 4 - gets translated as (4-3)^3 so to a 2 - Write            *
-;* 5 - gets translated as (5-3)^3 so to a 1 - Read             *
-;* 6 - gets translated as (6-3)^3 so to a 0 - status           *
+;* We get here if the command is greater than or equal to four. *
+;* Normal ProDOS commands are                                   *
+;* 0 - Status                                                   *
+;* 1 - Read                                                     *
+;* 2 - Write                                                    *
+;* 3 - Init                                                     *
+;* Extended commands (read / write a whole track)               *
+;* 4 - gets translated as (4-3)^3 so to a 2 - Write             *
+;* 5 - gets translated as (5-3)^3 so to a 1 - Read              *
+;* 6 - gets translated as (6-3)^3 so to a 0 - status            *
 ;****************************************************************
 PD_MULT_SECT_OP:
 		sec			; Do the conversion
