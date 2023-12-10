@@ -7,12 +7,12 @@ GETSRCDRV: 11 59 B0 ld   de,$B059
 B18C: CD 23 B3 call $GETDRVLTR
 B18F: 38 F8    jr   c,GETSRCDRV
 B191: 11 87 B0 ld   de,MSGINSSRCDSK
-B194: CD FF B2 call $B2FF
-B197: CD 99 B3 call $CPYDRV
+B194: CD FF B2 call SETCPM3DRV
+B197: CD 99 B3 call CPYDRV
 B19A: 0E 05    ld   c,$05
-B19C: CD D3 B2 call $B2D3
-B19F: 0E 0F    ld   c,$0F
-B1A1: CD CD B2 call $B2CD
+B19C: CD D3 B2 call $BIOSTRKOP
+B19F: 0E 0F    OPENCPM3SYS: ld   c,$0F
+B1A1: CD CD B2 call $CPM3BDOS
 B1A4: B7       or   a
 B1A5: 28 10    jr   z,$B1B7
 B1A7: 11 10 B0 ld   de,MSGNOTSYS
@@ -21,35 +21,38 @@ B1AD: F6 20    or   $20
 B1AF: FE 79    cp   $79
 B1B1: CA 89 B1 jp   z,$GETSRCDRV
 B1B4: C3 C3 B2 jp   $B2C3
-B1B7: 21 80 30 ld   hl,$3080
-B1BA: 06 00    ld   b,$00
-B1BC: 11 80 00 ld   de,$0080
+SRCDSKOK:
+B1B7: 21 80 30 ld   hl,CPM3SYSDATA-BLKSIZE
+B1BA: 06 00    ld   b,0
+B1BC: 11 80 00 READCPM3SYS: ld   de,BLKSIZE
 B1BF: 19       add  hl,de
 B1C0: E5       push hl
 B1C1: C5       push bc
 B1C2: EB       ex   de,hl
-B1C3: CD 2F B3 call $DOSETDMA
-B1C6: 0E 14    ld   c,$14
-B1C8: CD CD B2 call $B2CD
-B1CB: FE FF    cp   $FF
-B1CD: CA 47 B3 jp   z,$B347
+B1C3: CD 2F B3 call DOSETDMA
+B1C6: 0E 14    ld   c,DREADFh
+B1C8: CD CD B2 call CPM3BDOS
+B1CB: FE FF    cp   0FFH
+B1CD: CA 47 B3 jp   z,POPDISKERR
 B1D0: C1       pop  bc
 B1D1: E1       pop  hl
 B1D2: 04       inc  b
-B1D3: FE 01    cp   $01
-B1D5: 20 E5    jr   nz,$B1BC
+B1D3: FE 01    cp   ERR_EOF
+B1D5: 20 E5    jr   nz,READCPM3SYS
 B1D7: 78       ld   a,b
 B1D8: 3D       dec  a
 B1D9: 32 93 B3 ld   ($XXXX),a
-B1DC: 0E 10    ld   c,$10
-B1DE: CD CD B2 call $B2CD
+B1DC: 0E 10    ld   c,CLOSEF
+B1DE: CD CD B2 call CPM3BDOS
 B1E1: 11 B0 B0 ld   de,MSGDSTDISK
 B1E4: CD 23 B3 call GETDRVLTR
-B1E7: 38 B6    jr   c,$B19F
+B1E7: 38 B6    jr   c,OPENCPM3SYS
 B1E9: 11 DC B0 ld   de,MSGINSDSTDSK
-B1EC: CD FF B2 call $B2FF
-B1EF: CD EB B2 call $B2EB
-B1F2: 20 77    jr   nz,$B26B
+B1EC: CD FF B2 call SETCPM3DRV
+B1EF: CD EB B2 call DRVISDISK2
+B1F2: 20 77    jr   nz,NOTDISK2
+
+
 B1F4: 3E 03    ld   a,$03
 B1F6: 32 80 F3 ld   ($F380),a
 B1F9: AF       xor  a
@@ -58,7 +61,7 @@ B1FD: 11 00 81 ld   de,$8100
 B200: 32 81 F3 ld   ($F381),a
 B203: F5       push af
 B204: 3E 01    ld   a,$01
-B206: CD 34 B3 call $BIOSDISKOP
+B206: CD 34 B3 call BIOSDISKOP
 B209: 21 00 F8 ld   hl,$F800
 B20C: 01 00 01 ld   bc,$0100
 B20F: ED B0    ldir
@@ -84,7 +87,7 @@ B232: FE 80    cp   $80
 B234: 38 07    jr   c,$B23D
 B236: E1       pop  hl
 B237: 11 13 B1 ld   de,$B113
-B23A: C3 C0 B2 jp   $EXITMSG
+B23A: C3 C0 B2 jp   EXITMSG
 B23D: 23       inc  hl
 B23E: 0D       dec  c
 B23F: 20 F0    jr   nz,$B231
@@ -99,69 +102,74 @@ B24E: 01 20 00 ld   bc,$0020
 B251: ED B0    ldir
 B253: 3A 4A B2 ld   a,($B24A)
 B256: 67       ld   h,a
-B257: 2E 00    ld   l,$00
+B257: 2E 00    ld   l,$00h
 B259: D6 81    sub  $81
 B25B: 32 81 F3 ld   ($F381),a
 B25E: 11 00 F8 ld   de,$F800
 B261: 01 00 01 ld   bc,$0100
 B264: ED B0    ldir
 B266: 3E 02    ld   a,$02
-B268: CD 34 B3 call $BIOSDISKOP
-B26B: 0E 04    ld   c,$04
-B26D: CD D3 B2 call $B2D3
-B270: 0E 13    ld   c,$13
-B272: CD CD B2 call $B2CD
+B268: CD 34 B3 call BIOSDISKOP
+
+
+
+
+B26B: 0E 04    NOTDISK2: ld   c,$04
+B26D: CD D3 B2 call BIOSTRKOP
+B270: 0E 13    ld   c,DELTEF
+B272: CD CD B2 call CPM3BDOS
 B275: B7       or   a
-B276: 28 07    jr   z,$B27F
+B276: 28 07    jr   z,CPM3DELOK
 B278: 7C       ld   a,h
 B279: B7       or   a
-B27A: 28 03    jr   z,$B27F
-B27C: C2 47 B3 jp   nz,$B347
-B27F: 3E 00    ld   a,$00
+B27A: 28 03    jr   z,CPM3DELOK
+B27C: C2 47 B3 jp   nz,POPDISKERR
+B27F: 3E 00    CPM3DELOK: ld   a,0
 B281: 32 6E B3 ld   ($B36E),a
 B284: 32 5A B3 ld   ($B35A),a
-B287: 0E 16    ld   c,$16
-B289: CD CD B2 call $B2CD
-B28C: 0E 0F    ld   c,$0F
-B28E: CD CD B2 call $B2CD
+B287: 0E 16    ld   c,SETDMAOFF
+B289: CD CD B2 call CPM3BDOS
+B28C: 0E 0F    ld   c,OPENF
+B28E: CD CD B2 call CPM3BDOS
 B291: 3A 93 B3 ld   a,($XXXX)
 B294: 47       ld   b,a
 B295: 21 80 30 ld   hl,$3080
-B298: 11 80 00 ld   de,$0080
+B298: 11 80 00 WRNXTCPM3SYS: ld   de,$0080
 B29B: 19       add  hl,de
 B29C: C5       push bc
 B29D: E5       push hl
 B29E: EB       ex   de,hl
-B29F: CD 2F B3 call $DOSETDMA
-B2A2: 0E 15    ld   c,$15
-B2A4: CD CD B2 call $B2CD
+B29F: CD 2F B3 call DOSETDMA
+B2A2: 0E 15    ld   c,DWRITF
+B2A4: CD CD B2 call CPM3BDOS
 B2A7: E1       pop  hl
 B2A8: 3C       inc  a
-B2A9: CA 47 B3 jp   z,$B347
+B2A9: CA 47 B3 jp   z,POPDISKERR
 B2AC: FE 03    cp   $03
 B2AE: 38 05    jr   c,$B2B5
 B2B0: 11 B8 AF ld   de,$AFB8
-B2B3: 18 0B    jr   $EXITMSG
+B2B3: 18 0B    jr   EXITMSG
 B2B5: C1       pop  bc
-B2B6: 10 E0    djnz $B298
-B2B8: 0E 10    ld   c,$10
-B2BA: CD CD B2 call $B2CD
+B2B6: 10 E0    djnz WRNXTCPM3SYS
+B2B8: 0E 10    ld   c,CLOSEF
+B2BA: CD CD B2 call CPM3BDOS
+
 B2BD: 11 9A AF ld   de,MSGOPDONE
 EXITMSG: CD 94 B3 call MSGDE
 B2C3: 3A 92 B3 ld   a,(CURDRV)
 B2C6: 5F       ld   e,a
 B2C7: CD 09 B3 call $B309
 B2CA: C3 00 00 jp   $0000
-B2CD: 11 4E B3 ld   de,CPM3SYSFCB
+CPM3BDOS: 11 4E B3 ld   de,CPM3SYSFCB
 B2D0: C3 05 00 jp   $0005
-B2D3: 3E 11    ld   a,$11
+BIOSTRKOP: 3E 11    ld   a,$11
 B2D5: 32 82 F3 ld   ($F382),a
 B2D8: 3E 00    ld   a,$00
 B2DA: 32 80 F3 ld   ($F380),a
 B2DD: 06 03    ld   b,$03
 B2DF: C5       push bc
 B2E0: 79       ld   a,c
-B2E1: CD 34 B3 call $BIOSDISKOP
+B2E1: CD 34 B3 call BIOSDISKOP
 B2E4: C1       pop  bc
 B2E5: 21 80 F3 ld   hl,$F380
 B2E8: 34       inc  (hl)
@@ -179,22 +187,23 @@ B2FA: 19       add  hl,de
 B2FB: 7E       ld   a,(hl)
 B2FC: FE 02    cp   $02
 B2FE: C9       ret
-B2FF: F5       push af
-B300: CD 1A B3 call $MSGCONIN
+SETCPM3DRV:   push af
+B300: CD 1A B3 call MSGCONIN
 B303: F1       pop  af
 B304: 5F       ld   e,a
 B305: 3C       inc  a
 B306: 32 4E B3 ld   (CPM3SYSFCB),a
-B309: 0E 0E    ld   c,$0E
+B309: 0E 0E    ld   c,SELD
 B30B: CD 05 00 call BDOS
 B30E: B7       or   a
 B30F: C8       ret  z
 B310: 25       dec  h
-B311: 28 34    jr   z,$B347
+B311: 28 34    jr   z,POPDISKERR
 B313: E1       pop  hl
 B314: 11 F2 AF ld   de,MSGINVDRV
-B317: C3 C0 B2 jp   $EXITMSG
-MSGCONIN: CD 94 B3 call MSGDE
+B317: C3 C0 B2 jp   EXITMSG
+MSGCONIN: 
+B31A: CD 94 B3 call MSGDE
 B31D: 0E 01    ld   c,$01
 B31F: CD 05 00 call BDOS
 B322: C9       ret
@@ -217,7 +226,7 @@ B341: 3A 89 F3 ld   a,($F389)
 B344: B7       or   a
 B345: C8       ret  z
 B346: E1       pop  hl
-B347: E1       pop  hl
+POPDISKERR: E1       pop  hl
 B348: 11 66 AF ld   de,$AF66
 B34B: C3 C0 B2 jp   $EXITMSG
 B34E: 00       nop
