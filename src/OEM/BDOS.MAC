@@ -17,3 +17,5 @@ DRBIOS		equ  50			; Direct BIOS call function
 BLKSIZE		equ  080H		; CP/M read block size
 ERR_EOF		equ  1			; End of file error
 ERR_HARD	equ  0FFH		; Hardware error
+FCB_EX		equ  0CH		; Extent in FCB
+FCB_CR		equ  20H		; Current record in FCB

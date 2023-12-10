@@ -133,64 +133,64 @@ RDNXTCPM3SYS:	ld   de,BLKSIZE
 ;
 ;============================================================
 		; Read in the directory sectors
-		ld   a,BOOT_TRACKS
-		ld   (ZDISK_TRKL),a
+		ld   a,BOOT_TRACKS	; Directory starts on first track
+		ld   (ZDISK_TRKL),a	; After boot
 		xor  a
 		ld   (ZDISK_TRKH),a
-		ld   de,DISKII_DIR
-RDNXTDIRSECT:	ld   (ZDISK_SECT),a
-		push af
+		ld   de,DISKII_DIR	; Setup destination pointer
+RDNXTDIRSECT:	ld   (ZDISK_SECT),a	; Set source directory
+		push af			; Save acc over disk call
 		ld   a,DSKOP_RD
-		call BIOSDISKOP
-		ld   hl,ZDISK_BUFF
-		ld   bc,DISKII_SECTLEN
+		call BIOSDISKOP		; Read in a sector
+		ld   hl,ZDISK_BUFF	; Copy from disk buffer into
+		ld   bc,DISKII_SECTLEN	; destination point (de)
 		ldir
-		pop  af
+		pop  af			; Get back sector counter
 		inc  a
-		cp   DISKII_DIRSEC
-		jr   nz,RDNXTDIRSECT
-		ld   hl,DISKII_DIR-DIRENT_LEN
+		cp   DISKII_DIRSEC	; Done all eight sectors?
+		jr   nz,RDNXTDIRSECT	; nope,loop back get more
 		; Scan to make sure nothing has used boot tracks
-		ld   b,0
-NXTDIRENT:	ld   de,DIRENT_LEN
+		ld   hl,DISKII_DIR-DIRENT_LEN ; setcurrent directory entry
+		ld   b,0		; to start - 1
+NXTDIRENT:	ld   de,DIRENT_LEN	; next directory entry
 		add  hl,de
-		ld   a,(hl)
+		ld   a,(hl)		; Is this a file entry
 		cp   10H
-		jr   c,DIRENTUSED
-		ld   (DIRSECTADDR+1),hl
-		jr   SKIPDIRENT
-DIRENTUSED:	push hl
-		ld   de,ALLOC_OFFS
+		jr   c,DIRENTUSED	; Yes, go parse it
+		ld   (DIRSECTADDR+1),hl	; Save away any blank entries
+		jr   SKIPDIRENT		; Skip this one.
+DIRENTUSED:	push hl			; Save current dir entry
+		ld   de,ALLOC_OFFS	; point to block allocatiosn
 		add  hl,de
-		ld   c,MAX_ALLOC
-CHKNXTALLOC:	ld   a,(hl)
-		cp   SYSALLOCBLOCK
-		jr   c,NXTALLOC
-		pop  hl
-		ld   de,MSGSYSTRKUSED
-		jp   EXITMSG
-NXTALLOC:	inc  hl
-		dec  c
-		jr   nz,CHKNXTALLOC
-		pop  hl
-SKIPDIRENT:	inc  b
+		ld   c,MAX_ALLOC	; counter of block alloc in dir entry
+CHKNXTALLOC:	ld   a,(hl)		; Get the block number.
+		cp   SYSALLOCBLOCK	; Somewhere in the boot tracks
+		jr   c,NXTALLOC		; nope, advance to next allocation entry
+		pop  hl			; yes, can't use this disk
+		ld   de,MSGSYSTRKUSED	; tell the user
+		jp   EXITMSG		; and quit.
+NXTALLOC:	inc  hl			; Advance to next alloc block
+		dec  c			; Done everything in this dir entry?
+		jr   nz,CHKNXTALLOC	; Nope keep going
+		pop  hl			; Get back the pointer
+SKIPDIRENT:	inc  b			; Done all 64 directory entiries?
 		ld   a,DISKII_DIRENT
 		cp   b
-		jr   nz,NXTDIRENT
+		jr   nz,NXTDIRENT	; loop back and try more
 		; Create a disk track entry marking boot tracks as used
 DIRSECTADDR:	ld   de,0000H		; Overwritten earlier on
-		ld   hl,SYSDIRENT
-		ld   bc,DIRENT_LEN
+		ld   hl,SYSDIRENT	; pointer to "system.trk"
+		ld   bc,DIRENT_LEN	; with all three boot tracks used.
 		ldir
-		ld   a,(DIRSECTADDR+2)
-		ld   h,a
-		ld   l,00h
-		sub  HIGH DISKII_DIR
-		ld   (ZDISK_SECT),a
-		ld   de,ZDISK_BUFF
+		ld   a,(DIRSECTADDR+2)	; Get page in memory of the sector
+		ld   h,a	
+		ld   l,00h		; clear low byte
+		sub  HIGH DISKII_DIR	; add just high byte to get right
+		ld   (ZDISK_SECT),a	; sector and save it
+		ld   de,ZDISK_BUFF	; Copy sector back to data bufer
 		ld   bc,DISKII_SECTLEN
 		ldir
-		ld   a,DSKOP_WR
+		ld   a,DSKOP_WR		; Write sector to disk.
 		call BIOSDISKOP
 ;============================================================
 ;
@@ -209,8 +209,8 @@ NOTDISK2:	ld   c,DSKOP_WRTRK	; write out the boot tracks
 		jr   z,CPM3DELOK	; leaves h zero so carry on
 		jp   nz,POPDISKERR	; Get out of here.
 CPM3DELOK:	ld   a,0
-		ld   (0B36EH),a
-		ld   (0B35AH),a
+		ld   (CPM3SYSFCB+FCB_CR),a ; reset current record
+		ld   (CPM3SYSFCB+FCB_EX),a ; reset extent
 		ld   c,MAKEF		; Create the file
 		call CPM3BDOS
 		ld   c,OPENF		; open the file
@@ -257,7 +257,7 @@ CPM3BDOS:	ld   de,CPM3SYSFCB
 ; Exit
 ;   BOOT_TRKDATA has three tracks of data for read
 ;   a = card type
-;   zero flag set if drive was disk ][]
+;   zero flag set if drive was disk ][
 ;============================================================
 BIOSTRKOP:	ld   a,HIGH BOOT_TRKDATA
 		ld   (ZDISK_TRK_ADDR),a
@@ -285,6 +285,7 @@ DRVISDISK2:	call CPYDRV		; Get Apple ][ Bios drive
 		cp   DISKII_TYPE	; Is the drive a Disk II?
 		ret
 ;============================================================
+; Set the drive letter for CPM3.SYS
 ;============================================================
 SETCPM3DRV:	push af
 		call MSGCONIN
@@ -293,6 +294,7 @@ SETCPM3DRV:	push af
 		inc  a
 		ld   (CPM3SYSFCB),a
 ;============================================================
+; Select the disk drive
 ;============================================================
 BDOSSELD:	ld   c,SELD
 		call BDOS
@@ -326,10 +328,13 @@ GETDRVLTR:	call MSGCONIN		; Display message and get a key press
 		ccf			; invert and go home.
 		ret
 ;============================================================
+; Set the DMA address
 ;============================================================
 DOSETDMA:	ld   c,SETDMAOFF
 		jp   BDOS
 ;============================================================
+; Call the 6502 disk BIOS
+; Check for errors and abort
 ;============================================================
 BIOSDISKOP:	ld   (ZDISK_OP),a
 		ld   hl,DISK_ROUT
