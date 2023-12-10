@@ -183,7 +183,7 @@ DIRSECTADDR:	ld   de,0000H		; Overwritten earlier on
 		ld   bc,DIRENT_LEN	; with all three boot tracks used.
 		ldir
 		ld   a,(DIRSECTADDR+2)	; Get page in memory of the sector
-		ld   h,a	
+		ld   h,a
 		ld   l,00h		; clear low byte
 		sub  HIGH DISKII_DIR	; add just high byte to get right
 		ld   (ZDISK_SECT),a	; sector and save it

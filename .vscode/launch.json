@@ -115,7 +115,7 @@
             "stopAtEntry": false
         },
         {
-            "name": "AsmFmt",
+            "name": "AsmFmt OEM",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
@@ -123,6 +123,21 @@
             "program": "${workspaceFolder}/Tools/asmfmt/bin/Debug/net8.0/asmfmt.dll",
             "args": [
                 "${workspaceFolder}/src/OEM/*.MAC"
+            ],
+            "cwd": "${workspaceFolder}/Tools/asmfmt/bin/Debug/net8.0",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+	{
+            "name": "AsmFmt Patched",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Tools/asmfmt/bin/Debug/net8.0/asmfmt.dll",
+            "args": [
+                "${workspaceFolder}/src/patched/*.MAC"
             ],
             "cwd": "${workspaceFolder}/Tools/asmfmt/bin/Debug/net8.0",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

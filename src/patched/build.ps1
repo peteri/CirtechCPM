@@ -63,7 +63,6 @@ Write-Host 'Building files'
 .\M80.ps1 COPYSYS
 .\M80.ps1 START
 # Annoyingly the linker doesn't return errors
-# however the file comparisons will blow up.
 Write-Host 'Linking'
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BOOTSECT.BIN[NR,NL]=BOOTSECT
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK TOOLKEY.BIN[NR,NL]=TOOLKEY
@@ -85,7 +84,7 @@ Write-host ' '
 move-item *.BIN -Destination .\binaries
 move-item *.COM -Destination .\binaries
 move-item gencpm\CPM3.SYS -Destination .\binaries
-move-item gencpm\BNKBIOS3.SPR -Destination .\binaries
+remove-item gencpm\BNKBIOS3.SPR
 copy-item -Path .\RomWBW\CCP.COM -Destination binaries\CCP.COM
 remove-item .\CPMLDR.SYM
 remove-item -Path *.REL -Exclude CPMLDR.REL

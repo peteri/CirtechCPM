@@ -71,7 +71,7 @@ Write-host ' '
 move-item *.BIN -Destination .\binaries
 move-item *.COM -Destination .\binaries
 move-item gencpm\CPM3.SYS -Destination .\binaries
-move-item gencpm\BNKBIOS3.SPR -Destination .\binaries
+remove-item gencpm\BNKBIOS3.SPR
 copy-item -Path .\comparison\CCP.COM -Destination binaries\CCP.COM
 remove-item .\CPMLDR.SYM
 remove-item -Path *.REL -Exclude CPMLDR.REL
