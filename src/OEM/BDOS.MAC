@@ -5,7 +5,7 @@ CONI		equ  1h			; console input function
 CONO		equ  2h			; console output function
 PRSTR		equ  9			; console print string function
 SELD		equ  14			; select a disk
-OPENF		equ  15 		; disk open function
+OPENF		equ  15			; disk open function
 CLOSEF		equ  16			; open a file
 DELTEF		equ  19			; delete a file
 DREADF		equ  20			; Read func
