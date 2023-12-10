@@ -3,14 +3,12 @@
 # it also builds and use some tools that will need a dotnet 8.0 SDK installing
 # These tools:
 # - Add and remove CtrlZ at the end of the CP/M files
-# - Dumps the binaries from a nibble image of a bootable disk for comparison
-# - (future) Writes the binaries into a Apple disk image. 
+# - Writes the binaries into a Apple disk image. 
 # Note this will not boot on an emulator due to code that detects a Cirtech code
 #
 $systemFiles=@(
 'binaries/CPM3.SYS',
-# Change COPYSYS to binaries once done.
-'system/COPYSYS.COM',
+'binaries/COPYSYS.COM',
 'RomWBW/SET.COM',
 'RomWBW/PUT.COM',
 'RomWBW/RENAME.COM',

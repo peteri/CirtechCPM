@@ -1,49 +1,382 @@
 		.Z80
 ;************************************************
-;*						*
-;*						*
-;*						*
+;*                                              *
+;*     COPYSYS                                  *
+;*     Copy the system files from one disk      *
+;*     to another.                              *
+;*                                              *
+;* Binary   (C) Copyright 1986 Cirtech          *
+;* Comments (C) Copyright 2023 Peter Ibbotson   *
 ;************************************************
-BDOS		EQU  05H
-BELL		EQU  07H
-LF		EQU  0AH
-CR		EQU  0DH
-ESC		EQU  1BH
-START:		DS   11H
+		INCLUDE EQUATES.MAC
+		INCLUDE BDOS.MAC
+BELL		EQU  07H		; Bell character
+DISKII_TYPE	EQU  02H		; Type of a Disk II in a slot.
+BOOT_TRACKS	EQU  03H		; Number of boot tracks
+DIRENT_LEN	EQU  20H		; Length of a directory entry
+MAX_ALLOC	EQU  10H		; Max allocation blocs in a dir entry
+ALLOC_OFFS	EQU  10H		; Offset of block allocation in dir entry
+BOOT_TRKDATA	EQU  01100H		; Where the 6502 reads the boot tracks into
+ZBOOT_TRKDATA	EQU  00100H		; Z80 address of the boot tracks.
+DISKII_DIR	EQU  08100H		; Disk II directory is loaded here
+DISKII_DIRSEC	EQU  08H		; Disk II directory number of sectors
+DISKII_SECTLEN	EQU  0100H
+DISKII_DIRENT	EQU  040H		; Number of directory entries for Disk II
+		; Where to put the CPM3 System data
+CPM3SYSDATA	EQU  ZBOOT_TRKDATA+(BOOT_TRACKS*16*256)
+SYSALLOCBLOCK	EQU  080H		; System allocation blocks
+START:		ld   de,RELOCSTART	; Relocate ourselves
+		ld   hl,RELOCADR	; To higher up in memory
+		ld   bc,RELOCEND-RELOCSTART
+		ldir
+		jp   RELOCSTART		; Call our jump
+RELOCADR:
+		.PHASE 0AF00H
+RELOCSTART:	jp   START2		; Skip past messages
 		DB   "(C) CIRTECH UK Ltd. 1986"
-		; 0129H
-		DB   ESC,'*',ESC,'(',CR,LF,LF,LF
-		DB   "System disk Copy Program (C) CIRTECH (UK) Ltd. 1986  Issue 1.02"
+MSGWELCOME:	DB   ESC,'*',ESC,'(',CR,LF,LF,LF
+		DB   " System disk Copy Program (C) CIRTECH (UK) Ltd. 1986  Issue 1.02"
 		DB   ESC,')','$'
-		; 0174
-		DB   CR,LF,LF,BELL
+MSGDISKERR:	DB   CR,LF,LF,BELL
 		DB   "A disk error has occurred, returning to system.$"
-		; 01A8
-		DB   CR,LF,LF,LF
+MSGOPDONE:	DB   CR,LF,LF,LF
 		DB   "Operation completed okay.$"
-		; 01C6
-		DB   CR,LF,LF,BELL
+MSGNOSPACE:	DB   CR,LF,LF,BELL
 		DB   "No space on disk, erase some files or try another disk"
-		DB   CR,LF,LF,BELL
+MSGINVDRV:	DB   CR,LF,LF,BELL
 		DB   "Invalid drive identifier.$"
-		; 021E
-		DB   CR,LF,LF,BELL
+MSGNOTSYS:	DB   CR,LF,LF,BELL
 		DB   "That is not a system disk, it does not have the file CPM3.SYS on it.$"
-		; 0267
-		DB   CR,LF,LF
+MSGSRCDISK:	DB   CR,LF,LF
 		DB   "Which drive is the SOURCE system disk in ?$"
-		; 0295
-		DB   CR,LF,LF
+MSGINSSRCDSK:	DB   CR,LF,LF
 		DB   "Insert SOURCE disk and press any key.$"
-		; 2BE
-		DB   CR,LF,LF
+MSGDSTDISK:	DB   CR,LF,LF
 		DB   "Which drive is the DESTINATION disk in ?$"
-		; 2EA
-		DB   CR,LF,LF
+MSGINSDSTDSK:	DB   CR,LF,LF
 		DB   "Insert DESTINATION disk in drive and press any key.$"
-		; 321
-		DB   CR,LF,LF,BELL
+MSGSYSTRKUSED:	DB   CR,LF,LF,BELL
 		DB   "The system tracks are already in use."
 		DB   CR,LF
 		DB   "Copy all the files on this disk to a new disk and try again.$"
+START2:		ld   de,MSGWELCOME	; Say hello
+		call MSGDE
+		ld   c,GETDRV		; Get the current disk drive
+		call BDOS
+		ld   (CURDRV),a		; Save the result
+GETSRCDRV:	ld   de,MSGSRCDISK	; Ask for the source disk
+		call GETDRVLTR
+		jr   c,GETSRCDRV	; Out of range loop back
+		ld   de,MSGINSSRCDSK	; Ask user for disk drive
+		call SETCPM3DRV		; Set drive for CPM3.SYS
+		call CPYDRV		; Copy drive details across banks
+		ld   c,DSKOP_RDTRK	; Read in first three tracks
+		call BIOSTRKOP
+OPENCPM3SYS:	ld   c,OPENF		; See if we can open CPM3.SYS
+		call CPM3BDOS
+		or   a			; Any errors ?
+		jr   z,READCPM3SYS	; Nope, carry on
+		ld   de,MSGNOTSYS	; Yes, tell user
+		call MSGCONIN		; and get a key press
+		or   20H		; convert to lower case
+		cp   'y'		; another go?
+		jp   z,GETSRCDRV	; Loop around
+		jp   EXIT		; Nope, exit
+;============================================================
+;
+; Read in CPM3.SYS
+;
+;============================================================
+READCPM3SYS:	ld   hl,CPM3SYSDATA-BLKSIZE ; Set destination
+		ld   b,0		; Number of blocks read
+RDNXTCPM3SYS:	ld   de,BLKSIZE
+		add  hl,de		; Bounce along the dst pointer
+		push hl			; Save pointer and count
+		push bc
+		ex   de,hl		; Set destination address
+		call DOSETDMA
+		ld   c,DREADF		; Read in a block
+		call CPM3BDOS
+		cp   ERR_HARD		; Hardware error
+		jp   z,POPDISKERR	; Get out of here
+		pop  bc			; Get back pointer and count
+		pop  hl
+		inc  b			; Increment the conter
+		cp   ERR_EOF		; End of file?
+		jr   nz,RDNXTCPM3SYS	; Nope, loop back around again
+		ld   a,b
+		dec  a			; save number of blocks
+		ld   (CPM3BLKS),a
+		ld   c,CLOSEF
+		call CPM3BDOS
+;============================================================
+;
+; Time to write out all that lovely data
+;
+;============================================================
+		ld   de,MSGDSTDISK	; Prompt user to get destination drive
+		call GETDRVLTR
+		jr   c,OPENCPM3SYS	; Loop back to re-read CPM3.SYS?
+		ld   de,MSGINSDSTDSK	; Prompt user destination disk
+		call SETCPM3DRV		; Set the drive.
+		call DRVISDISK2		; Drive is a disk II
+		jr   nz,NOTDISK2	; Nope, skip disk II boot track logic
+;============================================================
+;
+; If the destination is a Disk II drive then for
+; data disks tracks 35,36 and 37 are mapped to be
+; tracks 0,1,2 on the real disk. For a system disk
+; there is a dummy directory entry that marks the
+; data blocks on tracks 35,36 and 37 as being used.
+;
+; Larger drives don't reuse the boot tracks.
+;
+;============================================================
+		; Read in the directory sectors
+		ld   a,BOOT_TRACKS	; Directory starts on first track
+		ld   (ZDISK_TRKL),a	; After boot
+		xor  a
+		ld   (ZDISK_TRKH),a
+		ld   de,DISKII_DIR	; Setup destination pointer
+RDNXTDIRSECT:	ld   (ZDISK_SECT),a	; Set source directory
+		push af			; Save acc over disk call
+		ld   a,DSKOP_RD
+		call BIOSDISKOP		; Read in a sector
+		ld   hl,ZDISK_BUFF	; Copy from disk buffer into
+		ld   bc,DISKII_SECTLEN	; destination point (de)
+		ldir
+		pop  af			; Get back sector counter
+		inc  a
+		cp   DISKII_DIRSEC	; Done all eight sectors?
+		jr   nz,RDNXTDIRSECT	; nope,loop back get more
+		; Scan to make sure nothing has used boot tracks
+		ld   hl,DISKII_DIR-DIRENT_LEN ; setcurrent directory entry
+		ld   b,0		; to start - 1
+NXTDIRENT:	ld   de,DIRENT_LEN	; next directory entry
+		add  hl,de
+		ld   a,(hl)		; Is this a file entry
+		cp   10H
+		jr   c,DIRENTUSED	; Yes, go parse it
+		ld   (DIRSECTADDR+1),hl	; Save away any blank entries
+		jr   SKIPDIRENT		; Skip this one.
+DIRENTUSED:	push hl			; Save current dir entry
+		ld   de,ALLOC_OFFS	; point to block allocatiosn
+		add  hl,de
+		ld   c,MAX_ALLOC	; counter of block alloc in dir entry
+CHKNXTALLOC:	ld   a,(hl)		; Get the block number.
+		cp   SYSALLOCBLOCK	; Somewhere in the boot tracks
+		jr   c,NXTALLOC		; nope, advance to next allocation entry
+		pop  hl			; yes, can't use this disk
+		ld   de,MSGSYSTRKUSED	; tell the user
+		jp   EXITMSG		; and quit.
+NXTALLOC:	inc  hl			; Advance to next alloc block
+		dec  c			; Done everything in this dir entry?
+		jr   nz,CHKNXTALLOC	; Nope keep going
+		pop  hl			; Get back the pointer
+SKIPDIRENT:	inc  b			; Done all 64 directory entiries?
+		ld   a,DISKII_DIRENT
+		cp   b
+		jr   nz,NXTDIRENT	; loop back and try more
+		; Create a disk track entry marking boot tracks as used
+DIRSECTADDR:	ld   de,0000H		; Overwritten earlier on
+		ld   hl,SYSDIRENT	; pointer to "system.trk"
+		ld   bc,DIRENT_LEN	; with all three boot tracks used.
+		ldir
+		ld   a,(DIRSECTADDR+2)	; Get page in memory of the sector
+		ld   h,a	
+		ld   l,00h		; clear low byte
+		sub  HIGH DISKII_DIR	; add just high byte to get right
+		ld   (ZDISK_SECT),a	; sector and save it
+		ld   de,ZDISK_BUFF	; Copy sector back to data bufer
+		ld   bc,DISKII_SECTLEN
+		ldir
+		ld   a,DSKOP_WR		; Write sector to disk.
+		call BIOSDISKOP
+;============================================================
+;
+; Either no-one has used the Disk II drive boot tracks
+; yet to store data, OR we're not on a Disk II drive.
+;
+;============================================================
+NOTDISK2:	ld   c,DSKOP_WRTRK	; write out the boot tracks
+		call BIOSTRKOP
+		ld   c,DELTEF		; Delete CPM3.SYS
+		call CPM3BDOS
+		or   a			; Check if acc zero
+		jr   z,CPM3DELOK	; we're good
+		ld   a,h		; check extended code
+		or   a			; File not found
+		jr   z,CPM3DELOK	; leaves h zero so carry on
+		jp   nz,POPDISKERR	; Get out of here.
+CPM3DELOK:	ld   a,0
+		ld   (CPM3SYSFCB+FCB_CR),a ; reset current record
+		ld   (CPM3SYSFCB+FCB_EX),a ; reset extent
+		ld   c,MAKEF		; Create the file
+		call CPM3BDOS
+		ld   c,OPENF		; open the file
+		call CPM3BDOS
+		ld   a,(CPM3BLKS)	; Get # CPM3.SYS blocks
+		ld   b,a		; set our counter
+		ld   hl,CPM3SYSDATA-BLKSIZE ; Set source
+WRNXTCPM3SYS:	ld   de,BLKSIZE
+		add  hl,de		; bounce pointer along
+		push bc			; save counter and pointers
+		push hl
+		ex   de,hl
+		call DOSETDMA		; Write the data out
+		ld   c,DWRITF
+		call CPM3BDOS
+		pop  hl			; Get back data pointer
+		inc  a			; ff =>
+		jp   z,POPDISKERR	; Hardware error
+		cp   03H
+		jr   c,NOWRITEERR	; Out of space?
+		ld   de,MSGNOSPACE	; Yes tell user
+		jr   EXITMSG
+NOWRITEERR:	pop  bc			; bring back counter
+		djnz WRNXTCPM3SYS
+		ld   c,CLOSEF		; Close the file
+		call CPM3BDOS
+		ld   de,MSGOPDONE	; Tell the user all done
+EXITMSG:	call MSGDE		; Display message
+EXIT:		ld   a,(CURDRV)		; Reset drive back
+		ld   e,a
+		call BDOSSELD
+		jp   BOOT		; Back to CP/M
+;============================================================
+;
+; CPM3BDOS - Perform a BDOS operation on CPM3.SYS FCB
+;
+;============================================================
+CPM3BDOS:	ld   de,CPM3SYSFCB
+		jp   BDOS
+;============================================================
+; BIOSTRKOP - Perform a multi track operation
+; Entry
+;   c = disk operation
+; Exit
+;   BOOT_TRKDATA has three tracks of data for read
+;   a = card type
+;   zero flag set if drive was disk ][
+;============================================================
+BIOSTRKOP:	ld   a,HIGH BOOT_TRKDATA
+		ld   (ZDISK_TRK_ADDR),a
+		ld   a,0		; Start on track zero
+		ld   (ZDISK_TRKL),a
+		ld   b,BOOT_TRACKS	; Three tracks please
+BIOSNEXTRKOP:	push bc			; Save count and operation
+		ld   a,c		; Setup for call
+		call BIOSDISKOP		; Read or write a whole track
+		pop  bc			; Get back our count`
+		ld   hl,ZDISK_TRKL	; Add one to the track
+		inc  (hl)
+		djnz BIOSNEXTRKOP	; Done all three tracks?
+DRVISDISK2:	call CPYDRV		; Get Apple ][ Bios drive
+		and  07FH		; Strip off drive
+		rrca			; Convert to slot
+		rrca
+		rrca
+		rrca
+		ld   e,a		; Index into
+		ld   d,0
+		ld   hl,ZSLOT_INFO	; Slot info
+		add  hl,de
+		ld   a,(hl)
+		cp   DISKII_TYPE	; Is the drive a Disk II?
+		ret
+;============================================================
+; Set the drive letter for CPM3.SYS
+;============================================================
+SETCPM3DRV:	push af
+		call MSGCONIN
+		pop  af
+		ld   e,a
+		inc  a
+		ld   (CPM3SYSFCB),a
+;============================================================
+; Select the disk drive
+;============================================================
+BDOSSELD:	ld   c,SELD
+		call BDOS
+		or   a
+		ret  z
+		dec  h
+		jr   z,POPDISKERR
+		pop  hl
+		ld   de,MSGINVDRV
+		jp   EXITMSG
+;============================================================
+; MSGCONIN - Display message in DE and get a character
+; Entry DE = Message to display
+; Exit  A = Key pressed by user
+;============================================================
+MSGCONIN:	call MSGDE		; Display the message
+		ld   c,CONI		; Get a character from the console
+		call BDOS
+		ret
+;============================================================
+; GETDRVLTR - Display message in DE and get a drive letter
+; Entry DE = Message to display
+; Exit  A = Key pressed by user,
+; carry flag set if out of range
+;============================================================
+GETDRVLTR:	call MSGCONIN		; Display message and get a key press
+		or   20H		; turn to lower case
+		sub  'a'		; convert A-P to 0-15
+		ret  c
+		cp   10H		; out of range?
+		ccf			; invert and go home.
+		ret
+;============================================================
+; Set the DMA address
+;============================================================
+DOSETDMA:	ld   c,SETDMAOFF
+		jp   BDOS
+;============================================================
+; Call the 6502 disk BIOS
+; Check for errors and abort
+;============================================================
+BIOSDISKOP:	ld   (ZDISK_OP),a
+		ld   hl,DISK_ROUT
+		ld   (ZROUT_6502),hl
+		ld   hl,(ZCARD_Z80)
+		ld   (hl),a
+		ld   a,(ZDISK_ERR)
+		or   a
+		ret  z
+		pop  hl
+POPDISKERR:	pop  hl
+		ld   de,MSGDISKERR
+		jp   EXITMSG
+		; FCB for CPM3.SYS
+CPM3SYSFCB:	DB   00H		; Drive
+		DB   'CPM3    SYS'	; Filename+type
+		DB   00H,00H,00H,00H	; EX,S1,S2,RC
+		DS   10H,00h		; AL (16 bytes)
+		DB   00H,00H,00H,00H	; CR,R0,R1,R2
+		; Directory entry for boot tracks.
+SYSDIRENT:	DB   000h
+		DB   'system  '
+		DB   't' + 80H, 'r' + 80H, 'k' + 80H
+		DB   000H,000H,000H,060H
+		DB   080H,081H,082H,083H,084H,085H,086H,087H
+		DB   088H,089H,08AH,08BH,000H,000H,000H,000H
+CURDRV:		DB   00
+CPM3BLKS:	DB   00
+;============================================================
+; Print message pointed to by DE to console
+;============================================================
+MSGDE:		ld   c,PRSTR
+		jp   BDOS
+;============================================================
+; Copy drive from main ram into CP/M TPA
+;============================================================
+CPYDRV:		ld   hl,ZDISK_DRV
+		ld   (ZRDMAINRAM),a
+		ld   a,(hl)
+		ld   (ZRDCARDRAM),a
+		ld   (hl),a
+		ret
+RELOCEND:
+		.DEPHASE
 		END
