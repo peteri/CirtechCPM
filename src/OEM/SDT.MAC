@@ -1,4 +1,11 @@
 		.Z80
+;********************************************************
+;*                                                      *
+;*     Single disk transfer for Cirtech CP/M plus	*
+;*     Tab test						*
+;*     Longer tab test					* 
+;*							*
+;********************************************************
 		INCLUDE BDOS.MAC
 LF		EQU  0ah
 CTRLV		EQU  16h	; Scroll screen down
@@ -7,31 +14,24 @@ ESC		EQU  1bh
 FNAMEBUF	EQU  080H	; Buffer for users file name
 FNAMELEN	EQU  2+8+1+3	; Buffer length A:ABCDEFGH.ABC
 DATASTART	EQU  ENDOFCODE+20H
-;********************************************************
-;*                                                      *
-;*     Single disk transfer for Cirtech CP/M plus	*
-;*     Tab test						*
-;*     Longer tab test					* 
-;*							*
-;********************************************************
 		ld   sp,DATASTART	; 32 bytes of stack.
-		ld   a,07H
+		ld   a,HIGH DATASTART -1;
 		ld   b,a
 		ld   a,(BDOS+2)		; get bdos hi address byte
-		sub  b			; subtract 7
+		sub  b			; subtract end of program
 		ld   l,a
-		ld   h,0
-		add  hl,hl
-		ld   a,0EDH
+		ld   h,0		; hl= number of 256 byte pages
+		add  hl,hl		; convert to 128 byte blocks
+		ld   a,LOW DATASTART	; Can we sneak another one?
 		bit  7,a
-		jr   nz,SKIPINC
-		inc  hl
-SKIPINC:	ld   (L6B0),hl
+		jr   nz,SKIPINC		; No
+		inc  hl			; Yes, lets do it.
+SKIPINC:	ld   (MAXREADS),hl
 		ld   e,0FFH		; Set hardware error mode
 		ld   c,SETERRMODE	; to be error code in h
 		call BDOS		; no error message printed
-DOITAGAIN:	ld   de,DATASTART
-		ld   c,SETDMAOFF
+DOITAGAIN:	ld   de,DATASTART	; We start reading data
+		ld   c,SETDMAOFF	; into here.
 		call BDOS
 		ld   hl,FILELEN		; Clear out 24 bit
 		ld   b,3		; file length
@@ -133,7 +133,7 @@ READSRC:	ld   hl,MSGWAITREAD	; Tell user we're reading
 		ld   hl,FILELEN
 		ld   bc,3
 		ldir
-		ld   hl,(L6B0)
+		ld   hl,(MAXREADS)
 		ld   de,DATASTART
 L0207:		push hl
 		push de
@@ -160,7 +160,7 @@ L0221:		or   a
 		or   l
 		jr   nz,L0207
 L0231:		ex   de,hl
-		ld   hl,(L6B0)
+		ld   hl,(MAXREADS)
 		xor  a
 		sbc  hl,de
 		ld   a,h
@@ -307,7 +307,7 @@ FILEEXT:	DB '    ',08H,0		; 06a5,6,7,8,9
 FILELEN:	DB 0,0,0		; 06AB,C,D
 L6AE:		DB 0			; 06AE
 L6AF:		DB 0 			; 06AF
-L6B0:		DW 0			; 06B0
+MAXREADS:	DW 0			; Max num of CP/M 128 byte block reads we can do.
 L6B2:		DW 0			; 06B2
 PRNULSTR: 	ld   a,(hl)		; 6b4
 		or   a
