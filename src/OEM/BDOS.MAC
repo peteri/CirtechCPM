@@ -26,4 +26,5 @@ ERR_EOF		equ  1			; End of file error
 ERR_HARD	equ  0FFH		; Hardware error
 FCB_EX		equ  0CH		; Extent in FCB
 FCB_CR		equ  20H		; Current record in FCB
+FCB_R0		equ  21H
 FCBLEN		equ  24H		; FCB length

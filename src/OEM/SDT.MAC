@@ -15,10 +15,10 @@ DATASTART	EQU  ENDOFCODE+20H
 ;*							*
 ;********************************************************
 		ld   sp,DATASTART	; 32 bytes of stack.
-		ld   a,007
+		ld   a,07H
 		ld   b,a
-		ld   a,(BDOS+2)
-		sub  b
+		ld   a,(BDOS+2)		; get bdos hi address byte
+		sub  b			; subtract 7
 		ld   l,a
 		ld   h,0
 		add  hl,hl
@@ -75,67 +75,193 @@ INVFNAME:	ld   hl,MSGINVFNAME	; Tell them it's invalid
 		xor  a
 		ld   (L6AF),a
 		ld   (L6AE),a
-		ld   hl,MSGSRCDSK	; Ask user for destination disk.
+L017C:		ld   hl,MSGSRCDSK	; Ask user for destination disk.
 		call PRNULSTR
 		ld   c,CONI		; Wait for key press
 		call BDOS
 		ld   de,3		; Reset drives A & B
 		ld   c,DRESET
 		call BDOS
-		ld   a,(L6AF)
+		ld   a,(L6AF)		; Possible first time flag?
 		or   a
-		jr   nz,OPENSRCFILE
-		ld   de,SRCFCB
+		jr   nz,OPENSRCFILE	
+		ld   de,SRCFCB		; See if we have a file?
 		ld   c,SFIRST
 		call BDOS
-		cp   0FFH
-		jp   z,SRCCHKERR
+		cp   0FFH		; Error?
+		jp   z,SRCCHKERR	; Check the error
+		add  a,a		; multiply acc by 32
+		add  a,a		; points us to actual
+		add  a,a		; file found.
 		add  a,a
 		add  a,a
-		add  a,a
-		add  a,a
-		add  a,a
-		ld   c,a
+		ld   c,a		; bc = directory entry  
 		ld   b,0
 		ld   hl,DATASTART
-		add  hl,bc
-		inc  hl
-		push hl
-		ld   de,SRCFCB+1
-		ld   bc,0BH
+		add  hl,bc		; Now hl points to file we want
+		inc  hl			; add one to get to first character of 
+		push hl			; file name.
+		ld   de,SRCFCB+1	; copy into the file name
+		ld   bc,0BH		; of the src FCB
 		ldir
-		ld   de,FILENAME
+		ld   de,FILENAME	; Copy into the display filename
 		ld   bc,8
 		pop  hl
-		ldir
-		ld   de,FILEEXT
+		ldir			; Now we want to do the file extension
+		ld   de,FILEEXT		; period is in there already.
 		ld   bc,3
 		ldir
-		ld   de,DSTFCB
-		ld   hl,SRCFCB
+		ld   de,DSTFCB		; Copy over src FCB to the
+		ld   hl,SRCFCB		; dest FCB
 		ld   bc,FCBLEN-1
 		ldir
-OPENSRCFILE:	ld   de,SRCFCB
+OPENSRCFILE:	ld   de,SRCFCB		; open the source file
 		ld   c,OPENF
 		call BDOS
-		inc  a
-		jr   nz,READSRC
-SRCCHKERR:	ld   a,h
+		inc  a			; check error code
+		jr   nz,READSRC		; good to carry on?
+SRCCHKERR:	ld   a,h		; h = 0
 		or   a
-		ld   hl,MSGNOFILE
-		jp   z,AGAINMSG
-		jp   DOITAGAIN
-READSRC:	ld   hl,MSGWAITREAD
+		ld   hl,MSGNOFILE	; if so then not an error
+		jp   z,AGAINMSG		; tell them no file 
+		jp   DOITAGAIN		; loop back for file name again.
+READSRC:	ld   hl,MSGWAITREAD	; Tell user we're reading
 		call PRNULSTR
-		ld   hl,FILENAME
+		ld   hl,FILENAME	; Print file name
 		call PRNULSTR
-		ld   de,00675H
+		ld   de,SRCFCB+FCB_R0	; copy record position into file len
 		ld   hl,FILELEN
 		ld   bc,3
 		ldir
-		ds 0119H
+		ld   hl,(L6B0)
+		ld   de,DATASTART
+L0207:		push hl
+		push de
+		ld   c,SETDMAOFF
+		call BDOS
+		ld   de,SRCFCB
+		ld   c,DREADF
+		call BDOS
+		cp   1
+		pop  de
+		pop  hl
+		jr   nz,L0221
+		ld   (L6AE),a
+		jr   L0231
+L0221:		or   a
+		jp   nz,DOITAGAIN
+		dec  hl
+		push hl
+		ld   hl,080H
+		add  hl,de
+		ex   de,hl
+		pop  hl
+		ld   a,h
+		or   l
+		jr   nz,L0207
+L0231:		ex   de,hl
+		ld   hl,(L6B0)
+		xor  a
+		sbc  hl,de
+		ld   a,h
+		or   l
+		jr   nz,L0242
+		ld   de,SRCFCB
+		jp   L031D
+L0242:		ld   (L6B2),hl
+		ld   de,SRCFCB
+		ld   c,CLOSEF
+		call BDOS
+		or   a
+		jp   nz,DOITAGAIN
+		ld   hl,MSGDSTDSK
+		call PRNULSTR
+		ld   c,CONI
+		call BDOS
+		ld   de,3
+		ld   c,DRESET
+		call BDOS
+		ld   a,(L6AF)
+		or   a
+		jr   nz,L02B3
+		inc  a
+		ld   (L6AF),a
+		ld   de,DSTFCB
+		ld   c,OPENF
+		call BDOS
+		inc  a
+		jr   nz,L027F
+		cp   h
+		jp   nz,DOITAGAIN
+		jr   L02A3
+L027F:		ld   hl,MSGDSTEXIST
+		call PRNULSTR
+		ld   c,CONI
+		call BDOS
+		or   020H
+		cp   'y'
+		jp   nz,DOITAGAIN
+		call CLRDSTFCB
+		ld   de,DSTFCB
+		ld   c,DELTEF
+		call BDOS
+		or   a
+		jp   nz,DOITAGAIN
+		call CLRDSTFCB
+L02A3:		ld   de,DSTFCB
+		ld   c,MAKEF
+		call BDOS
+		ld   de,DSTFCB
+		ld   c,CLOSEF
+		call BDOS
+L02B3:		ld   hl,MSGWAITWRITE
+		call PRNULSTR
+		ld   hl,FILENAME
+		call PRNULSTR
+		ld   de,DSTFCB
+		ld   c,OPENF
+		call BDOS
+		ld   de,DSTFCB+FCB_R0
+		ld   hl,FILELEN
+		ld   bc,3
+		ldir
+		ld   hl,(L6B2)
+		ld   de,DATASTART
+L02D8:		push hl
+		push de
+		ld   c,SETDMAOFF
+		call BDOS
+		ld   de,DSTFCB
+		ld   c,DWRITF
+		call BDOS
+		pop  de
+		pop  hl
+		or   a
+		jr   z,L02F2
+		ld   hl,MSGDSKERR
+		jp   AGAINMSG
+L02F2:		dec  hl
+		push hl
+		ld   hl,080H
+		add  hl,de
+		ex   de,hl
+		pop  hl
+		ld   a,h
+		or   l
+		jr   nz,L02D8
+		ld   a,(L6AE)
+		or   a
+		jr   nz,L031A
+		ld   de,FILELEN
+		ld   hl,DSTFCB+FCB_R0
+		ld   bc,3
+		ldir
+		ld   de,DSTFCB
+		ld   c,CLOSEF
+		call BDOS
+		jp   L017C
 L031A: 		ld   de,DSTFCB
- 		ld   c,CLOSEF
+L031D: 		ld   c,CLOSEF
  		call BDOS
  		ld   hl,MSGOPSUCC ; Tell user it was good
 AGAINMSG:	call PRNULSTR
@@ -163,10 +289,10 @@ MSGSDTBOX:	DB ESC,"=70"," _________  Single Drive File Transfer __________ ",LF
 MSGENTFNAME:	DB ESC,"=+1"," Please enter the Disk File name ->",0
 MSGSRCDSK:	DB ESC,"=+1"," Place  SOURCE  disk in drive and press any key",0
 MSGDSTDSK:	DB ESC,"=+1"," Place  DESTINATION  in drive and press any key",0
-		DB ESC,"=+1","The file already exists. Delete old file (Y/N)? ",8,0
+MSGDSTEXIST:	DB ESC,"=+1","The file already exists. Delete old file (Y/N)? ",8,0
 MSGINVFNAME:	DB ESC,"=+1"," Sorry, Invalid File name.     Try again (Y/N)? ",8,0
 MSGNOFILE:	DB ESC,"=+1"," Sorry, that file isn't there. Try again (Y/N)? ",8,0
-		DB ESC,"=+1"," Sorry, there is a Disk Error. Try again (Y/N)? ",8,0
+MSGDSKERR:	DB ESC,"=+1"," Sorry, there is a Disk Error. Try again (Y/N)? ",8,0
 MSGOPSUCC:	DB ESC,"=+1"," Operation successful.          Do again (Y/N)? ",8,0
 MSGWAITREAD:	DB ESC,"=+1"," Please wait...... Reading File -> ",0
 MSGWAITWRITE:	DB ESC,"=+1"," Please wait...... Writing File -> ",0
@@ -177,16 +303,12 @@ DSTPFCB:	DW FNAMEBUF+2		; 0650
 SRCFCB:		DS FCBLEN,0		; 0654
 DSTFCB:		DS FCBLEN,0		; 0678
 FILENAME:	DB '        .'		; 069c
-FILEEXT:	DB '   '		; 06a5,6,7
-		DB 020H			; 06a8
-		DB 08H			; 06a9
-		DB 0			; 06aa
-FILELEN:	DW 0			; 06AB,C
-		DB 0			; 06AD
+FILEEXT:	DB '    ',08H,0		; 06a5,6,7,8,9
+FILELEN:	DB 0,0,0		; 06AB,C,D
 L6AE:		DB 0			; 06AE
 L6AF:		DB 0 			; 06AF
 L6B0:		DW 0			; 06B0
-		DW 0			; 06B2
+L6B2:		DW 0			; 06B2
 PRNULSTR: 	ld   a,(hl)		; 6b4
 		or   a
 		ret  z
