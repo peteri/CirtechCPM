@@ -13,8 +13,7 @@ $systemFiles=@(
 'RomWBW/PUT.COM',
 'RomWBW/RENAME.COM',
 'RomWBW/PATCH.COM',
-# once source code available change to binaries
-'system/SDT.COM',
+'binaries/SDT.COM',
 'RomWBW/DATE.COM',
 'RomWBW/PIP.COM',
 'RomWBW/DEVICE.COM',
@@ -63,7 +62,7 @@ Write-Host 'Building files'
 .\M80.ps1 BIOS
 .\M80.ps1 COPYSYS
 .\M80.ps1 START
-# .\M80.ps1 SDT
+.\M80.ps1 SDT
 # Annoyingly the linker doesn't return errors
 Write-Host 'Linking'
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BOOTSECT.BIN[NR,NL]=BOOTSECT
@@ -75,7 +74,7 @@ C:\tools\ntvcm.exe ..\..\tools\DRI\LINK CPMLDR.BIN[L1100,NL]=CPMLDR,LDRBIOS
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BNKBIOS3[b,NR,NL]=BIOS,SCB
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK COPYSYS[NR,NL]=COPYSYS
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK START[NR,NL]=START
-# C:\tools\ntvcm.exe ..\..\tools\DRI\LINK SDT[NR,NL]=SDT
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK SDT[NR,NL]=SDT
 # move the Banked BIOS into the gencpm folder and run it.
 move-item BNKBIOS3.SPR -Destination gencpm 
 Write-host 'Running GENCPM'

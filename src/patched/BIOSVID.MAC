@@ -229,6 +229,14 @@ CURSOR_RIGHT:	inc  CURSORX		; Add one to cursor position
 
 OFF_RIGHT:	jsr  CARRIAGE_RET	; Off right hand edge Set to 0
 		jmp  LINEFEED		; and down a line
+; New function added on Ctrl-K, matches character in
+; the Microsoft screen function tables in $0300 area.
+; Clear to end of screen is now on Ctrl-^
+; Cursor Up
+CURSOR_UP:	dec CURSORY		; knock one off
+		bpl SET_LINE_PTR	; Positive, all done
+		inc CURSORY		; Add it back if neg
+		rts			; no need to adjust line pointer	
 
 ; Clear line
 CLR_LINE:	lda  #$00		; Set us to be at the beginning of the line
@@ -467,7 +475,7 @@ CTRL_CHAR_TAB:	DW   BELL		; Ctrl-G
 		DW   BACKSPACE		; Ctrl-H
 		DW   IGNORE_CHAR	; Ctrl-I
 		DW   LINEFEED		; Ctrl-J
-		DW   CLR_TO_ENDSCR	; Ctrl-K
+		DW   CURSOR_UP		; Ctrl-K
 		DW   CLEAR_SCREEN	; Ctrl-L
 		DW   CARRIAGE_RET	; Ctrl-M
 		DW   SET_NORMAL		; Ctrl-N
@@ -486,13 +494,14 @@ CTRL_CHAR_TAB:	DW   BELL		; Ctrl-G
 		DW   IGNORE_CHAR	; Ctrl-[ aka Esc
 		DW   CURSOR_RIGHT	; Ctrl-\
 		DW   CLR_EOL		; Ctrl-]
+		DW   CLR_TO_ENDSCR	; Ctrl-^
 LINE_STARTH:	DB   $04,$04,$05,$05,$06,$06,$07,$07 ; Start of video line high
 		DB   $04,$04,$05,$05,$06,$06,$07,$07
 		DB   $04,$04,$05,$05,$06,$06,$07,$07
 LINE_STARTL:	DB   $00,$80,$00,$80,$00,$80,$00,$80 ; Start of video line low
 		DB   $28,$a8,$28,$a8,$28,$a8,$28,$a8
 		DB   $50,$d0,$50,$d0,$50,$d0,$50,$d0
-; Used to convert some televideo 920(maybe?) escape codes to Ctrl codes
+; Used to convert some Siroq IQ-120 escape codes to Ctrl codes
 ESC_CTRL_CODES:	DB   $8c		; <ESC><FF> - Form feed
 		DB   ')' + $80		; <ESC> ) - Start half intensity
 		DB   '(' + $80		; <ESC> ( - End half intesity
@@ -503,7 +512,7 @@ ESC_CHAR_TRANS:	DB   $8c		; Ctrl-L - Form feed
 		DB   $8e		; Ctrl-N - set normal
 		DB   $8f		; Ctrl-O - Set Inverse
 		DB   $8c		; Ctrl-L - Form feed
-		DB   $8b		; Ctrl-K - Clear to end of screen
+		DB   $9f		; Ctrl-^ - Clear to end of screen
 		DB   $9d		; Ctrl-] - Clear to end of line
 GOTO_Y:		DB   $00		; Goto YX cursor Y
 		.dephase
