@@ -4,7 +4,6 @@
 # These tools:
 # - Add and remove CtrlZ at the end of the CP/M files
 # - Writes the binaries into a Apple disk image. 
-# Note this will not boot on an emulator due to code that detects a Cirtech code
 #
 $systemFiles=@(
 'binaries/CPM3.SYS',
