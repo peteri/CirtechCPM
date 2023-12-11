@@ -1,0 +1,399 @@
+		.Z80
+;********************************************************
+;*                                                      *
+;*     Single disk transfer for Cirtech CP/M plus       *
+;*                                                      *
+;* Binary   (C) Copyright 1985 Cirtech                  *
+;* Comments (C) Copyright 2023 Peter Ibbotson           *
+;********************************************************
+		INCLUDE BDOS.MAC
+		CSEG
+		.PHASE 0100H
+LF		EQU  0ah
+CTRLV		EQU  16h		; Scroll screen down
+CTRLW		EQU  17h		; Scroll screen up
+ESC		EQU  1bh
+FNAMEBUF	EQU  080H		; Buffer for users file name
+FNAMELEN	EQU  2+8+1+3		; Buffer length A:ABCDEFGH.ABC
+DATASTART	EQU  ENDOFCODE+20H
+		ld   sp,DATASTART	; 32 bytes of stack.
+		ld   a,HIGH DATASTART+1 ; Get how big we are
+		ld   b,a
+		ld   a,(BDOS+2)		; get bdos hi address byte
+		sub  b			; subtract end of program
+		ld   l,a
+		ld   h,0		; hl= number of 256 byte pages
+		add  hl,hl		; convert to 128 byte blocks
+		ld   a,LOW DATASTART	; Can we sneak another one?
+		bit  7,a
+		jr   nz,SKIPINC		; No
+		inc  hl			; Yes, lets do it.
+SKIPINC:	ld   (MAXRECORDS),hl
+		ld   e,0FFH		; Set hardware error mode
+		ld   c,SETERRMODE	; to be error code in h
+		call BDOS		; no error message printed
+DOITAGAIN:	ld   de,DATASTART	; We start reading data
+		ld   c,SETDMAOFF	; into here.
+		call BDOS
+		ld   hl,RECORDPOS	; Clear out 24 bit
+		ld   b,3		; record position
+CLRRPOSLOOP:	ld   (hl),0
+		inc  hl
+		djnz CLRRPOSLOOP
+		ld   c,CTRLV		; Scroll screen down by
+		ld   b,24		; 24 lines
+		call PRT_C_BTIMES
+		ld   hl,MSGSDTBOX	; Get the initial message box
+		call PRNULSTR		; Display on screen
+		ld   c,CTRLW		; Scroll screen up by
+		ld   b,10		; 10 lines
+		call PRT_C_BTIMES
+		ld   hl,MSGENTFNAME	; Prompt user for file name
+		call PRNULSTR
+		ld   hl,FNAMEBUF	; filename buffer for user to type into
+		ld   (hl),FNAMELEN	; Set max Length
+		ex   de,hl
+		push de			; Save buffer
+		ld   c,RDSTR		; Read the file name
+		call BDOS
+		pop  de			; bring back the buffer
+		inc  de
+		ld   a,(de)		; get the length the user typed
+		or   a
+INVFNAME:	ld   hl,MSGINVFNAME	; Tell them it's invalid
+		jp   z,AGAINMSG		; Go ask if they want to try again
+		ld   l,a		; Get length into HL
+		ld   h,0
+		add  hl,de		; Add it to buffer
+		inc  hl
+		ld   (hl),'='		; Add an elephant for parser
+		ld   de,SRCPFCB
+		ld   c,PARSEFNAME	; Parse filename into FCB
+		call BDOS
+		inc  hl			; Returns FFFF if name invalid
+		ld   a,h		; Now 0?
+		or   l
+		jr   z,INVFNAME		; Tell user and loop.
+		xor  a
+		ld   (FIRSTTIME),a	; Clear first time through flag
+		ld   (SRCEOFSEEN),a	; and end of source file flag
+INSERTSRC:	ld   hl,MSGSRCDSK	; Ask user for source disk.
+		call PRNULSTR
+		ld   c,CONI		; Wait for key press
+		call BDOS
+		ld   de,3		; Reset drives A & B
+		ld   c,DRESET
+		call BDOS
+		ld   a,(FIRSTTIME)	; First time through lets check
+		or   a
+		jr   nz,OPENSRCFILE
+;============================================================
+;
+; First time through we check if the file exists
+; and setup the src and dst FCBs
+; We also display the found file name to the user.
+;
+;============================================================
+		ld   de,SRCFCB		; See if we have a file?
+		ld   c,SFIRST		; Search the directory...
+		call BDOS
+		cp   0FFH		; Error?
+		jp   z,SRCCHKERR	; Check the error
+		add  a,a		; multiply acc by 32
+		add  a,a		; points us to actual
+		add  a,a		; file found.
+		add  a,a
+		add  a,a
+		ld   c,a		; bc = directory entry
+		ld   b,0
+		ld   hl,DATASTART
+		add  hl,bc		; Now hl points to file we want
+		inc  hl			; add one to get to first character of
+		push hl			; file name.
+		ld   de,SRCFCB+1	; copy into the file name
+		ld   bc,0BH		; of the src FCB
+		ldir
+		ld   de,FILENAME	; Copy into the display filename
+		ld   bc,8
+		pop  hl
+		ldir			; Now we want to do the file extension
+		ld   de,FILEEXT		; period is in there already.
+		ld   bc,3
+		ldir
+		ld   de,DSTFCB		; Copy over src FCB to the
+		ld   hl,SRCFCB		; dest FCB
+		ld   bc,FCBLEN-1
+		ldir
+;============================================================
+;
+; By now we have the right disk in the drive
+; and we're sure the file exists.
+;
+;============================================================
+OPENSRCFILE:	ld   de,SRCFCB		; open the source file
+		ld   c,OPENF
+		call BDOS
+		inc  a			; check error code
+		jr   nz,READSRC		; good to carry on?
+SRCCHKERR:	ld   a,h		; h = 0
+		or   a
+		ld   hl,MSGNOFILE	; if so then not an error
+		jp   z,AGAINMSG		; tell them no file
+		jp   DOITAGAIN		; loop back for file name again.
+READSRC:	ld   hl,MSGWAITREAD	; Tell user we're reading
+		call PRNULSTR
+		ld   hl,FILENAME	; Print file name
+		call PRNULSTR
+		ld   de,SRCFCB+FCB_R0	; copy record position
+		ld   hl,RECORDPOS	; into SRC FCB
+		ld   bc,3
+		ldir
+		ld   hl,(MAXRECORDS)	; Get max records we can read
+		ld   de,DATASTART	; Setup for where to read too...
+READNXTREC:	push hl			; Save how much space left in memory
+		push de			; and where we're pointing to....
+		ld   c,SETDMAOFF	; Set the destination for our read
+		call BDOS
+		ld   de,SRCFCB		; Do the read
+		ld   c,READF
+		call BDOS		; End of file?
+		cp   1
+		pop  de			; Restore space left and
+		pop  hl			; Where we reading too..
+		jr   nz,RDNOTEOF	; Not EOF yet
+		ld   (SRCEOFSEEN),a	; Flag it
+		jr   WRITEDST		; And go write to disk.
+RDNOTEOF:	or   a			; Read error?
+		jp   nz,DOITAGAIN	; Go and do it again...
+		dec  hl			; decrement record space counter
+		push hl			; save it
+		ld   hl,080H		; bounce along destination pointer
+		add  hl,de
+		ex   de,hl
+		pop  hl			; get back record space
+		ld   a,h
+		or   l
+		jr   nz,READNXTREC
+;============================================================
+;
+; Time to start writing data out
+;
+;============================================================
+WRITEDST:	ex   de,hl		; de=record space left in memory
+		ld   hl,(MAXRECORDS)	; hl=max record space in memory
+		xor  a
+		sbc  hl,de		; subtract... hl=number of records read
+		ld   a,h
+		or   l
+		jr   nz,WRITEDATA	; Something to write?
+		ld   de,SRCFCB		; Nope just close the source FCB
+		jp   CLOSEFCB
+WRITEDATA:	ld   (WRITERECORDS),hl	; Save away how many to do.
+		ld   de,SRCFCB		; Close the source file.
+		ld   c,CLOSEF
+		call BDOS
+		or   a			; Did we get an error
+		jp   nz,DOITAGAIN	; Do it again.
+		ld   hl,MSGDSTDSK	; Ask user to insert destination disk
+		call PRNULSTR
+		ld   c,CONI		; Get a key press
+		call BDOS
+		ld   de,3		; Reset drives A & B
+		ld   c,DRESET
+		call BDOS
+		ld   a,(FIRSTTIME)	; First time here?
+		or   a
+		jr   nz,DOWRITE		; Nope just go do it...
+;============================================================
+;
+; Check if the file exists already
+; and see if the user really wants to overwrite it.
+; If the file doesn't exist create a new one.
+;
+;============================================================
+		inc  a
+		ld   (FIRSTTIME),a	; Flag for next time...
+		ld   de,DSTFCB
+		ld   c,OPENF
+		call BDOS
+		inc  a			; Did we succeed?
+		jr   nz,ASKOVERWRITE	; Ask if we should overwrite
+		cp   h
+		jp   nz,DOITAGAIN	; Try again if we had an error
+		jr   CREATEDST		; Otherwise create our destination
+ASKOVERWRITE:	ld   hl,MSGDSTEXIST
+		call PRNULSTR
+		ld   c,CONI		; get users response
+		call BDOS
+		or   020H		; to lower case
+		cp   'y'		; not happy
+		jp   nz,DOITAGAIN	; Loop back.
+		call CLRDSTFCB		; Clear FCB bits saying file is open
+		ld   de,DSTFCB
+		ld   c,DELTEF		; Do the delete
+		call BDOS
+		or   a			; Had an error
+		jp   nz,DOITAGAIN
+		call CLRDSTFCB		; Clear FCB bits after delete
+CREATEDST:	ld   de,DSTFCB
+		ld   c,MAKEF
+		call BDOS		; Create our file
+		ld   de,DSTFCB
+		ld   c,CLOSEF
+		call BDOS		; And close it.
+;============================================================
+;
+; Get here once we've either checked for existing files
+; and the user is happy to overwrite or we're on the
+; second write to disk
+;
+;============================================================
+DOWRITE:	ld   hl,MSGWAITWRITE	; Tell the user we're writing
+		call PRNULSTR
+		ld   hl,FILENAME	; And here's the filename
+		call PRNULSTR
+		ld   de,DSTFCB		; Open our file
+		ld   c,OPENF
+		call BDOS
+		ld   de,DSTFCB+FCB_R0	; Copy current position
+		ld   hl,RECORDPOS	; into destination FCB
+		ld   bc,3
+		ldir
+		ld   hl,(WRITERECORDS)	; Get how many records
+		ld   de,DATASTART
+WRNXTREC:	push hl
+		push de
+		ld   c,SETDMAOFF	; Set Source data
+		call BDOS
+		ld   de,DSTFCB
+		ld   c,WRITF
+		call BDOS		; Write the data
+		pop  de
+		pop  hl
+		or   a			; Error?
+		jr   z,NOWRITEERR
+		ld   hl,MSGDSKERR	; Tell user we had a disk error
+		jp   AGAINMSG		; And see if they want another go.
+NOWRITEERR:	dec  hl			; decrement record counter
+		push hl
+		ld   hl,080H		; Add to our source pointer.
+		add  hl,de
+		ex   de,hl
+		pop  hl			; Bring back record counter
+		ld   a,h		; zero yet?
+		or   l
+		jr   nz,WRNXTREC	; No loop back for next record.
+		ld   a,(SRCEOFSEEN)	; End of source file?
+		or   a
+		jr   nz,CLOSEDSTFCB	; Yes lets close and tell user.
+		ld   de,RECORDPOS	; Copy into record position
+		ld   hl,DSTFCB+FCB_R0	; How far we've got.
+		ld   bc,3
+		ldir
+		ld   de,DSTFCB		; Close destination file
+		ld   c,CLOSEF		; before user swaps disk
+		call BDOS
+		jp   INSERTSRC		; Go ask for source disk
+;============================================================
+;
+; Close destination FCB and loop around
+;
+;============================================================
+CLOSEDSTFCB:	ld   de,DSTFCB		; Close destination file
+CLOSEFCB:	ld   c,CLOSEF
+		call BDOS
+		ld   hl,MSGOPSUCC	; Tell user it was good
+AGAINMSG:	call PRNULSTR
+		ld   c,CONI		; get a keypress
+		call BDOS
+		or   020H		; turn to lower case
+		cp   'y'		; Yes from user
+		jp   z,DOITAGAIN	; Do it all again
+		ld   b,24
+		ld   c,CTRLW		; Scroll screen up
+		call PRT_C_BTIMES
+		ld   c,BOOT
+		call BDOS		; Exit and head home
+;============================================================
+;
+; Clear destination FCB bytes from FCB_EX onwards
+;
+;============================================================
+CLRDSTFCB:	ld   b,FCBLEN-(FCB_EX+1)
+		ld   hl,DSTFCB+FCB_EX
+CLRDSTFCB1:	ld   (hl),0
+		inc  hl
+		djnz CLRDSTFCB1
+		ret
+;============================================================
+;
+; Data starts here
+;
+;============================================================
+MSGSDTBOX:	DB   ESC,"=70"," _________  Single Drive File Transfer __________ ",LF
+		DB   ESC,"=70","|                                                |",LF
+		DB   ESC,"=70","|                                                |",LF
+		DB   ESC,"=70","|                                                |",LF
+		DB   ESC,"=70","|________ (C) CIRTECH 1985 Version 1.02 _________|",0
+MSGENTFNAME:	DB   ESC,"=+1"," Please enter the Disk File name ->",0
+MSGSRCDSK:	DB   ESC,"=+1"," Place  SOURCE  disk in drive and press any key",0
+MSGDSTDSK:	DB   ESC,"=+1"," Place  DESTINATION  in drive and press any key",0
+MSGDSTEXIST:	DB   ESC,"=+1","The file already exists. Delete old file (Y/N)? ",8,0
+MSGINVFNAME:	DB   ESC,"=+1"," Sorry, Invalid File name.     Try again (Y/N)? ",8,0
+MSGNOFILE:	DB   ESC,"=+1"," Sorry, that file isn't there. Try again (Y/N)? ",8,0
+MSGDSKERR:	DB   ESC,"=+1"," Sorry, there is a Disk Error. Try again (Y/N)? ",8,0
+MSGOPSUCC:	DB   ESC,"=+1"," Operation successful.          Do again (Y/N)? ",8,0
+MSGWAITREAD:	DB   ESC,"=+1"," Please wait...... Reading File -> ",0
+MSGWAITWRITE:	DB   ESC,"=+1"," Please wait...... Writing File -> ",0
+SRCPFCB:	DW   FNAMEBUF+2		; Parser FCB for source file
+		DW   SRCFCB
+DSTPFCB:	DW   FNAMEBUF+2		; Parser FCB for destination file
+		DW   DSTFCB
+SRCFCB:		DS   FCBLEN,0		; Source file FCB
+DSTFCB:		DS   FCBLEN,0		; Destination file FCB
+FILENAME:	DB   '        .'	; Filename for display
+FILEEXT:	DB   '    ',08H,0	; Split into two for copy function.
+RECORDPOS:	DB   0,0,0		;
+SRCEOFSEEN:	DB   0			; Flag if we've seen EOF on a read.
+FIRSTTIME:	DB   0			; First time through? Need to check if files exists etc
+MAXRECORDS:	DW   0			; Max num of CP/M 128 byte block reads we can do.
+WRITERECORDS:	DW   0			; Number of records to write to disk
+;============================================================
+;
+; Print a null terminated string directly to console
+; Entry
+; hl = pointer to string
+;============================================================
+PRNULSTR:	ld   a,(hl)		; 6b4
+		or   a
+		ret  z
+		push hl
+		ld   e,a
+		ld   c,DCONIO
+		call BDOS
+		pop  hl
+		inc  hl
+		jr   PRNULSTR
+;============================================================
+;
+; Print character in C, B times
+; Entry
+; B = count
+; C = character to print
+;============================================================
+PRT_C_BTIMES:	push bc
+		ld   e,c
+		ld   c,DCONIO
+		call BDOS
+		pop  bc
+		djnz PRT_C_BTIMES
+		ret
+;============================================================
+;
+; 32 bytes of stack start here, followed by
+; data from the disk
+;
+;============================================================
+ENDOFCODE:
+		.DEPHASE
+		END

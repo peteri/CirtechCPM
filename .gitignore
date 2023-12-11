@@ -303,6 +303,9 @@ src/OEM/LDRBIOS.REL
 src/OEM/TOOLKEY.REL
 src/OEM/BIOS.REL
 src/OEM/SCB.REL
+src/OEM/COPYSYS.REL
+src/OEM/START.REL
+src/OEM/SDT.REL
 src/OEM/*.COM
 src/OEM/*.BIN
 src/OEM/*.$$$
@@ -310,6 +313,25 @@ src/OEM/*.LOG
 src/OEM/comparison/*
 src/OEM/binaries/*
 src/OEM/system/*
+# patched folder
+src/patched/BOOTSECT.REL
+src/patched/BIOSDISK.REL
+src/patched/BIOSCHAR.REL
+src/patched/BIOSVID.REL
+src/patched/LDRBIOS.REL
+src/patched/TOOLKEY.REL
+src/patched/BIOS.REL
+src/patched/SCB.REL
+src/patched/COPYSYS.REL
+src/patched/START.REL
+src/patched/SDT.REL
+src/patched/*.COM
+src/patched/*.BIN
+src/patched/*.$$$
+src/patched/*.LOG
+src/patched/binaries/*
+src/patched/system/*
+src/patched/utility/*
 # CPM editors (I'm using Turbo pascal)
 # easiest to just copy them into the working folder
 # But best not to add them to git.

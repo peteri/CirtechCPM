@@ -414,8 +414,8 @@ internal class CpmDisk
             bootTrackFiles.Add(file);
         }
 
-        // Check size
-        if (bootTrackFiles.Sum(f => f.Length) != (BootTracks * SectorsPerTrack * SectorSize))
+        // Check size (round up to a disk sector)
+        if (bootTrackFiles.Sum(f => (f.Length+255)&0xff00) != (BootTracks * SectorsPerTrack * SectorSize))
             throw new Exception("File sizes are wrong for the boot sectors");
         return bootTrackFiles;
     }
@@ -427,12 +427,13 @@ internal class CpmDisk
     private void WriteBootTrack(List<FileInfo> bootTrackFiles)
     {
         byte[] data = new byte[(BootTracks * SectorsPerTrack * SectorSize)];
+        Array.Fill(data,(byte)0xE5);
         int offset = 0;
         foreach (var file in bootTrackFiles)
         {
             var fileData = File.ReadAllBytes(file.FullName);
             fileData.CopyTo(data, offset);
-            offset += fileData.Length;
+            offset += (fileData.Length+255) &0xff00;
         }
         int track = 0;
         int sector = 0;

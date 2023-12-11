@@ -1,0 +1,38 @@
+		.Z80
+;********************************************************
+;*                                                      *
+;*     Welcome screen for Cirtech CP/M plus startup     *
+;*                                                      *
+;********************************************************
+TAB		EQU  09H		; Tab character
+LF		EQU  0AH		; Linefeed character
+CR		EQU  0DH		; Carriage return character
+BDOS		EQU  0005H		; CP/M BDOS entry point
+		ld   c,9
+		ld   de,MSG
+		jp   BDOS		; Write out message and exit via BDOS
+MSG:		DB   CR, LF
+		DS   10, ' '		; Box line 1
+		DS   53, '_'
+		DB   CR, LF
+		DS   9, ' '		; Box line 2
+		DB   '|'
+		DS   53, ' '
+		DB   '|'
+		DB   CR, LF
+		DS   9, ' '		; Box line 3
+		DB   "|  Welcome to the CIRTECH Apple //e CP/M PLUS System  |"
+		DB   CR, LF
+		DS   9, ' '		; Box line 5
+		DB   '|'
+		DS   53, '_'
+		DB   '|'
+		DB   CR, LF, LF
+		DB   "To get Help, insert the SYSTEM UTILITIES Disk and type",CR,LF,LF
+		DB   TAB,TAB,TAB,TAB,"HELP ?",CR,LF,LF
+		DB   TAB,TAB,TAB,"then press < RETURN >.",CR,LF,LF
+		DB   "To prevent this message appearing when you boot this disk, delete (ERA) the",CR,LF
+		DB   "file called 'PROFILE.SUB' from this disk (see the manual for information on",CR,LF
+		DB   "Automatic programs).",CR,LF
+		DB   '$'
+		END

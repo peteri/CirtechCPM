@@ -1,0 +1,265 @@
+		TITLE 'Boot sector for Cirtech CPM'
+;********************************************************************************
+;* Cirtech Apple //e CP/M Plus boot sector disassembly                          *
+;*                                                                              *
+;* Disassembled by Peter Ibbotson.                                              *
+;*                                                                              *
+;* Boots from Disk ][, ProDOS driver and a Smart Port                           *
+;*                                                                              *
+;* Generated using 6502bench SourceGen v1.8.5                                   *
+;********************************************************************************
+		INCLUDE EQUATES.MAC
+		CSEG			; Absolute segment
+		.6502			; Into 6502 mode
+		.phase $800
+		db   $01		; Disk II boot sector count to read
+		stx  SLOTX16		; Slot ($60 for disk ii in slot 6)
+		txa
+		lsr  A			; Divide by 16
+		lsr  A
+		lsr  A
+		lsr  A
+		sta  SLOTX		; Now we have slot number
+		ora  #$c0
+		sta  READCXFF+2
+READCXFF	lda  $c0ff		; Check for Disk II 16 sector?
+DISKII_TEST	beq  DISKII_FOUND_INIT
+		jmp  IDCFOUND		; Found Intelligent Disk Controller
+
+; This code runs on the first boot sector, we read in the second sector to $900
+; Presumably to mimic a Intelligent Disk Controller aka Smart Drive, which has
+; a sector size of 512 bytes. We skip this code on future reads.
+DISKII_FOUND_INIT
+		txa
+		clc
+		adc  #$04
+		sta  SLOTXPLUS4
+		sec
+		sbc  #$08
+		sta  SLOTXMINUS4
+		lda  READCXFF+2		; Get back CX slot
+		sta  JSRDISKIIREAD+2	; Update rom address we want to call
+; This constant is SKIP_DISKII_INIT - (DISKII_TEST+2)
+		lda  #$22		; Alter jump to skip next time we run
+		sta  DISKII_TEST+1
+		jsr  CLRSCR_ENABLELANGCARD
+		lda  #$00		; We've read sector 0
+		sta  SECT2READ
+; Future reads skip the code above and jump to here.
+SKIP_DISKII_INIT
+		inc  SECT2READ		; Add one to our sect to read
+		lda  SECT2READ
+		ldx  BOOT_TRACK		; Still on BOOT_TRACK 0?
+		bne  BOOTTRKREADYET	; Nope see if we've read the whole BOOT_TRACK
+		cmp  #$02		; BOOT_TRACK 0 still, have read sector 1 yet?
+		bne  BOOTTRKREADYET
+		pha			; So now we've read in sectors 0 and 1
+		lda  #$d0		; We can start reading into the language card
+		sta  DATA_PTR+1
+		pla
+BOOTTRKREADYET	cmp  #$10		; Done the whole BOOT_TRACK yet?
+		bne  MAP_SECTOR_AND_READ
+; Assuming Disk II in slot 6
+; First time X=$60
+; Write to $C0E0 (C080,X) IWM_PH0_OFF - left on by C600 ROM
+; Write to $C0E3 (C083,X) IWM_PH1_ON
+; Delay
+; Write to $C0E2 (C082,X) IWM_PH1_OFF
+; Write to $C0E5 (C085,X) IWM_PH2_ON
+; Read a whole BOOT_TRACK
+		ldx  SLOTX16
+		ldy  #$11		; Start loading in CPM stuff at $1100 (6520) 0100H Z80
+		lda  BOOT_TRACK
+		beq  READ_NEXT_TRK
+		cmp  #$01		; BOOT_TRACK one read in?
+		bne  COPY_VECTORS_FIND_Z80 ; Done BOOT_TRACK two, fire up Z80
+; Second time X=$64
+; Write to $C0E4 (C080,X) IWM_PH2_OFF ; left on by C600 ROM
+; Write to $C0E7 (C083,X) IWM_PH3_ON
+; Delay
+; Write to $C0E6 (C082,X) IWM_PH3_OFF
+		ldx  SLOTXPLUS4		; Time to read BOOT_TRACK 2
+		ldy  DATA_PTR+1
+READ_NEXT_TRK	sty  DATA_PTR+1
+		lda  #$00		; Get sector zero
+		sta  SECT2READ
+		inc  BOOT_TRACK		; Add one to the BOOT_TRACK
+		lda  IWM_PH0_OFF,x
+		lda  IWM_PH1_ON,x	; Move the head half BOOT_TRACK
+		lda  #$56		; Sleep for a bit
+		sec
+DELAY1		pha
+DELAY2		sbc  #$01
+		bne  DELAY2
+		pla
+		sbc  #$01
+		bne  DELAY1
+		lda  IWM_PH1_OFF,x	; Turn off the stepper motor
+		cpx  SLOTXPLUS4		; Are we on BOOT_TRACK 1.5?
+		bne  READTRK1
+; Third time X=$5C
+; Write to $C0E1 (C085,X) IWM_PH0_ON
+; Read a whole BOOT_TRACK
+		ldx  SLOTXMINUS4	; Time to go to BOOT_TRACK 2
+READTRK1	lda  IWM_PH2_ON,x	; Another half BOOT_TRACK
+MAP_SECTOR_AND_READ
+		ldy  SECT2READ		; Get the prodos(?) style sector
+		lda  SECTORMAP,y	; Convert it for the ROM
+		sta  ROM_SECT2READ
+		ldx  SLOTX16		; Setup X register for ROM
+JSRDISKIIREAD	jmp  DISKREADSECT	; Read in the sector via ROM, reneter back at $801
+
+SECTORMAP	DB   $00,$02,$04,$06,$08,$0a,$0c,$0e
+		DB   $01,$03,$05,$07,$09,$0b,$0d,$0f
+
+CLRSCR_ENABLELANGCARD
+		jsr  MON_INIT		; Clear 40 column etc
+		lda  $c30d		; Copy 80 column pascal init offset
+		sta  JSR80COLINIT+1	; Self modify so we can init the 80 column card
+JSR80COLINIT	jsr  $c300
+		lda  LCBANK1		; Allow writes to language card
+		lda  LCBANK1
+		rts
+
+SLOTXPLUS4	db   $00
+SLOTXMINUS4	db   $00
+COPYRIGHT	asc  '(C) CIRTECH 1985 PAT PEND'
+
+COPY_VECTORS_FIND_Z80
+		ldy  #$1c
+COPY_6502_LOOP	lda  VECTOR6502-1,y
+		sta  $03bf,y
+		dey
+		bne  COPY_6502_LOOP
+		ldy  #$0b
+COPY_Z80_LOOP	lda  VECTORZ80-1,y
+		sta  $0fff,y
+		dey
+		bne  COPY_Z80_LOOP
+		ldx  #$e7		; Z80 card swap from Z80 side
+		ldy  #$c7		; Z80 card swap from 6502 side
+PATCH_VECT_LOOP	stx  $03df		; Patch back from Z80
+		sty  $03c8		; Patch go to Z80
+		sty  TEST_Z80_CARD+2	; Patch this test
+TEST_Z80_CARD	sta  $c700
+		dex
+		dey
+		bit  $1000		; Found the card?
+		beq  START_Z80
+		cpy  #$c0		; Out of card slots?
+		bne  PATCH_VECT_LOOP
+SHOW_ERROR	lda  ROMIN		; Show an error message
+		jsr  MON_PRERR
+		jmp  MON_MONZ
+
+START_Z80	jmp  $03c0
+
+; Jump code to and from the Z80
+; Copy this into $3C0 - $3DB
+VECTOR6502	lda  LCBANK2		; $3C0
+		lda  LCBANK2		; $3C3
+		sta  $c400		; $3C6 (Patched when Z80 card found)
+		lda  ROMIN		; $3C9 Turn on ROM
+		jsr  $038a		; $3cc restore 6502 regs (unclear how that gets in place)
+		jsr  $0000		; $3CF 6502 routine?
+		sta  ROMIN		; $3D2 STA so we don't overwrite it
+		sei			; $3D5
+		jsr  MON_SAVE		; $3D6 Save away the registers
+		jmp  $03c0		; $3D9 Back to z80 land
+		.z80
+VECTORZ80:	xor  a
+		ld   (0000H),a		; Tell 6502 we're here
+		ld   hl,(0F3DEH)	; Card return address to 6502
+		ld   (hl),a		; Return back to 6502
+		jp   1100H		; Fire up loader
+		.6502
+IDCFOUND	jsr  CLRSCR_ENABLELANGCARD
+		lda  READCXFF+2		; Get back Cx00 slot
+		sta  SMARTDRV_CALL+2	; Patch up various things
+		sta  PD_ENTRY_PTR+2	; Get the prodos driver entry point
+		sta  SMART_DRV_CHK+2
+		sta  PD_CALL_DRIVER+2
+PD_ENTRY_PTR	ldy  $c0ff		; Get Prodos entry point
+SMART_DRV_CHK	lda  $c0fb		; Check for smartdrv?
+		lsr  A
+		bcc  PRODOS_READ	; Call via the ProDOS driver
+; Okay we've decided to use a smart port
+; This is used for booting from a ram drive.
+		iny
+		iny
+		iny
+		sty  SMARTDRV_CALL+1
+		lda  #$d0		; Read in rest of BOOT_TRACK zero to $D000
+		ldx  #$0e
+		ldy  #$02
+		jsr  SMARTDRV_READ
+		lda  #$11		; Read in BOOT_TRACKs one and two to $1100
+		ldx  #$20
+		ldy  #$10
+		jsr  SMARTDRV_READ
+		lda  SLOTX16		; Used by BIOS to set A: drive
+		ora  #$01		; Some sort of flag?
+		sta  SLOTX16
+		jmp  COPY_VECTORS_FIND_Z80
+
+SMARTDRV_READ	sta  SMART_BUF_PTR+1
+		stx  SMART_NUM_BYTES+1
+		sty  SMART_BLOCK_NUM+1
+SMARTDRV_CALL	jsr  $0000
+		db   $08		; Read command
+		dw   SMARTDRV_PARAM
+		rts
+
+SMARTDRV_PARAM	db   $04		; Number of parameters
+		db   $01		; Unit number 1
+SMART_BUF_PTR	dw   $0000
+SMART_NUM_BYTES	dw   $0000
+SMART_BLOCK_NUM	db   $00		; Three bytes for the address
+		db   $00
+		db   $00
+
+; Read via ProDOS device driver
+PRODOS_READ	sty  PD_CALL_DRIVER+1
+		lda  SLOTX16
+		sta  BPRODOS_UNITNUM
+		ora  #$0f
+		sta  SLOTX16		; Used by BIOS to set A: drive
+		ldx  #$06
+PD_ZP_COPY	lda  BPRODOS_CMD,x	; Copy prodos command to zero page
+		sta  PRODOS_CMD,x
+		dex
+		bpl  PD_ZP_COPY
+		ldx  #$07		; Read in 7 ProDOS blocks
+		stx  PD_ERR_COUNT
+		stx  PD_BLOCK_COUNT
+		jsr  PD_CALL_DRIVER
+		lda  #$11
+		sta  PRODOS_BUFPTRH
+		lda  #$10		; Read in BOOT_TRACKs one and two
+		sta  PD_BLOCK_COUNT
+		jsr  PD_CALL_DRIVER
+		jmp  COPY_VECTORS_FIND_Z80
+
+PD_CALL_DRIVER	jsr  $0000		; Call the prodos driver
+		bcs  PD_ERROR_HANDLER
+		inc  PRODOS_BUFPTRH	; Increment the store address by 512
+		inc  PRODOS_BUFPTRH
+		inc  PRODOS_BLKNUM	; Add one to the block number
+		dec  PD_BLOCK_COUNT
+		bne  PD_CALL_DRIVER	; Repeat until done
+		rts
+
+PD_BLOCK_COUNT	db   $00
+PD_ERR_COUNT	db   $00
+
+PD_ERROR_HANDLER
+		dec  PD_ERR_COUNT
+		bne  PD_CALL_DRIVER
+		jmp  SHOW_ERROR
+
+BPRODOS_CMD	db   $01		; Prodos command copied $42
+BPRODOS_UNITNUM	db   $00		; Prodos unit number copied $43
+BPRODOS_BUFPTR	dw   $d000
+BPRODOS_BLKNUM	dw   $0001
+		.dephase
+		END

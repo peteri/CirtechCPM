@@ -56,7 +56,7 @@ class Program
                 {
                     result = result + ' ';
                 }
-                while (result.Length % 07 != 0);
+                while ((result.Length & 7) != 0);
                 inPos++;
             }
             else

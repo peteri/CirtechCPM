@@ -1132,6 +1132,5 @@ SMARTDRV_BLOCKNUM:
 		DB   $00
 PD_TRACK_OP_CNT:
 		DB   $00
-		ds   83,$00
 		.dephase
 		END
