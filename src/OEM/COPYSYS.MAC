@@ -95,7 +95,7 @@ RDNXTCPM3SYS:	ld   de,BLKSIZE
 		push bc
 		ex   de,hl		; Set destination address
 		call DOSETDMA
-		ld   c,DREADF		; Read in a block
+		ld   c,READF		; Read in a block
 		call CPM3BDOS
 		cp   ERR_HARD		; Hardware error
 		jp   z,POPDISKERR	; Get out of here
@@ -183,7 +183,7 @@ DIRSECTADDR:	ld   de,0000H		; Overwritten earlier on
 		ld   bc,DIRENT_LEN	; with all three boot tracks used.
 		ldir
 		ld   a,(DIRSECTADDR+2)	; Get page in memory of the sector
-		ld   h,a	
+		ld   h,a
 		ld   l,00h		; clear low byte
 		sub  HIGH DISKII_DIR	; add just high byte to get right
 		ld   (ZDISK_SECT),a	; sector and save it
@@ -224,7 +224,7 @@ WRNXTCPM3SYS:	ld   de,BLKSIZE
 		push hl
 		ex   de,hl
 		call DOSETDMA		; Write the data out
-		ld   c,DWRITF
+		ld   c,WRITF
 		call CPM3BDOS
 		pop  hl			; Get back data pointer
 		inc  a			; ff =>

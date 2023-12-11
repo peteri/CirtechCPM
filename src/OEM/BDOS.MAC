@@ -3,7 +3,7 @@ BDOS		equ  05h		; DOS entry point
 BOOT		equ  00h		; reboot for system
 CONI		equ  1			; 01 - console input function
 CONO		equ  2			; 02 - console output function
-DCONO           equ  6			; 06 - direct console output
+DCONIO		equ  6			; 06 - direct console output
 PRSTR		equ  9			; 09 - console print string function
 RDSTR		equ  10			; 0a - Buffered console input
 SELD		equ  14			; 0e - select a disk
@@ -12,8 +12,8 @@ CLOSEF		equ  16			; 10 - close a file
 SFIRST		equ  17			; 11 - Search first
 SNEXT		equ  18			; 12 - Search next
 DELTEF		equ  19			; 13 - delete a file
-DREADF		equ  20			; 14 - Read func
-DWRITF		equ  21			; 15 - Write func
+READF		equ  20			; 14 - Read func
+WRITF		equ  21			; 15 - Write func
 MAKEF		equ  22			; 16 - Make a file
 GETDRV		equ  25			; 19 - return current drive function
 SETDMAOFF	equ  26			; 1a - Set DMA
