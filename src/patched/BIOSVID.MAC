@@ -9,9 +9,9 @@
 		CSEG
 		.6502
 		.phase $d000
-HIBELL		EQU BELL + $80		; Bell with high bit
-HIESC 		EQU ESC + $80		; Escape with high bit
-HISPACE 	EQU SPACE + $80		; Space with high bit
+HIBELL		EQU  BELL + $80		; Bell with high bit
+HIESC		EQU  ESC + $80		; Escape with high bit
+HISPACE		EQU  SPACE + $80	; Space with high bit
 ;*******************************************************************************
 ;*                                                                             *
 ;* Routines to handle the 80 Column card                                       *
@@ -233,10 +233,10 @@ CURSOR_RIGHT:	inc  CURSORX		; Add one to cursor position
 OFF_RIGHT:	jsr  CARRIAGE_RET	; Off right hand edge Set to 0
 		jmp  LINEFEED		; and down a line
 ; Cursor Up
-CURSOR_UP:	dec CURSORY		; knock one off
-		bpl SET_LINE_PTR	; Positive, all done
-		inc CURSORY		; Add it back if neg
-		rts			; no need to adjust line pointer	
+CURSOR_UP:	dec  CURSORY		; knock one off
+		bpl  SET_LINE_PTR	; Positive, all done
+		inc  CURSORY		; Add it back if neg
+		rts			; no need to adjust line pointer
 ; Clear line
 CLR_LINE:	lda  #$00		; Set us to be at the beginning of the line
 		sta  CURSORX
@@ -475,7 +475,7 @@ CTRL_CHAR_TAB:	DW   RINGBELL		; Ctrl-G
 		DW   BACKSPACE		; Ctrl-H
 		DW   IGNORE_CHAR	; Ctrl-I
 		DW   LINEFEED		; Ctrl-J
-		DW   CURSOR_UP          ; Ctrl-K
+		DW   CURSOR_UP		; Ctrl-K
 		DW   CURSOR_RIGHT	; Ctrl-L
 		DW   CARRIAGE_RET	; Ctrl-M
 		DW   SET_NORMAL		; Ctrl-N

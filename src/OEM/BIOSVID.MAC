@@ -9,9 +9,9 @@
 		CSEG
 		.6502
 		.phase $d000
-HIBELL		EQU BELL + $80		; Bell with high bit
-HIESC 		EQU ESC + $80		; Escape with high bit
-HISPACE 	EQU SPACE + $80		; Space with high bit
+HIBELL		EQU  BELL + $80		; Bell with high bit
+HIESC		EQU  ESC + $80		; Escape with high bit
+HISPACE		EQU  SPACE + $80	; Space with high bit
 ;*******************************************************************************
 ;*                                                                             *
 ;* Routines to handle the 80 Column card                                       *
