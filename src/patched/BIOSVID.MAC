@@ -232,7 +232,11 @@ CURSOR_RIGHT:	inc  CURSORX		; Add one to cursor position
 
 OFF_RIGHT:	jsr  CARRIAGE_RET	; Off right hand edge Set to 0
 		jmp  LINEFEED		; and down a line
-
+; Cursor Up
+CURSOR_UP:	dec CURSORY		; knock one off
+		bpl SET_LINE_PTR	; Positive, all done
+		inc CURSORY		; Add it back if neg
+		rts			; no need to adjust line pointer	
 ; Clear line
 CLR_LINE:	lda  #$00		; Set us to be at the beginning of the line
 		sta  CURSORX
@@ -305,7 +309,8 @@ CLR_PAGE1_LINE:	sta  (SCRLINEL),y	; Clear the character
 		cpy  #40		; All done?
 		bne  CLR_PAGE1_LINE	; Nope do the next one
 		rts
-
+NEWLINE:	jsr  CARRIAGE_RET	; Carriage return
+		jmp  LINEFEED
 ; Ring the bell
 RINGBELL:	lda  #$35
 		sta  BELL_COUNT
@@ -470,8 +475,8 @@ CTRL_CHAR_TAB:	DW   RINGBELL		; Ctrl-G
 		DW   BACKSPACE		; Ctrl-H
 		DW   IGNORE_CHAR	; Ctrl-I
 		DW   LINEFEED		; Ctrl-J
-		DW   CLR_TO_ENDSCR	; Ctrl-K
-		DW   CLEAR_SCREEN	; Ctrl-L
+		DW   CURSOR_UP          ; Ctrl-K
+		DW   CURSOR_RIGHT	; Ctrl-L
 		DW   CARRIAGE_RET	; Ctrl-M
 		DW   SET_NORMAL		; Ctrl-N
 		DW   SET_INVERSE	; Ctrl-O
@@ -484,11 +489,13 @@ CTRL_CHAR_TAB:	DW   RINGBELL		; Ctrl-G
 		DW   SCROLL_DOWN	; Ctrl-V
 		DW   SCROLL_UP		; Ctrl-W
 		DW   IGNORE_CHAR	; Ctrl-X
-		DW   HOME		; Ctrl-Y
+		DW   CLEAR_SCREEN	; Ctrl-Y
 		DW   CLR_LINE		; Ctrl-Z
 		DW   IGNORE_CHAR	; Ctrl-[ aka Esc
-		DW   CURSOR_RIGHT	; Ctrl-\
+		DW   CLR_TO_ENDSCR	; Ctrl-\
 		DW   CLR_EOL		; Ctrl-]
+		DW   HOME		; Ctrl-^
+		DW   NEWLINE		; Ctrl-_
 CTRLTABLEN	EQU  *-CTRL_CHAR_TAB
 LINE_STARTH:	DB   $04,$04,$05,$05,$06,$06,$07,$07 ; Start of video line high
 		DB   $04,$04,$05,$05,$06,$06,$07,$07
@@ -504,11 +511,11 @@ ESC_CTRL_CODES:	DB   $8c		; <ESC><FF> - Form feed
 		DB   'Y' + $80		; <ESC> Y - Page erase to space
 		DB   'T' + $80		; <ESC> T - Line erase to space
 SINGTABLEN	EQU  *-ESC_CTRL_CODES
-ESC_CHAR_TRANS:	DB   $8c		; Ctrl-L - Form feed
+ESC_CHAR_TRANS:	DB   $99		; Ctrl-Y - Form feed
 		DB   $8e		; Ctrl-N - set normal
 		DB   $8f		; Ctrl-O - Set Inverse
-		DB   $8c		; Ctrl-L - Form feed
-		DB   $8b		; Ctrl-K - Clear to end of screen
+		DB   $99		; Ctrl-Y - Form feed
+		DB   $9c		; Ctrl-\ - Clear to end of screen
 		DB   $9d		; Ctrl-] - Clear to end of line
 GOTO_Y:		DB   $00		; Goto YX cursor Y
 		.dephase
