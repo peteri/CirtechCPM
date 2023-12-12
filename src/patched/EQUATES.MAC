@@ -134,8 +134,10 @@ MON_SAVE	EQU  $ff4a		; save 6502 registers to $45-49
 MON_MONZ	EQU  $ff69		; reset and enter monitor
 		; Misc constants
 ESC		EQU  1BH		; Escape character
+BELL		EQU  07H		; Bell
 CR		EQU  0DH		; Carriage return
 LF		EQU  0AH		; Line feed
+SPACE		EQU  20H		; Space
 DSKOP_RD	EQU  01H		; Disk operation Read
 DSKOP_WR	EQU  02H		; Disk operation Write
 DSKOP_FMT	EQU  03H		; Disk operation Format
