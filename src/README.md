@@ -40,9 +40,11 @@ Code patches applied:
 - `BIOS.MAC` - Checks for the Cirtech CP/M plus Apple //e physical hardware which it is suspected used the address mapping PROM with an alternative mapping have been removed.
 - `BIOSCHAR.MAC` - The 6850 ACIA based card driver (for the CCS7710 or Apple ][ communications card ]) now no longer overwrites an input character. _Note_ this is untested until I plug the CCS7710 I have into physical hardware.
 - `BIOSDISK.MAC` - No changes currently, although the disk formatter routine track nibble gap sizing routine looks like it is jumping to an incorrect location when wasting cycles.
-- `BIOSVID.MAC` - Now has an cursor up command.
+- `BIOSVID.MAC` - Now has an cursor up command and correctly implements the Soroq IQ-120
 
 Currently this builds a `system.dsk` in the binaries folder which is capable of being booted under AppleWin and Mame. The Utility disk is still on the todo list.
+
+For details of the video card patches please see [video-bios-patch.md](video-bios-patch.md)
 
 ## TO DO
 
