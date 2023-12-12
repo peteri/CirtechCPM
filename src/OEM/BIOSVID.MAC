@@ -9,6 +9,9 @@
 		CSEG
 		.6502
 		.phase $d000
+HIBELL		EQU  BELL + $80		; Bell with high bit
+HIESC		EQU  ESC + $80		; Escape with high bit
+HISPACE		EQU  SPACE + $80	; Space with high bit
 ;*******************************************************************************
 ;*                                                                             *
 ;* Routines to handle the 80 Column card                                       *
@@ -52,14 +55,14 @@ PRINT_CHAR:	ora  #$80		; Set the high bit
 ;
 GOTO_YX:	jsr  HIDE_CURSOR
 		sec
-		sbc  #$a0		; Subtract space
+		sbc  #HISPACE		; Subtract space
 		cmp  #80		; Okay are we on screen?
 		bcc  CURSORX_OK		; Bigger than screen
 		lda  #$00		; Zero cursor
 CURSORX_OK:	sta  CURSORX		; Save away X position
 		lda  GOTO_Y		; Get the Y Coord
 		sec
-		sbc  #$a0
+		sbc  #HISPACE
 		cmp  #24
 		bcc  CURSORY_OK
 		lda  #$00
@@ -73,7 +76,7 @@ CHECK_ESC_CHAR1:
 		bvc  CHECK_FOR_ESC
 		jmp  ESCAPE_CHAR1
 
-CHECK_FOR_ESC:	cmp  #$9b
+CHECK_FOR_ESC:	cmp  #HIESC
 		bne  CTRL_WRITE_SCR
 		lda  #$40
 		sta  ESC_STATE
@@ -81,7 +84,7 @@ CHECK_FOR_ESC:	cmp  #$9b
 
 ; Come here to write a character to screen
 ; and handle control characters
-CTRL_WRITE_SCR:	cmp  #$a0
+CTRL_WRITE_SCR:	cmp  #HISPACE
 		bcc  TEST_CONTROL_CHAR	; Go off and deal with a control character
 		tax			; Save A for later
 		lda  CURSORX		; Get the current cursor
@@ -141,14 +144,14 @@ IGNORE_CHAR:	rts			; Also used in jump table
 
 ; Handle a possible control character
 TEST_CONTROL_CHAR:
-		cmp  #$9e		; Off the end of the table
+		cmp  #HIBELL+(CTRLTABLEN/2) ; Off the end of the table
 		bcs  IGNORE_CHAR	; Ignore it
-		cmp  #$87		; Off the front of the table
+		cmp  #HIBELL		; Off the front of the table
 		bcc  IGNORE_CHAR	; Ignore it
 HANDLE_CONTROL_CHAR:
 		jsr  HIDE_CURSOR
 		sec
-		sbc  #$87		; Subtract Bell character
+		sbc  #HIBELL		; Subtract Bell character
 		asl  A			; Mult by 2 for table index
 		tay
 		lda  CTRL_CHAR_TAB,y	; Lookup the entry and modify jump
@@ -164,7 +167,7 @@ ESCAPE_CHAR1:	ldy  #$00		; First character in escape sequence
 		cmp  #'=' + $80		; Goto YX command?
 		beq  GOTO_YX_CMD	; Yes it is
 ; Convert any of the single character escape codes
-		ldy  #$05
+		ldy  #SINGTABLEN-1
 FIND_ESC_CHAR_LOOP:
 		cmp  ESC_CTRL_CODES,y	; Is it in the table?
 		beq  FOUND_ESC_CHAR	; Yes it is do something
@@ -304,7 +307,7 @@ CLR_PAGE1_LINE:	sta  (SCRLINEL),y	; Clear the character
 		rts
 
 ; Ring the bell
-BELL:		lda  #$35
+RINGBELL:	lda  #$35
 		sta  BELL_COUNT
 BELL_LOOP:	lda  #$05
 		jsr  DELAY
@@ -463,7 +466,7 @@ HIDE_CURSOR:	bit  CUR_STATE		; Get the current cursor state
 		pla			; Restore acc
 CURSOR_IS_OFF:	rts
 
-CTRL_CHAR_TAB:	DW   BELL		; Ctrl-G
+CTRL_CHAR_TAB:	DW   RINGBELL		; Ctrl-G
 		DW   BACKSPACE		; Ctrl-H
 		DW   IGNORE_CHAR	; Ctrl-I
 		DW   LINEFEED		; Ctrl-J
@@ -486,19 +489,21 @@ CTRL_CHAR_TAB:	DW   BELL		; Ctrl-G
 		DW   IGNORE_CHAR	; Ctrl-[ aka Esc
 		DW   CURSOR_RIGHT	; Ctrl-\
 		DW   CLR_EOL		; Ctrl-]
+CTRLTABLEN	EQU  *-CTRL_CHAR_TAB
 LINE_STARTH:	DB   $04,$04,$05,$05,$06,$06,$07,$07 ; Start of video line high
 		DB   $04,$04,$05,$05,$06,$06,$07,$07
 		DB   $04,$04,$05,$05,$06,$06,$07,$07
 LINE_STARTL:	DB   $00,$80,$00,$80,$00,$80,$00,$80 ; Start of video line low
 		DB   $28,$a8,$28,$a8,$28,$a8,$28,$a8
 		DB   $50,$d0,$50,$d0,$50,$d0,$50,$d0
-; Used to convert some televideo 920(maybe?) escape codes to Ctrl codes
+; Used to convert some Siroq - IQ120 escape codes to Ctrl codes
 ESC_CTRL_CODES:	DB   $8c		; <ESC><FF> - Form feed
 		DB   ')' + $80		; <ESC> ) - Start half intensity
 		DB   '(' + $80		; <ESC> ( - End half intesity
 		DB   '*' + $80		; <ESC> * - Clear all to null
 		DB   'Y' + $80		; <ESC> Y - Page erase to space
 		DB   'T' + $80		; <ESC> T - Line erase to space
+SINGTABLEN	EQU  *-ESC_CTRL_CODES
 ESC_CHAR_TRANS:	DB   $8c		; Ctrl-L - Form feed
 		DB   $8e		; Ctrl-N - set normal
 		DB   $8f		; Ctrl-O - Set Inverse

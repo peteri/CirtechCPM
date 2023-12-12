@@ -20,7 +20,7 @@ The Apple //e video BIOS mostly emulates a Datamedia terminal according to the M
 | Ctrl-Y | $19 | EM   | Home                 |
 | Ctrl-Z | $1A | SUB  | Clear line           |
 | Ctrl-[ | $1B | ESC  | Escape               |  
-| Ctrl-\ | $1C | FS   | Foward space         |
+| Ctrl-\ | $1C | FS   | Forward space        |
 | Ctrl-] | $1D | GS   | Clear to end of line |
 | Ctrl-^ | $1E | RS   | Goto X,Y             |
 | Ctrl-_ | $1F | US   | Cursor up            |
@@ -33,8 +33,49 @@ The Microsoft documentation recommends using a Siroq IQ120 terminal definition f
 
 The `CONFIGIO.BAS` program sets up two tables at $396 and $3A1 which map from the software codes to codes that the 80 column in slot 3 will understand. The mapping is performed in the CP/M BIOS console IO routines.
 
+## Cirtech card
+
 The Cirtech BIOS does not perform this mapping and has a null table where the screen definition is a one to one mapping from Siroq to Siroq codes. What is noticable from the terminal screen function screen shot is that some codes are reused (`RS`,`VT` and `FF`).
 
-In practice
+In practice I never really noticed the missing functionality when I was using the original BIOS back in the 80's.
+
+The quick reference page from the Soroq manual shows the correct codes:
 
 ![Soroq manual page](../images/IQ120operators.png)
+
+## Patches
+
+To avoid creating too many changes, the following map of ctrl codes to screen actions has been created. The orignal Soroq codes preceeded by the `<ESC>` characters have been mapped to a single ctrl character code. 
+
+| Ctrl        | Hex | Code | Function               |
+|-------------|-----|------|------------------------|
+| Ctrl-H      | $08 | BS   | Backspace              |
+| Ctrl-J      | $0A | LF   | Linefeed               |
+| Ctrl-K      | $0B | VT   | Cursor Up              |
+| Ctrl-L      | $0C | FF   | Cursor Forward         |
+| Ctrl-M      | $0D | CR   | Carriage return        |
+| Ctrl-N      | $0E | SO   | Normal                 |
+| Ctrl-O      | $0F | SI   | Inverse                |
+| Ctrl-V      | $16 | SYN  | Scroll down            |
+| Ctrl-W      | $17 | ETB  | Scroll up              |
+| Ctrl-Y      | $19 | EM   | Clear screen           |
+| Ctrl-Z      | $1A | SUB  | Clear line             |
+| Ctrl-[      | $1B | ESC  | Escape                 |  
+| Ctrl-\      | $1C | FS   | Clear to end of screen |
+| Ctrl-]      | $1D | GS   | Clear to end of line   |
+| Ctrl-^      | $1E | RS   | Home cursor            |
+| Ctrl-_      | $1F | US   | Newline (CR+LF)        |
+
+Escape prefixed codes
+
+| Prefixed code   | Code | Function               |
+|-----------------|------|------------------------|
+| `<ESC>` `<FF>`  | EM   | Clear screen           |
+| `<ESC>` `)`     | SO   | Lo-Lite text           |
+| `<ESC>` `(`     | HI   | Hi-lite text           |
+| `<ESC>` `*`     | EM   | Clear screen           |
+| `<ESC>` `Y`     | FS   | Clear to end of screen |
+| `<ESC>` `T`     | GS   | Clear to end of line   |
+| `<ESC>` `=` Y X |      | Goto column X row Y    |
+
+The addition of `<ESC>` `<FF>` has been kept from the original Cirtech source code.

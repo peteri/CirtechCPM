@@ -17,7 +17,7 @@ FNAMEBUF	EQU  080H		; Buffer for users file name
 FNAMELEN	EQU  2+8+1+3		; Buffer length A:ABCDEFGH.ABC
 DATASTART	EQU  ENDOFCODE+20H
 		ld   sp,DATASTART	; 32 bytes of stack.
-		ld   a,HIGH DATASTART+1 ; Get how big we are
+		ld   a,HIGH DATASTART+1	; Get how big we are
 		ld   b,a
 		ld   a,(BDOS+2)		; get bdos hi address byte
 		sub  b			; subtract end of program
