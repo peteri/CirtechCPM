@@ -496,7 +496,7 @@ LINE_STARTH:	DB   $04,$04,$05,$05,$06,$06,$07,$07 ; Start of video line high
 LINE_STARTL:	DB   $00,$80,$00,$80,$00,$80,$00,$80 ; Start of video line low
 		DB   $28,$a8,$28,$a8,$28,$a8,$28,$a8
 		DB   $50,$d0,$50,$d0,$50,$d0,$50,$d0
-; Used to convert some Siroq - IQ120 escape codes to Ctrl codes
+; Used to convert some Soroc - IQ120 escape codes to Ctrl codes
 ESC_CTRL_CODES:	DB   $8c		; <ESC><FF> - Form feed
 		DB   ')' + $80		; <ESC> ) - Start half intensity
 		DB   '(' + $80		; <ESC> ( - End half intesity
