@@ -1,0 +1,69 @@
+		.Z80
+;********************************************************
+;*                                                      *
+;*     MBASIC.COM patcher for Cirtech CP/M plus         *
+;*                                                      *
+;* Binary   (C) Copyright 1985 Cirtech                  *
+;* Comments (C) Copyright 2023 Peter Ibbotson           *
+;********************************************************
+		INCLUDE BDOS.MAC
+LF		EQU  0AH
+CR		EQU  0DH
+BELL            EQU  07H
+		CSEG
+		.PHASE 0100H
+ 		ld   de,ENDOFCODE
+	 	ld   c,SETDMAOFF
+ 		call BDOS
+ 		ld   de,MBASICFCB
+ 		ld   c,OPENF
+ 		call BDOS
+ 		inc  a
+ 		jr   nz,FILEOKAY
+ 		ld   de,NOMBASIC
+	 	jr   EXITMSG
+FILEOKAY: 	ld   hl,00BBH
+ 		ld   (018DH),hl
+ 		xor  a
+ 		ld   (018FH),a
+ 		ld   de,MBASICFCB
+ 		ld   c,RREADF
+ 		call BDOS
+ 		inc  a
+ 		jr   nz,READOK
+ 		ld   de,DISKERR
+ 		jr   EXITMSG
+READOK:		ld   a,0C3H
+ 		ld   (020DH),a
+ 		ld   a,0C4H
+ 		ld   (020EH),a
+ 		ld   a,05EH
+ 		ld   (020FH),a
+ 		ld   hl,00BBH
+ 		ld   (018DH),hl
+ 		xor  a
+ 		ld   (018FH),a
+ 		ld   de,MBASICFCB
+ 		ld   c,RWRITF
+ 		call BDOS
+ 		ld   de,MBASICFCB
+ 		ld   c,CLOSEF
+ 		call BDOS
+ 		inc  a
+ 		ld   de,DISKERR
+ 		jr   z,EXITMSG
+ 		ld   de,PATCHOK
+EXITMSG:	ld   c,PrSTR
+ 		call BDOS
+ 		jp   BOOT
+MBASICFCB:	DB   00H		; DR
+		DB   'MBASIC  COM'	; FNAME
+		DB   00H,00H,00H,00H	; EX,S1,S2,RC
+		DS   10H,00H		; AL0..FCB
+		DB   00H,00H,00H,00H	; CR,R0,R1,R2
+DISKERR:	DB   BELL,LF,CR,CR,' DISK I/O ERROR ',LF,CR,'$'
+NOMBASIC:	DB   BELL,LF,CR,CR,' CANNOT FIND MBASIC.COM ON CURRENT DRIVE',LF,CR,'$'
+PATCHOK:	DB   LF,CR,CR,CR,' PATCH COMPLETED OKAY ',LF,CR,CR,'$'
+ENDOFCODE:
+		.DEPHASE
+		END

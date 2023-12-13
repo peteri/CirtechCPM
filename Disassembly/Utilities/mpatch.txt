@@ -1,0 +1,176 @@
+0100: 11 F5 01 ld   de,$01F5
+0103: 0E 1A    ld   c,$1A
+0105: CD 05 00 call $0005
+0108: 11 6C 01 ld   de,$016C
+010B: 0E 0F    ld   c,$0F
+010D: CD 05 00 call $0005
+0110: 3C       inc  a
+0111: 20 05    jr   nz,$0118
+0113: 11 A8 01 ld   de,$01A8
+0116: 18 4C    jr   $0164
+0118: 21 BB 00 ld   hl,$00BB
+011B: 22 8D 01 ld   ($018D),hl
+011E: AF       xor  a
+011F: 32 8F 01 ld   ($018F),a
+0122: 11 6C 01 ld   de,$016C
+0125: 0E 21    ld   c,$21
+0127: CD 05 00 call $0005
+012A: 3C       inc  a
+012B: 20 05    jr   nz,$0132
+012D: 11 91 01 ld   de,$0191
+0130: 18 32    jr   $0164
+0132: 3E C3    ld   a,$C3
+0134: 32 0D 02 ld   ($020D),a
+0137: 3E C4    ld   a,$C4
+0139: 32 0E 02 ld   ($020E),a
+013C: 3E 5E    ld   a,$5E
+013E: 32 0F 02 ld   ($020F),a
+0141: 21 BB 00 ld   hl,$00BB
+0144: 22 8D 01 ld   ($018D),hl
+0147: AF       xor  a
+0148: 32 8F 01 ld   ($018F),a
+014B: 11 6C 01 ld   de,$016C
+014E: 0E 22    ld   c,$22
+0150: CD 05 00 call $0005
+0153: 11 6C 01 ld   de,$016C
+0156: 0E 10    ld   c,$10
+0158: CD 05 00 call $0005
+015B: 3C       inc  a
+015C: 11 91 01 ld   de,$0191
+015F: 28 03    jr   z,$0164
+0161: 11 D7 01 ld   de,$01D7
+0164: 0E 09    ld   c,$09
+0166: CD 05 00 call $0005
+0169: C3 00 00 jp   $0000
+016C: 00       nop
+016D: 4D       ld   c,l
+016E: 42       ld   b,d
+016F: 41       ld   b,c
+0170: 53       ld   d,e
+0171: 49       ld   c,c
+0172: 43       ld   b,e
+0173: 20 20    jr   nz,$0195
+0175: 43       ld   b,e
+0176: 4F       ld   c,a
+0177: 4D       ld   c,l
+0178: 00       nop
+0179: 00       nop
+017A: 00       nop
+017B: 00       nop
+017C: 00       nop
+017D: 00       nop
+017E: 00       nop
+017F: 00       nop
+0180: 00       nop
+0181: 00       nop
+0182: 00       nop
+0183: 00       nop
+0184: 00       nop
+0185: 00       nop
+0186: 00       nop
+0187: 00       nop
+0188: 00       nop
+0189: 00       nop
+018A: 00       nop
+018B: 00       nop
+018C: 00       nop
+018D: 00       nop
+018E: 00       nop
+018F: 00       nop
+0190: 00       nop
+0191: 07       rlca
+0192: 0A       ld   a,(bc)
+0193: 0D       dec  c
+0194: 0D       dec  c
+0195: 20 44    jr   nz,$01DB
+0197: 49       ld   c,c
+0198: 53       ld   d,e
+0199: 4B       ld   c,e
+019A: 20 49    jr   nz,$01E5
+019C: 2F       cpl
+019D: 4F       ld   c,a
+019E: 20 45    jr   nz,$01E5
+01A0: 52       ld   d,d
+01A1: 52       ld   d,d
+01A2: 4F       ld   c,a
+01A3: 52       ld   d,d
+01A4: 20 0A    jr   nz,$01B0
+01A6: 0D       dec  c
+01A7: 24       inc  h
+01A8: 07       rlca
+01A9: 0A       ld   a,(bc)
+01AA: 0D       dec  c
+01AB: 0D       dec  c
+01AC: 20 43    jr   nz,$01F1
+01AE: 41       ld   b,c
+01AF: 4E       ld   c,(hl)
+01B0: 4E       ld   c,(hl)
+01B1: 4F       ld   c,a
+01B2: 54       ld   d,h
+01B3: 20 46    jr   nz,$01FB
+01B5: 49       ld   c,c
+01B6: 4E       ld   c,(hl)
+01B7: 44       ld   b,h
+01B8: 20 4D    jr   nz,$0207
+01BA: 42       ld   b,d
+01BB: 41       ld   b,c
+01BC: 53       ld   d,e
+01BD: 49       ld   c,c
+01BE: 43       ld   b,e
+01BF: 2E 43    ld   l,$43
+01C1: 4F       ld   c,a
+01C2: 4D       ld   c,l
+01C3: 20 4F    jr   nz,$0214
+01C5: 4E       ld   c,(hl)
+01C6: 20 43    jr   nz,$020B
+01C8: 55       ld   d,l
+01C9: 52       ld   d,d
+01CA: 52       ld   d,d
+01CB: 45       ld   b,l
+01CC: 4E       ld   c,(hl)
+01CD: 54       ld   d,h
+01CE: 20 44    jr   nz,$0214
+01D0: 52       ld   d,d
+01D1: 49       ld   c,c
+01D2: 56       ld   d,(hl)
+01D3: 45       ld   b,l
+01D4: 0A       ld   a,(bc)
+01D5: 0D       dec  c
+01D6: 24       inc  h
+01D7: 0A       ld   a,(bc)
+01D8: 0D       dec  c
+01D9: 0D       dec  c
+01DA: 0D       dec  c
+01DB: 20 50    jr   nz,$022D
+01DD: 41       ld   b,c
+01DE: 54       ld   d,h
+01DF: 43       ld   b,e
+01E0: 48       ld   c,b
+01E1: 20 43    jr   nz,$0226
+01E3: 4F       ld   c,a
+01E4: 4D       ld   c,l
+01E5: 50       ld   d,b
+01E6: 4C       ld   c,h
+01E7: 45       ld   b,l
+01E8: 54       ld   d,h
+01E9: 45       ld   b,l
+01EA: 44       ld   b,h
+01EB: 20 4F    jr   nz,$023C
+01ED: 4B       ld   c,e
+01EE: 41       ld   b,c
+01EF: 59       ld   e,c
+01F0: 20 0A    jr   nz,$01FC
+01F2: 0D       dec  c
+01F3: 0D       dec  c
+01F4: 24       inc  h
+01F5: 1A       ld   a,(de)
+01F6: 1A       ld   a,(de)
+01F7: 1A       ld   a,(de)
+01F8: 1A       ld   a,(de)
+01F9: 1A       ld   a,(de)
+01FA: 1A       ld   a,(de)
+01FB: 1A       ld   a,(de)
+01FC: 1A       ld   a,(de)
+01FD: 1A       ld   a,(de)
+01FE: 1A       ld   a,(de)
+01FF: 1A       ld   a,(de)
