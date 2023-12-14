@@ -52,9 +52,9 @@ For details of the video card patches please see [video-bios-patch.md](video-bio
 
 ~Add a patched version of CP/M plus bootable with mame / AppleWin with a Softcard emulated.~
 
-Write 6502 / Z80 code to test the possible memory remapper that is being used to detect the Cirtech card. This should help with figuring out why the main code use 0E401H to swap between Z80 and 6502 code
+~Add source code for the utility disk and build steps to generate it.~
 
-Add source code for the utility disk and build steps to generate it.
+Write 6502 / Z80 code to test the possible memory remapper that is being used to detect the Cirtech card. This should help with figuring out why the main code use 0E401H to swap between Z80 and 6502 code
 
 Possibly add Cirtech CP/M emulation to mame / AppleWin.
 
