@@ -1,0 +1,68 @@
+;********************************************************
+;*                                                      *
+;*     xBASIC.COM patcher for Cirtech CP/M plus         *
+;*     Shared common file for MPATCH.COM and GPATCH.COM *
+;*                                                      *
+;* Binary   (C) Copyright 1985 Cirtech                  *
+;* Comments (C) Copyright 2023 Peter Ibbotson           *
+;********************************************************
+LF		EQU  0AH
+CR		EQU  0DH
+BELL            EQU  07H
+		CSEG
+		.PHASE 0100H
+ 		ld   de,ENDOFCODE	; Set destination address
+	 	ld   c,SETDMAOFF
+ 		call BDOS
+ 		ld   de,XBASICFCB	; Open the file
+ 		ld   c,OPENF
+ 		call BDOS
+ 		inc  a			; Open was okay
+ 		jr   nz,FILEOKAY
+ 		ld   de,NOXBASIC	; Tell the user
+	 	jr   EXITMSG		; it was bad...
+FILEOKAY: 	ld   hl,PATCHRECORD	; Setup which record
+ 		ld   (XBASICFCB+FCB_R0),hl
+ 		xor  a
+ 		ld   (XBASICFCB+FCB_R0+2),a
+ 		ld   de,XBASICFCB	; Do a random read
+ 		ld   c,RREADF
+ 		call BDOS
+ 		inc  a
+ 		jr   nz,READOK		; No error carry on
+ 		ld   de,DISKERR		; Let them know...
+ 		jr   EXITMSG
+READOK:		ld   a,PATCHBYTE1	; Do the patch
+ 		ld   (ENDOFCODE+PATCHOFFS),a
+ 		ld   a,PATCHBYTE2
+ 		ld   (ENDOFCODE+PATCHOFFS+1),a
+ 		ld   a,PATCHBYTE3
+ 		ld   (ENDOFCODE+PATCHOFFS+2),a
+ 		ld   hl,PATCHRECORD	; Reset our record position
+ 		ld   (XBASICFCB+FCB_R0),hl
+ 		xor  a
+ 		ld   (XBASICFCB+FCB_R0+2),a
+ 		ld   de,XBASICFCB	; Do the write
+ 		ld   c,RWRITF
+ 		call BDOS
+ 		ld   de,XBASICFCB	; Do the close
+ 		ld   c,CLOSEF
+ 		call BDOS
+ 		inc  a			; Error?
+ 		ld   de,DISKERR
+ 		jr   z,EXITMSG		; Yes tell the user
+ 		ld   de,PATCHOK		; Nope let em know we're good
+EXITMSG:	ld   c,PRSTR
+ 		call BDOS
+ 		jp   BOOT
+XBASICFCB:	DB   00H		; DR
+		DB   BASIC,'BASIC  COM'	; FNAME
+		DB   00H,00H,00H,00H	; EX,S1,S2,RC
+		DS   10H,00H		; AL0..ALF 
+		DB   00H,00H,00H,00H	; CR,R0,R1,R2
+		DB   00H
+DISKERR:	DB   BELL,LF,CR,CR,' DISK I/O ERROR ',LF,CR,'$'
+NOXBASIC:	DB   BELL,LF,CR,CR,' CANNOT FIND ',BASIC,'BASIC.COM ON CURRENT DRIVE',LF,CR,'$'
+PATCHOK:	DB   LF,CR,CR,CR,' PATCH COMPLETED OKAY ',LF,CR,CR,'$'
+ENDOFCODE:
+		.DEPHASE

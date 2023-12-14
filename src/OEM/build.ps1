@@ -20,22 +20,30 @@ if ((Test-Path -Path system -PathType Container) -eq $false)
 {
     New-Item -ItemType Directory -Path system
 }
+if ((Test-Path -Path utility -PathType Container) -eq $false)
+{
+    New-Item -ItemType Directory -Path utility
+}
 # Delete output from earlier runs
 remove-item binaries\*.*
 remove-item system\*.*
+remove-item utility\*.*
 remove-item comparison\*.*
 # create some comparison binaries from a disk image
 Set-location -Path comparison
 dotnet run --project ../../../tools/NibReader -- ../../../DiskImages/BlankBootableCPM3.nib -nodiag
 # extract files from the cirtech drive
 Set-location -Path ../system
-#dotnet run --project ../../../tools/CpmDsk -- directory --disk-image "../../../DiskImages/CIRTECH CPM PLUS SYSTEM.DSK" 
 dotnet run --project ../../../tools/CpmDsk -- extract *.* --disk-image "../../../DiskImages/CIRTECH CPM PLUS SYSTEM.DSK" 
+Set-location -Path ../utility
+dotnet run --project ../../../tools/CpmDsk -- extract *.* --disk-image "../../../DiskImages/CIRTECH CPM PLUS UTILITY.DSK" 
 Set-location -Path ..
 # Copy files into comparison folder
 copy-item -Path .\system\START.COM -Destination .\comparison\START.COM
 copy-item -Path .\system\COPYSYS.COM -Destination .\comparison\COPYSYS.COM
 copy-item -Path .\system\SDT.COM -Destination .\comparison\SDT.COM
+copy-item -Path .\utility\GPATCH.COM -Destination .\comparison\GPATCH.COM
+copy-item -Path .\utility\MPATCH.COM -Destination .\comparison\MPATCH.COM
 Write-Host 'Building files'
 # For M80 we can wrap in powershell script and catch and errors by
 # teeing output to a file and looking for No Fatal Error(s)
@@ -50,6 +58,8 @@ Write-Host 'Building files'
 .\M80.ps1 COPYSYS
 .\M80.ps1 START
 .\M80.ps1 SDT
+.\M80.ps1 MPATCH
+.\M80.ps1 GPATCH
 # Annoyingly the linker doesn't return errors
 # however the file comparisons will blow up.
 Write-Host 'Linking'
@@ -63,6 +73,8 @@ C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BNKBIOS3[b,NR,NL]=BIOS,SCB
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK COPYSYS[NR,NL]=COPYSYS
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK START[NR,NL]=START
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK SDT[NR,NL]=SDT
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK MPATCH[NR,NL]=MPATCH
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK GPATCH[NR,NL]=GPATCH
 # move the Banked BIOS into the gencpm folder and run it.
 move-item BNKBIOS3.SPR -Destination gencpm 
 Write-host 'Running GENCPM'
@@ -101,7 +113,19 @@ Write-Host 'Comparing binaries for START.COM'
 fc.exe /b binaries\START.COM comparison\START.COM
 Write-Host 'Comparing binaries for SDT.COM'
 fc.exe /b binaries\SDT.COM comparison\SDT.COM
+Write-Host 'Comparing binaries for MPATCH.COM'
+fc.exe /b binaries\MPATCH.COM comparison\MPATCH.COM
+Write-Host 'Comparing binaries for GPATCH.COM'
+fc.exe /b binaries\GPATCH.COM comparison\GPATCH.COM
+# Create the system disk in binaries folder
+Write-Host 'Create binaries\system.dsk'
 dotnet run --project ../../tools/CpmDsk -- create --disk-image binaries/system.dsk --binaries-folder ./binaries
 dotnet run --project ../../tools/CpmDsk -- add system/*.* --disk-image binaries/system.dsk
-dotnet run --project ../../tools/CpmDsk -- remove cpm3.sys --disk-image binaries/system.dsk
-dotnet run --project ../../tools/CpmDsk -- add binaries/cpm3.sys --disk-image binaries/system.dsk
+dotnet run --project ../../tools/CpmDsk -- remove cpm3.sys start.com sdt.com --disk-image binaries/system.dsk
+dotnet run --project ../../tools/CpmDsk -- add binaries/cpm3.sys binaries/start.com binaries/sdt.com --disk-image binaries/system.dsk
+# Create the utility disk in binaries folder
+Write-Host 'Create binaries\utility.dsk'
+dotnet run --project ../../tools/CpmDsk -- create --disk-image binaries/utility.dsk
+dotnet run --project ../../tools/CpmDsk -- add utility/*.* --disk-image binaries/utility.dsk
+dotnet run --project ../../tools/CpmDsk -- remove MPATCH.COM GPATCH.COM --disk-image binaries/system.dsk
+dotnet run --project ../../tools/CpmDsk -- add binaries/MPATCH.COM binaries/GPATCH.COM --disk-image binaries/utility.dsk

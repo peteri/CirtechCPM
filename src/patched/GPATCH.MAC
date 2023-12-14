@@ -1,0 +1,17 @@
+		.Z80
+;********************************************************
+;*                                                      *
+;*     GBASIC.COM patcher for Cirtech CP/M plus         *
+;*                                                      *
+;* Binary   (C) Copyright 1985 Cirtech                  *
+;* Comments (C) Copyright 2023 Peter Ibbotson           *
+;********************************************************
+		INCLUDE BDOS.MAC
+PATCHRECORD	EQU  00C2H		; Record to patch
+PATCHOFFS	EQU  28H		; Position of patch in record
+PATCHBYTE1	EQU  0C3H		; First byte of patch
+PATCHBYTE2	EQU  03AH		; First byte of patch
+PATCHBYTE3	EQU  082H		; First byte of patch
+BASIC		EQU  'G'		; letter of basic
+		INCLUDE XPATCH.MAC
+		END

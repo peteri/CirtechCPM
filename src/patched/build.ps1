@@ -26,6 +26,15 @@ $systemFiles=@(
 'RomWBW/TYPE.COM',
 'binaries/START.COM'
 )
+$utilityFiles=@(
+'RomWBW/HELP.COM',
+'utility/HELP.HLP',
+'RomWBW/ED.COM',
+'binaries/MPATCH.COM',
+'RomWBW/INITDIR.COM',
+'RomWBW/GENCOM.COM',
+'binaries/GPATCH.COM'
+)
 if ((Test-Path -Path binaries -PathType Container) -eq $false)
 {
     New-Item -ItemType Directory -Path binaries
@@ -62,6 +71,8 @@ Write-Host 'Building files'
 .\M80.ps1 COPYSYS
 .\M80.ps1 START
 .\M80.ps1 SDT
+.\M80.ps1 MPATCH
+.\M80.ps1 GPATCH
 # Annoyingly the linker doesn't return errors
 Write-Host 'Linking'
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BOOTSECT.BIN[NR,NL]=BOOTSECT
@@ -74,6 +85,8 @@ C:\tools\ntvcm.exe ..\..\tools\DRI\LINK BNKBIOS3[b,NR,NL]=BIOS,SCB
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK COPYSYS[NR,NL]=COPYSYS
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK START[NR,NL]=START
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK SDT[NR,NL]=SDT
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK MPATCH[NR,NL]=MPATCH
+C:\tools\ntvcm.exe ..\..\tools\DRI\LINK GPATCH[NR,NL]=GPATCH
 # move the Banked BIOS into the gencpm folder and run it.
 move-item BNKBIOS3.SPR -Destination gencpm 
 Write-host 'Running GENCPM'
@@ -90,6 +103,9 @@ copy-item -Path .\RomWBW\CCP.COM -Destination binaries\CCP.COM
 remove-item .\CPMLDR.SYM
 remove-item -Path *.REL -Exclude CPMLDR.REL
 remove-item -Path '*.$$$'
+Write-Host 'Create binaries\system.dsk'
 dotnet run --project ../../tools/CpmDsk -- create --disk-image binaries/system.dsk --binaries-folder ./binaries
 dotnet run --project ../../tools/CpmDsk -- add $systemFiles  --disk-image binaries/system.dsk
-
+Write-Host 'Create binaries\utility.dsk'
+dotnet run --project ../../tools/CpmDsk -- create --disk-image binaries/utility.dsk
+dotnet run --project ../../tools/CpmDsk -- add $utilityFiles  --disk-image binaries/utility.dsk

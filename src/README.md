@@ -40,9 +40,9 @@ Code patches applied:
 - `BIOS.MAC` - Checks for the Cirtech CP/M plus Apple //e physical hardware which it is suspected used the address mapping PROM with an alternative mapping have been removed.
 - `BIOSCHAR.MAC` - The 6850 ACIA based card driver (for the CCS7710 or Apple ][ communications card ]) now no longer overwrites an input character. _Note_ this is untested until I plug the CCS7710 I have into physical hardware.
 - `BIOSDISK.MAC` - No changes currently, although the disk formatter routine track nibble gap sizing routine looks like it is jumping to an incorrect location when wasting cycles.
-- `BIOSVID.MAC` - Now has an cursor up command and correctly implements the Soroq IQ-120
+- `BIOSVID.MAC` - Now has an cursor up command and correctly implements the Soroc IQ-120
 
-Currently this builds a `system.dsk` in the binaries folder which is capable of being booted under AppleWin and Mame. The Utility disk is still on the todo list.
+Currently this builds a `system.dsk` in the binaries folder which is capable of being booted under AppleWin and Mame. The `utility.dsk` that is created has the `help.com` from the RomWBW distribution it is a bit smaller than the one on the original Cirtech disk.
 
 For details of the video card patches please see [video-bios-patch.md](video-bios-patch.md)
 
@@ -52,9 +52,9 @@ For details of the video card patches please see [video-bios-patch.md](video-bio
 
 ~Add a patched version of CP/M plus bootable with mame / AppleWin with a Softcard emulated.~
 
-Write 6502 / Z80 code to test the possible memory remapper that is being used to detect the Cirtech card. This should help with figuring out why the main code use 0E401H to swap between Z80 and 6502 code
+~Add source code for the utility disk and build steps to generate it.~
 
-Add source code for the utility disk and build steps to generate it.
+Write 6502 / Z80 code to test the possible memory remapper that is being used to detect the Cirtech card. This should help with figuring out why the main code use 0E401H to swap between Z80 and 6502 code
 
 Possibly add Cirtech CP/M emulation to mame / AppleWin.
 
