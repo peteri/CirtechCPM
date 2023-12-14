@@ -315,6 +315,7 @@ src/OEM/*.LOG
 src/OEM/comparison/*
 src/OEM/binaries/*
 src/OEM/system/*
+src/OEM/utility/*
 # patched folder
 src/patched/BOOTSECT.REL
 src/patched/BIOSDISK.REL

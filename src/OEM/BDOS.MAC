@@ -17,6 +17,8 @@ WRITF		equ  21			; 15 - Write func
 MAKEF		equ  22			; 16 - Make a file
 GETDRV		equ  25			; 19 - return current drive function
 SETDMAOFF	equ  26			; 1a - Set DMA
+RREADF		equ  33			; 21 - Read random
+RWRITF		equ  34			; 22 - Write random
 DRESET		equ  37			; 25 - Drive reset
 SETERRMODE	equ  45			; 2d - Set hardware error mode
 DRBIOS		equ  50			; Direct BIOS call function

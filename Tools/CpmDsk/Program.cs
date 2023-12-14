@@ -21,9 +21,9 @@ class Program
         };
         var binaryFolderOption = new Option<DirectoryInfo>(
             name: "--binaries-folder",
-            description: "Folder for boot track binaries to copy to a disk.")
+            description: "Folder for boot track binaries to copy to a disk. If missing data disk is created.")
         {
-            IsRequired = true
+            IsRequired = false
         };
         var fileFilterOption = new Argument<List<string>>(
             name: "files",
@@ -96,10 +96,11 @@ class Program
         cpmDisk.ExtractFiles(fileFilter);
     }
 
-    private static void Create(FileInfo diskImage, DirectoryInfo binariesDirectory)
+    private static void Create(FileInfo diskImage, DirectoryInfo? binariesDirectory)
     {
         var cpmDisk = new CpmDisk(diskImage);
-        cpmDisk.CopyBootable(binariesDirectory);
+        if (binariesDirectory!=null)
+            cpmDisk.CopyBootable(binariesDirectory);
         cpmDisk.WriteImage();
     }
 }

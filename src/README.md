@@ -42,7 +42,7 @@ Code patches applied:
 - `BIOSDISK.MAC` - No changes currently, although the disk formatter routine track nibble gap sizing routine looks like it is jumping to an incorrect location when wasting cycles.
 - `BIOSVID.MAC` - Now has an cursor up command and correctly implements the Soroc IQ-120
 
-Currently this builds a `system.dsk` in the binaries folder which is capable of being booted under AppleWin and Mame. The Utility disk is still on the todo list.
+Currently this builds a `system.dsk` in the binaries folder which is capable of being booted under AppleWin and Mame. The `utility.dsk` that is created has the `help.com` from the RomWBW distribution it is a bit smaller than the one on the original Cirtech disk.
 
 For details of the video card patches please see [video-bios-patch.md](video-bios-patch.md)
 
