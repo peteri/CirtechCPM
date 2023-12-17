@@ -1,5 +1,4 @@
 Cirtech CPM memory map 
-This version is wrong, see revised version in src\mappertest
 
 6502  Z80                          Main memory               Aux memory
                               +------------------------+------------------------+
@@ -22,8 +21,10 @@ This version is wrong, see revised version in src\mappertest
 8000  7000                    |   CP/M Disk buffers    |                        |
 8400  7400                    |                        |                        |
 8600  7600                    |  Banked BDOS           |                        |
+8800  9800  (Swapped address) |  Banked BDOS           |                        |
 9000  8000                    |  Banked BDOS           |                        |
 A000  9000                    |  Banked BDOS           |                        |
+A800  7800  (Swapped address) |  Banked BDOS           |                        |
 B000  A000                    |  Banked BDOS           |                        |
 B400  A400                    |  Banked BIOS           |                        |
             +---LC Bank 1-----+----LC Bank 2-----------+-----LC Bank 2----------+---LC Bank 1-----+ 
