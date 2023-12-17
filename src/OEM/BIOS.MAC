@@ -944,13 +944,13 @@ USERF_0A:	push hl
 ; Called from A47D
 ;
 ; Another bit of check if we're running on a Cirtech
-; card, we are should be writing $76 to $7b78, this
+; card, we are should be writing $76 to $787b, this
 ; gets called on every psuedo ISR call to get a character
 ; from the buffers.
 ;
 		.6502
 CC6502_2:	lda  #$76		; code at $B8EB or 0A8EBH
-		sta  USERF		; Write HALT in USERF
+		sta  USERF		; Write HALT in USERF ($A87B)
 		rts			; but the adress should be +$1000
 		.Z80
 ;============================================================
@@ -1909,7 +1909,7 @@ CARDCHECK:	ld   hl,07800H		; two pages into the BDOS (contains 00)
 		inc  de			; Add one to it 0E402H
 		ld   (de),a		; On a softcard, jump to 6502, not sure for Cirtech
 					; Strong suspicion it changes the mapping from
-					; 6502->Z80
+					; 6502->Z80 
 		ld   c,(hl)		; 6502 decremented this value? c=FF
 		ld   (hl),b		; put back saved value
 		inc  c			; if right value decremented c=0 after increment

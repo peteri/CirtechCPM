@@ -46,6 +46,8 @@ Currently this builds a `system.dsk` in the binaries folder which is capable of 
 
 For details of the video card patches please see [video-bios-patch.md](video-bios-patch.md)
 
+For details of the memory map for the cirtech card please see [address-map.md](address-map.md)
+
 ## TO DO
 
 ~Write a utility to generate a bootable Apple ][ .DSK image~
@@ -54,7 +56,7 @@ For details of the video card patches please see [video-bios-patch.md](video-bio
 
 ~Add source code for the utility disk and build steps to generate it.~
 
-Write 6502 / Z80 code to test the possible memory remapper that is being used to detect the Cirtech card. This should help with figuring out why the main code use 0E401H to swap between Z80 and 6502 code
+~Write 6502 / Z80 code to test the possible memory remapper that is being used to detect the Cirtech card. This should help with figuring out why the main code use 0E401H to swap between Z80 and 6502 code~
 
 Possibly add Cirtech CP/M emulation to mame / AppleWin.
 

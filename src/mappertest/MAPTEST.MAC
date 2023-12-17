@@ -1,0 +1,241 @@
+		.Z80
+;********************************************************
+;*                                                      *
+;*      Test for the memory mapper with the Cirtech     *
+;*      CP/M Apple //e                                  *
+;*                                                      *
+;*      Copyright 2023 Peter Ibbotson                   *
+;********************************************************
+		INCLUDE BDOS.MAC
+		ASEG
+		ORG  0100H
+TAB		EQU  09H
+LF		EQU  0Ah
+CR		EQU  0Dh
+ESC		EQU  1Bh
+MEMADDR		EQU  010H		; Zero page address of memory to read
+KNOWNEE		EQU  0C6EAH		; Address of EE in Disk II boot ROM
+; KNOWNEE       EQU  0C87BH             ; Alternate address with A11 high
+TESTADDR	EQU  KNOWNEE-0C000H	; Start of test addresses
+TESTROUT	EQU  0900H		; Address of test routine
+Z80OFFS		EQU  0F000H
+ZMEMREAD	EQU  Z80OFFS+MEMREAD
+ZTESTADDR	EQU  Z80OFFS+TESTADDR
+MSAVE		EQU  Z80OFFS+MEMREAD-1	; Start address of memory save
+ZROUT_6502	EQU  0F3D0H		; 6502 routine to call
+ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
+;============================================================
+;
+; Test program for the Cirtech Apple //e CP/M plus card
+; Writes a value to each page of the Z80 memory, then reads
+; it back from the 6502 side. Uses a known instance of EE for 
+; the main test.
+; 
+; After running on real hardware the results show that for
+; two address arranges when A11 is high a different map is
+; returned by the address mapper PROM.
+;
+;============================================================
+MAIN:		call WELCOME
+		ld   hl,TESTSTART
+		ld   de,TEST+Z80OFFS
+		ld   bc,TESTEND-TESTSTART
+		ldir
+		call SAVEMEM
+		ld   de,(ZCARD_Z80)
+		dec  de
+		call RUNTEST
+		call RUNTEST
+		call RUNTEST
+		call RUNTEST
+		call RESTOREMEM
+		call PRTRESULTS
+		jp   BOOT
+RUNTEST:	push de
+		ld   hl,TEST
+		ld   (ZROUT_6502),hl
+		ex   de,hl
+		ld   (hl),a
+		pop  de
+		inc  de
+		ret
+;============================================================
+;
+; Print a welcome message
+;
+;============================================================
+WELCOME:	ld   de,WELCOMEMSG
+		ld   c,PRSTR
+		jp   BDOS
+WELCOMEMSG:	DB   ESC,'*'
+		DB   'Cirtech memory map test',CR,LF
+		DB   'Addr',TAB,'E400',TAB,'E401',TAB,'E402',TAB,'E403',CR,LF,'$'
+;============================================================
+;
+; Print the results
+;
+;============================================================
+PRTRESULTS:	ld   bc,01000H
+		ld   iy,ZMEMREAD
+		ld   hl,TESTADDR
+RESULTLOOP:	push hl			; Print the address
+		call HEX_WORD
+		ld   a,TAB
+		call PRINT_CHAR
+		pop  hl
+		ld   a,(iy+00H)		; Print E400 result
+		call HEX_BYTE
+		ld   a,TAB
+		call PRINT_CHAR
+		ld   a,(iy+10H)		; Print E401 result
+		call HEX_BYTE
+		ld   a,TAB
+		call PRINT_CHAR
+		ld   a,(iy+20H)		; Print E402 result
+		call HEX_BYTE
+		ld   a,TAB
+		call PRINT_CHAR
+		ld   a,(iy+30H)		; Print E403 result
+		call HEX_BYTE
+		ld   a,CR		; new line
+		call PRINT_CHAR
+		ld   a,LF
+		call PRINT_CHAR
+		inc  iy			; next byte please
+		or   a			; clear carry flag
+		add  hl,bc		; next address to display
+		jr   nc,RESULTLOOP	; wrapped? nope, loop back
+		ret
+MEMSAVE:	DS   010H
+;============================================================
+;
+; Save memory from 0F6E9H down into ZMEMSAVE working
+; down in 01000H chunks. Storing 0FF counting down
+; in 011H bits.
+;
+;============================================================
+SAVEMEM:	ld   a,0FFH
+		ld   bc,0F000H
+		ld   de,MEMSAVE+00FH
+		ld   hl,ZTESTADDR
+SAVELOOP:	push af
+		ld   a,(hl)
+		ld   (de),a
+		pop  af
+		ld   (hl),a
+		dec  de
+		add  hl,bc
+		sub  11H
+		jr   nz,SAVELOOP
+		push af
+		ld   a,(hl)
+		ld   (de),a
+		pop  af
+		ld   (hl),a
+		ret
+;============================================================
+;
+; Restore memory from ZMEMSAVE down into 0F6E9H working
+; down in 01000H chunks.
+;
+;============================================================
+RESTOREMEM:	ld   a,0FFH
+		ld   bc,0F000H
+		ld   de,MEMSAVE+00FH
+		ld   hl,ZTESTADDR
+RESTORELOOP:	push af
+		ld   a,(de)
+		ld   (hl),a
+		pop  af
+		dec  de
+		add  hl,bc
+		sub  11H
+		jr   nz,RESTORELOOP
+		push af
+		ld   a,(de)
+		ld   (hl),a
+		pop  af
+		ret
+;============================================================
+;
+; Print hl as hex word at current
+; position, trashes acc
+;
+;============================================================
+HEX_WORD:	ld   a,h
+		call HEX_BYTE
+		ld   a,l
+;============================================================
+;
+; Print acc as hex byte at current
+; position, trashes acc
+;
+;============================================================
+HEX_BYTE:	push af
+		rra
+		rra
+		rra
+		rra
+		call HEX_NYBBLE
+		pop  af
+;============================================================
+;
+; Print acc as hex nybble at current
+; position, trashes acc
+;
+;============================================================
+HEX_NYBBLE:	or   0F0H
+		daa
+		add  a,0A0H
+		adc  a,040H
+		call print_char
+		ret
+;============================================================
+;
+; Print character in acc
+; saves hl,de,bc
+;
+;============================================================
+PRINT_CHAR:	push hl
+		push de
+		push bc
+		ld   c,CONO
+		ld   e,a
+		call BDOS
+		pop  bc
+		pop  de
+		pop  hl
+		ret
+TESTSTART:
+		.6502
+		.PHASE TESTROUT
+LCBANK2		EQU  $c083		; RWx2 read/write RAM bank 2
+LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
+
+TEST:		BIT  LCBANK2
+		BIT  LCBANK2
+		lda  #<TESTADDR
+		sta  MEMADDR
+		lda  #>TESTADDR
+		sta  MEMADDR+1
+		lda  #$00
+		tay
+		tax
+		clc
+TESTLOOP:	lda  (MEMADDR),y
+MEMSTORE:	sta  MEMREAD,x
+		inx
+		clc
+		lda  MEMADDR+1
+		adc  #$10
+		sta  MEMADDR+1
+		bcc  TESTLOOP
+		lda  MEMSTORE+1
+		clc
+		adc  #$10
+		sta  MEMSTORE+1
+		rts
+MEMREAD:	DS   $40
+		.DEPHASE
+TESTEND:
+		END
