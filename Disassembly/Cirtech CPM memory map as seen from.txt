@@ -1,4 +1,5 @@
 Cirtech CPM memory map 
+This version is wrong, see revised version in src\mappertest
 
 6502  Z80                          Main memory               Aux memory
                               +------------------------+------------------------+
