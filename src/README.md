@@ -46,6 +46,8 @@ Currently this builds a `system.dsk` in the binaries folder which is capable of 
 
 For details of the video card patches please see [video-bios-patch.md](video-bios-patch.md)
 
+For details of the memory map for the cirtech card please see [address-map.md](address-map.md)
+
 ## TO DO
 
 ~Write a utility to generate a bootable Apple ][ .DSK image~
