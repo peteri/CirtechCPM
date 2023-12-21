@@ -1,6 +1,24 @@
+using System.Runtime.CompilerServices;
+
 namespace CpmDsk;
 internal class CpmDisk
 {
+    private DiskParameterBlock DiskIIDPB = new DiskParameterBlock
+    (
+        SectorsPerTrack: 0x20,
+        BlockShift: 3,
+        BlockMask: 7,
+        ExtentMask: 0,
+        DriveSectorsMax: 35 * 4 - 1,
+        DirectorEntriesMax: 63,
+        AL0: 0xc0,
+        AL1: 0x00,
+        CheckVectorSize: 0x10,
+        ReservedTracksOffset: 0x03,
+        PhysicalRecordShift: 0x01,
+        PhysicalRecordMask: 0x01
+    );
+    private DiskParameterBlock currentDPB;
     private const int SectorsPerTrack = 16;
     private const int SectorSize = 256;
     private const int Tracks = 35;
@@ -11,6 +29,8 @@ internal class CpmDisk
     static int[] prodosSectorMap = { 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15 };
     static int[] cpmSectorMap = { 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13 };
     static int[] rawToDos33Map = { 0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15 };
+    bool isProdos = false;
+    byte userNumber;
     static SortedSet<byte> freeBlocks = new();
     static SortedSet<byte> usedBlocks = new();
     private FileInfo diskFileInfo;
@@ -21,15 +41,94 @@ internal class CpmDisk
     /// Constructor for the in memory CPM disk image.
     /// </summary>
     /// <param name="diskFileInfo">Disk image to use.</param>
-    public CpmDisk(FileInfo diskFileInfo)
+    public CpmDisk(FileInfo diskFileInfo, long numberOfProDosBlocks, int userNumber)
     {
         this.diskFileInfo = diskFileInfo;
+        this.userNumber = (byte)userNumber;
+        if (numberOfProDosBlocks == 280)
+            currentDPB = DiskIIDPB;
+        else
+            currentDPB = ComputeDPB(numberOfProDosBlocks);
         diskImageData = new byte[Tracks * SectorsPerTrack * SectorSize];
         var emptySector = new byte[SectorSize];
         Array.Fill(emptySector, CpmEmptyByte);
         // Fill all of the directory with empty bytes...
         for (int sector = 0; sector < DirectorySectors; sector++)
             WriteCpmSector(BootTracks, sector, emptySector.AsSpan());
+    }
+
+    public CpmDisk(FileInfo diskFileInfo, int userNumber) : this(diskFileInfo, diskFileInfo.Length / 512, userNumber)
+    {
+    }
+
+    public static DiskParameterBlock ComputeDPB(long numberOfProDosBlocks)
+    {
+        ushort numOfBlocks = (ushort)((numberOfProDosBlocks - 0x18L) >> 2);
+        byte blockHighByte = (byte)(numOfBlocks >> 8);
+        if (blockHighByte >= 0x10)
+            blockHighByte = (blockHighByte >= 0x20) ? (byte)0x14 : (byte)0x10;
+        bool directoryBump = (blockHighByte & 0x4) == 0x4;
+        byte bshift = (byte)((blockHighByte >> 3) + 1);
+        numOfBlocks = (ushort)((numOfBlocks >> bshift) - 1);
+        byte blockShift = (byte)(bshift + 4);
+        byte blockMask = (byte)((0x01 << (bshift + 4)) - 1);
+        byte EXM = (byte)((1 << bshift) - 1);
+        if (numOfBlocks < 256) EXM = (byte)((EXM << 1) + 1);
+        ushort numOfDirEntries = (ushort)(((directoryBump ? 0x80 : 0x40) << bshift) - 1);
+        byte AL0 = directoryBump ? (byte)0xc0 : (byte)0x80;
+        byte AL1 = 0x0;
+        ushort CKS = (ushort)((numOfDirEntries + 1) >> 2);
+        return new DiskParameterBlock
+        (
+            SectorsPerTrack: 0x20,
+            BlockShift: blockShift,
+            BlockMask: blockMask,
+            ExtentMask: EXM,
+            DriveSectorsMax: numOfBlocks,
+            DirectorEntriesMax: numOfDirEntries,
+            AL0: AL0,
+            AL1: AL1,
+            CheckVectorSize: CKS,
+            ReservedTracksOffset: 0x03,
+            PhysicalRecordShift: 0x02,  // 512 byte sectors
+            PhysicalRecordMask: 0x03
+        );
+    }
+
+    public static void DPBTest()
+    {
+        long[] sizes =
+        {
+		// 4K block sizes
+		0x3ff,0x420,0x63f,0x7ff,0x820,0xfff,0x1020,0x1FFF,
+		// 8K block sizes
+		0x2018,0x3FFF,0x4017,
+		// 16k block sizes
+		 0x4018,0x7FFF,0x8019,0xA000,0xFFFF
+        };
+        //        var dpbt = ComputeDPB(0x4017);
+        Console.WriteLine("Cirtech DPB test (Size is 512 byte blocks)");
+        Console.WriteLine("| Size| SPT | BSH| BLM| EXM| DSM | DRM | AL0| AL1| CKS | OFF | PSH| PHM| ALV |");
+        Console.WriteLine("|-----|-----|----|----|----|-----|-----|----|----|-----|-----|----|----|-----|");
+        foreach (var size in sizes)
+        {
+            var dpb = ComputeDPB(size);
+            Console.Write("| {0:X4}|", size);
+            Console.Write(" {0:X4}|", dpb.SectorsPerTrack);
+            Console.Write(" {0:X2} |", dpb.BlockShift);
+            Console.Write(" {0:X2} |", dpb.BlockMask);
+            Console.Write(" {0:X2} |", dpb.ExtentMask);
+            Console.Write(" {0:X4}|", dpb.DriveSectorsMax);
+            Console.Write(" {0:X4}|", dpb.DirectorEntriesMax);
+            Console.Write(" {0:X2} |", dpb.AL0);
+            Console.Write(" {0:X2} |", dpb.AL1);
+            Console.Write(" {0:X4}|", dpb.CheckVectorSize);
+            Console.Write(" {0:X4}|", dpb.ReservedTracksOffset);
+            Console.Write(" {0:X2} |", dpb.PhysicalRecordShift);
+            Console.Write(" {0:X2} |", dpb.PhysicalRecordMask);
+            Console.Write(" {0:X4}|", ((dpb.DriveSectorsMax + 1) / 4) + 1);
+            Console.WriteLine();
+        }
     }
 
     /// <summary>
@@ -415,7 +514,7 @@ internal class CpmDisk
         }
 
         // Check size (round up to a disk sector)
-        if (bootTrackFiles.Sum(f => (f.Length+255)&0xff00) != (BootTracks * SectorsPerTrack * SectorSize))
+        if (bootTrackFiles.Sum(f => (f.Length + 255) & 0xff00) != (BootTracks * SectorsPerTrack * SectorSize))
             throw new Exception("File sizes are wrong for the boot sectors");
         return bootTrackFiles;
     }
@@ -427,13 +526,13 @@ internal class CpmDisk
     private void WriteBootTrack(List<FileInfo> bootTrackFiles)
     {
         byte[] data = new byte[(BootTracks * SectorsPerTrack * SectorSize)];
-        Array.Fill(data,(byte)0xE5);
+        Array.Fill(data, (byte)0xE5);
         int offset = 0;
         foreach (var file in bootTrackFiles)
         {
             var fileData = File.ReadAllBytes(file.FullName);
             fileData.CopyTo(data, offset);
-            offset += (fileData.Length+255) &0xff00;
+            offset += (fileData.Length + 255) & 0xff00;
         }
         int track = 0;
         int sector = 0;

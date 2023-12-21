@@ -115,6 +115,21 @@
             "stopAtEntry": false
         },
         {
+		"name": "DPB Test",
+		"type": "coreclr",
+		"request": "launch",
+		"preLaunchTask": "build",
+		// If you have changed target frameworks, make sure to update the program path.
+		"program": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0/CpmDsk.dll",
+		"args": [
+		    "dpbtest",
+		],
+		"cwd": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0",
+		// For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+		"console": "internalConsole",
+		"stopAtEntry": false
+	    },	
+        {
             "name": "AsmFmt OEM",
             "type": "coreclr",
             "request": "launch",
