@@ -1,0 +1,392 @@
+		.Z80
+;********************************************************
+;*                                                      *
+;*      Test for the DPB computation code from the      *
+;*      Cirtech LDRBIOS for CP/M Apple //e              *
+;*                                                      *
+;*      Copyright 2023 Peter Ibbotson                   *
+;********************************************************
+		INCLUDE BDOS.MAC
+		ASEG
+		ORG  0100H
+TAB		EQU  09H
+LF		EQU  0Ah
+CR		EQU  0Dh
+ESC		EQU  1Bh
+;
+; DPB constants
+;
+DPB_SPT		EQU  00H		; SPT number of 128 records per track
+DPB_BSH		EQU  02H		; BSH Block shift factor
+DPB_BLM		EQU  03H		; BLM Block mask
+DPB_EXM		EQU  04H		; EXM extant mask
+DPB_DSM		EQU  05H		; DSM Blocks on drive
+DPB_DRM		EQU  07H		; DRM Number of directory entries
+DPB_AL0		EQU  09H		; AL0 reserved blocks for directory
+DPB_AL1		EQU  0AH		; AL1
+DPB_CKS		EQU  0BH		; CKS size of directory check vector
+DPB_OFF		EQU  0DH		; OFF reserved tracks
+DPB_PSH		EQU  0FH		; PSH Physical Shift
+DPB_PHM		EQU  10H		; PHM Physical Mask
+DPBLEN		EQU  11H		; Length of Disk parameter block
+;============================================================
+; Main routine
+;============================================================
+MAIN:		call WELCOME		; Draw the top of the table
+		ld   hl,SIZES		; Get starting pointer
+LOOP:		call DOSIZE		; Do this size
+		jr   nz,LOOP		; until we're done
+		jp   BOOT		; Exit back to CP/m
+;============================================================
+; Table of sizes to test
+;============================================================
+SIZES:
+		DW   003ffH,00420H,0063fH,07ffH,00820H,00fffH,01020H,01FFFH
+		; 8K block sizes
+		DW   02018H,03FFFH,04017H
+		; 16k block sizes
+		DW   04018H,07FFFH,08019H,0A000H,0FFFFH,0000H
+;============================================================
+;
+;  Compute the DPB for a given size and print the results.
+;  Entry
+;  hl = pointer to size table
+;  Exit
+;  hl = hl+2
+;  zero flag clear if end of list.
+;
+;============================================================
+DOSIZE:		ld   e,(hl)
+		inc  hl
+		ld   d,(hl)
+		inc  hl
+		ld   a,d
+		or   e
+		ret  z
+		push hl
+		push de
+		push de
+		ex   de,hl
+		call COMPUTEDPB
+		pop  hl
+		call PRINTDPB
+		pop  de
+		pop  hl
+		ld   a,d
+		or   e
+		ret
+;============================================================
+;
+; Print a welcome message
+;
+;============================================================
+WELCOME:	ld   de,WELCOMEMSG
+		ld   c,PRSTR
+		jp   BDOS
+WELCOMEMSG:	DB   'Cirtech DPB test (Size is 512 byte blocks)',CR,LF
+		DB   '| Size| SPT | BSH| BLM| EXM| DSM | DRM |'
+		DB   ' AL0| AL1| CKS | OFF | PSH| PHM| ALV |',CR,LF
+		DB   '|-----|-----|----|----|----|-----|-----|'
+		DB   '----|----|-----|-----|----|----|-----|',CR,LF,'$'
+;============================================================
+;
+; Print the DPB
+;
+;============================================================
+PRINTDPB:	ld   a,'|'
+		call PRINT_CHAR
+		ld   a,' '
+		call PRINT_CHAR
+		call HEX_WORD		; Print Size
+		ld   a,'|'
+		call PRINT_CHAR
+		ld   de,DPB
+		call DPB_WORD		; Print SPT
+		call DPB_BYTE		; Print BSH
+		call DPB_BYTE		; Print BLM
+		call DPB_BYTE		; Print EXM
+		call DPB_WORD		; Print DSM
+		call DPB_WORD		; Print DRM
+		call DPB_BYTE		; Print AL0
+		call DPB_BYTE		; Print AL1
+		call DPB_WORD		; Print CVS
+		call DPB_WORD		; Print OFF
+		call DPB_BYTE		; Print PSH
+		call DPB_BYTE		; Print PSM
+		call DPB_WORD		; Print ALV
+		ld   a,CR
+		call PRINT_CHAR
+		ld   a,LF
+		jp   PRINT_CHAR
+;============================================================
+; Print a word sized DPB entry
+; Entry
+; de=pointer to word to print.
+; Exit
+; de=de+2
+;============================================================
+DPB_WORD:	ld   a,' '
+		call PRINT_CHAR
+		ex   de,hl
+		ld   e,(hl)
+		inc  hl
+		ld   d,(hl)
+		inc  hl
+		ex   de,hl
+		call HEX_WORD
+		ld   a,'|'
+		jp   PRINT_CHAR
+;============================================================
+; Print a byte sized DPB entry
+; Entry
+; de=pointer to byte to print.
+; Exit
+; de=de+1
+;============================================================
+DPB_BYTE:	ld   a,' '
+		call PRINT_CHAR
+		ex   de,hl
+		ld   a,(hl)
+		inc  hl
+		ex   de,hl
+		call HEX_BYTE
+		ld   a,' '
+		call PRINT_CHAR
+		ld   a,'|'
+		jp   PRINT_CHAR
+;============================================================
+;
+; Print hl as hex word at current
+; position, trashes acc
+;
+;============================================================
+HEX_WORD:	ld   a,h
+		call HEX_BYTE
+		ld   a,l
+;============================================================
+;
+; Print acc as hex byte at current
+; position, trashes acc
+;
+;============================================================
+HEX_BYTE:	push af
+		rra
+		rra
+		rra
+		rra
+		call HEX_NYBBLE
+		pop  af
+;============================================================
+;
+; Print acc as hex nybble at current
+; position, trashes acc
+;
+;============================================================
+HEX_NYBBLE:	or   0F0H
+		daa
+		add  a,0A0H
+		adc  a,040H
+		call print_char
+		ret
+;============================================================
+;
+; Print character in acc
+; saves hl,de,bc
+;
+;============================================================
+PRINT_CHAR:	push hl
+		push de
+		push bc
+		ld   c,CONO
+		ld   e,a
+		call BDOS
+		pop  bc
+		pop  de
+		pop  hl
+		ret
+;============================================================
+;
+; Compute the DPB
+; Entry HL=number of blocks
+;
+;============================================================
+COMPUTEDPB:	ld   de,00018H		; subtract boot tracks
+		or   a			; clear carry
+		sbc  hl,de
+		ex   de,hl		; de = total disk size, hl=disk-boot tracks
+		srl  d
+		rr   e			; de = disk size in 1K blocks
+		srl  d
+		rr   e			; de = disk size in 2K blocks
+		ld   a,d
+		cp   010H		; Number of blocks < 4000H
+		jr   c,COMPUTESHFT	; We have a winner
+		bit  5,a		; Number of blocks < 8000H ?
+		ld   a,010H
+		jr   z,COMPUTESHFT	; Nope skip setting the carry flag after divide
+		set  2,a		; a=14H
+; by this point we have the following
+; Size |Blocks |   DE  |  Acc |
+; -----|-------|-------|------|
+; 512K | $03FF | $00F9 |  $00 |
+; 800K | $063F | $0189 |  $01 |
+; 1MB  | $07FF | $01F9 |  $01 |
+; 2MB  | $0FFF | $03F9 |  $03 |
+; 4MB  | $1FFF | $07F9 |  $07 |
+; 8MB  | $3FFF | $0FF9 |  $0F |
+; 16MB | $7fff | $1FF9 |  $10 |
+; 20MB | $9fff | $27F9 |  $14 |
+; 32MB | $ffff | $3FF9 |  $14 |
+COMPUTESHFT:	srl  a
+		srl  a
+		srl  a			; a=a/8
+		push af
+		inc  a
+; by this point we are ready to compute the block size
+; Size |Blocks |   DE  |  Acc | Carry | BlockSize
+; -----|-------|-------|------|-------|------
+; 512K | $03FF | $00F9 |  $01 |  0    | 4K
+; 800K | $063F | $0189 |  $01 |  0    | 4K
+; 1MB  | $07FF | $01F9 |  $01 |  0    | 4K
+; 2MB  | $0FFF | $03F9 |  $01 |  0    | 4K
+; 4MB  | $1FFF | $07F9 |  $01 |  1    | 4K
+; 8MB  | $3FFF | $0FF9 |  $02 |  1    | 8K
+; 16MB | $7fff | $1FF9 |  $03 |  0    | 16K
+; 20MB | $9fff | $27F9 |  $03 |  1    | 16K
+; 32MB | $ffff | $3FF9 |  $03 |  1    | 16K
+		ld   b,a		; Setup for loop
+COMPBLKS:	srl  d			; Divide by 2
+		rr   e
+		djnz COMPBLKS		; loop until done
+		dec  de
+		ld   (ST_DBPDSM+1),de
+		ld   l,a		; Save acc for later
+		add  a,004H		; Figure out shift factor
+		ld   (ST_DPBBSH+1),a	; Store shift factor in DPB create
+		ld   b,a		; Compute Block mask
+		ld   a,001H
+COMPBLM:	sla  a			; Shift left until
+		djnz COMPBLM		; acc = 2^B
+		dec  a			; decrement by one to get mask
+		ld   (ST_DPBBLM+1),a	; Save mask away (2^B)-1
+		xor  a
+		cp   d			; DSM<256 ?
+		jr   nz,DSMLT256	; Nope no need to inc EXM
+		inc  a			; Yes need to tweak EXM (see table 3-5 in CPM sys guide)
+DSMLT256:	ld   b,l		; Get back saved acc
+		ld   hl,00040H		; Going to be number of directory entries
+L1DE3:		scf
+		rl   a			; Shift a 1 into EXM
+		add  hl,hl		; multiply dir entries by 2
+		djnz L1DE3
+		ld   (ST_DPBEXM+1),a
+; by this point we have computed the EXM and dir entries
+; but we want to tweak the directory entry count for large disk sizes.
+; Size |Blocks |  DSM  |  Acc | Carry | BSze | BSH | BLM | EXM | DirEntries
+;      |       |       |   (on stack) |      |     |     |     |
+; -----|-------|-------|------|-------|------|-----|-----|-----|-------
+; 512K | $03FF | $007B |  $00 |  0    | 4K   | $05 | $1F |  3  | $80
+; 800K | $03FF | $00C3 |  $00 |  0    | 4K   | $05 | $1F |  3  | $80
+; 1MB  | $07FF | $00FB |  $00 |  0    | 4K   | $05 | $1F |  3  | $80
+; 2MB  | $0FFF | $01FB |  $00 |  0    | 4K   | $05 | $1F |  1  | $80
+; 4MB  | $1FFF | $03FB |  $00 |  1    | 4K   | $05 | $1F |  1  | $80
+; 8MB  | $3FFF | $03FD |  $01 |  1    | 8K   | $06 | $3F |  3  | $100
+; 16MB | $7fff | $03FE |  $02 |  0    | 16K  | $07 | $1F |  7  | $200
+; 20MB | $9fff | $04FE |  $02 |  1    | 16K  | $07 | $3F |  7  | $200
+; 32MB | $ffff | $07FE |  $02 |  1    | 16K  | $07 | $3F |  7  | $200
+		ld   b,080H		; AL0 to use
+		pop  af			; Get back carry
+		jr   nc,NODIRTWEAK
+		add  hl,hl		; For 4-8MB and 16-32MB double Number
+		scf			; of directory entries to
+		rr   b			; Shuffle into b
+NODIRTWEAK:	dec  hl			; hl is number of directory entries
+		ld   (ST_DPBDRM+1),hl	; save into store routine
+		ld   a,b
+		ld   (ST_DPBAL0+1),a
+; Next do the CKS size
+; Size |Blocks |  DSM  | BSze | BSH | BLM | EXM | DRM  | CKS  |
+; -----|-------|-------|------|-----|-----|-----|------|------|
+; 512K | $03FF | $007B | 4K   | $05 | $1F |  3  | $7F  | $20  |
+; 800K | $03FF | $00C3 | 4K   | $05 | $1F |  3  | $7F  | $20  |
+; 1MB  | $07FF | $00FB | 4K   | $05 | $1F |  3  | $7F  | $20  |
+; 2MB  | $0FFF | $01FB | 4K   | $05 | $1F |  1  | $7F  | $20  |
+; 4MB  | $1FFF | $03FB | 4K   | $05 | $1F |  1  | $FF  | $40  |
+; 8MB  | $3FFF | $03FD | 8K   | $06 | $3F |  3  | $1FF | $80  |
+; 16MB | $7fff | $03FE | 16K  | $07 | $1F |  7  | $1FF | $80  |
+; 20MB | $9fff | $04FE | 16K  | $07 | $3F |  7  | $3FF | $100 |
+; 32MB | $ffff | $07FE | 16K  | $07 | $3F |  7  | $3FF | $100 |
+		inc  hl			; Compute CKS
+		srl  h			; hl = DirEntries / 4
+		rr   l
+		srl  h
+		rr   l
+PDNOTREM:	ld   a,l		; Update code that does write
+		ld   (ST_DPBCKSL+1),a	; to a DPB
+		ld   a,h
+		ld   (ST_DPBCKSH+1),a
+;
+; Was code to search for a blank DPB, just hard code.
+;
+		ld   iy,DPB
+ST_DBPDSM:	ld   hl,00000H		; Number of blocks on the drive
+ST_DPBBSH:	ld   c,000H		; Block shift factor
+;============================================================
+;
+; Create a new DPB
+; Entry
+; c  = BSH Block shift factor
+; hl = DSM Blocks on drive
+; iy = Pointer to DPB to create
+;
+; Falls through into create DPH and DRVTBL entry
+;
+;============================================================
+NEWDPB:		push hl			; Save DSM for later
+		push iy
+		pop  hl			; hl= DPB
+		ld   (hl),020H		; SPT = 32 128 byte records per track (4K)
+		inc  hl
+		inc  hl
+		ld   (hl),c		; BSH = Block shift factor
+		inc  hl
+ST_DPBBLM:	ld   (hl),000H		; BLM = block mask
+		inc  hl
+ST_DPBEXM:	ld   (hl),000H		; EXM = extent mask
+		inc  hl
+		pop  de
+		call ST_DE_TO_HL	; DSM = Blocks on drive
+ST_DPBDRM:	ld   de,00000H
+		call ST_DE_TO_HL	; DRM = Number of directory entries
+ST_DPBAL0:	ld   (hl),000H		; AL0 = reserved blocks for directory
+		inc  hl
+		inc  hl			; AL1 = reserved blocks for directory
+ST_DPBCKSL:	ld   (hl),000H		; CKS = size of directory check vector low
+		inc  hl
+ST_DPBCKSH:	ld   (hl),000H		; CKS = size of directory check vector high
+		inc  hl
+		ld   (hl),003H		; OFF - Reserved tracks low
+		inc  hl
+		inc  hl			; OFF - Reserved tracks high
+		ld   (hl),002H		; PSH - Pysical shift
+		inc  hl
+		ld   (hl),003H		; PSM - Pysical mask
+DPHNOCSV:	ld   c,(iy+DPB_DSM)	; Get number of blocks
+		ld   b,(iy+DPB_DSM+1)
+		inc  bc			; Add one
+		srl  b			; Two bits for each block
+		rr   c			; in the ALV
+		srl  b
+		rr   c
+		inc  bc			; Add one more
+		ld   (ALV),bc
+		ret
+ST_DE_TO_HL:	ld   (hl),e		; Called from all over the place
+		inc  hl
+		ld   (hl),d
+		inc  hl
+		ret
+
+DPB:		DS   DPBLEN
+ALV:		DW   0
+		END
