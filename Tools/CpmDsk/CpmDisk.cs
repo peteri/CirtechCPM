@@ -1,9 +1,7 @@
-using System.Runtime.CompilerServices;
-
 namespace CpmDsk;
 internal class CpmDisk
 {
-    private DiskParameterBlock DiskIIDPB = new DiskParameterBlock
+    private static DiskParameterBlock DiskIIDPB = new DiskParameterBlock
     (
         SectorsPerTrack: 0x20,
         BlockShift: 3,
@@ -19,22 +17,17 @@ internal class CpmDisk
         PhysicalRecordMask: 0x01
     );
     private DiskParameterBlock currentDPB;
-    private const int SectorsPerTrack = 16;
-    private const int SectorSize = 256;
-    private const int Tracks = 35;
-    private const int BootTracks = 3;
-    private const int DirectorySectors = 8;
-    private const int DirectoryEntries = DirectorySectors * 8;
+    private const int CpmSectorSize = 128;
     public const byte CpmEmptyByte = 0xE5;
     static int[] prodosSectorMap = { 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15 };
     static int[] cpmSectorMap = { 0, 3, 6, 9, 12, 15, 2, 5, 8, 11, 14, 1, 4, 7, 10, 13 };
     static int[] rawToDos33Map = { 0, 7, 14, 6, 13, 5, 12, 4, 11, 3, 10, 2, 9, 1, 8, 15 };
     bool isProdos = false;
     byte userNumber;
-    static SortedSet<byte> freeBlocks = new();
-    static SortedSet<byte> usedBlocks = new();
+    static SortedSet<ushort> freeBlocks = new();
+    static SortedSet<ushort> usedBlocks = new();
     private FileInfo diskFileInfo;
-    private (byte block, byte[] data) emptyBlock = (0, Array.Empty<byte>());
+    private (ushort block, byte[] data) emptyBlock = (0, Array.Empty<byte>());
     private byte[] diskImageData;
 
     /// <summary>
@@ -45,12 +38,9 @@ internal class CpmDisk
     {
         this.diskFileInfo = diskFileInfo;
         this.userNumber = (byte)userNumber;
-        if (numberOfProDosBlocks == 280)
-            currentDPB = DiskIIDPB;
-        else
-            currentDPB = ComputeDPB(numberOfProDosBlocks);
-        diskImageData = new byte[Tracks * SectorsPerTrack * SectorSize];
-        var emptySector = new byte[SectorSize];
+        currentDPB = ComputeDPB(numberOfProDosBlocks);
+        diskImageData = new byte[numberOfProDosBlocks*512];
+        var emptySector = new byte[CpmSectorSize];
         Array.Fill(emptySector, CpmEmptyByte);
         // Fill all of the directory with empty bytes...
         for (int sector = 0; sector < DirectorySectors; sector++)
@@ -63,6 +53,8 @@ internal class CpmDisk
 
     public static DiskParameterBlock ComputeDPB(long numberOfProDosBlocks)
     {
+        if (numberOfProDosBlocks == 280)
+            return DiskIIDPB;
         ushort numOfBlocks = (ushort)((numberOfProDosBlocks - 0x18L) >> 2);
         byte blockHighByte = (byte)(numOfBlocks >> 8);
         if (blockHighByte >= 0x10)
@@ -138,7 +130,7 @@ internal class CpmDisk
     private void WriteFile(FileInfo fileInfo)
     {
         ReadDirectoryFreeBlocks();
-        var memoryDirEntry = new DirectoryEntry(fileInfo.Name);
+        var memoryDirEntry = new DirectoryEntry(userNumber, fileInfo.Name);
         RemoveFile(memoryDirEntry);
         Console.WriteLine("Adding file {0}", memoryDirEntry.Name);
         var diskDirEntry = FindBlankEntry();
@@ -455,7 +447,7 @@ internal class CpmDisk
         if (dirEntry.IsHidden) return false;
         foreach (var filter in filters)
         {
-            if (new DirectoryEntry(filter).Match(dirEntry))
+            if (new DirectoryEntry(userNumber, filter).Match(dirEntry))
                 return true;
         }
         return false;
@@ -606,7 +598,7 @@ internal class CpmDisk
         ReadDirectoryFreeBlocks();
         CpmWildcardAction(
             fileFilters,
-            (name, _) => RemoveFile(new DirectoryEntry(name)));
+            (name, _) => RemoveFile(new DirectoryEntry(userNumber, name)));
     }
 
     /// <summary>
@@ -617,7 +609,7 @@ internal class CpmDisk
     {
         CpmWildcardAction(
             fileFilters,
-            (name, _) => ReadFile(new DirectoryEntry(name)));
+            (name, _) => ReadFile(new DirectoryEntry(userNumber, name)));
     }
 
     /// <summary>

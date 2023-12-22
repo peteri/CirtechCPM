@@ -56,24 +56,21 @@ SIZES:		; 4K block sizes
 ;  zero flag clear if end of list.
 ;
 ;============================================================
-DOSIZE:		ld   e,(hl)
+DOSIZE:		ld   e,(hl)		; Get next size into de
 		inc  hl
 		ld   d,(hl)
 		inc  hl
-		ld   a,d
+		ld   a,d		; Next size zero?
 		or   e
-		ret  z
-		push hl
-		push de
-		push de
+		ret  z			; Go home
+		push hl			; Save current pointer
+		push de			; Save value for later
 		ex   de,hl
-		call COMPUTEDPB
-		pop  hl
-		call PRINTDPB
-		pop  de
-		pop  hl
-		ld   a,d
-		or   e
+		call COMPUTEDPB		; Compute DPB
+		pop  hl			; Get back size to print`
+		call PRINTDPB		; Print it
+		pop  hl			; Restore current pointer
+		or   1h 		; Set nz flag
 		ret
 ;============================================================
 ;
