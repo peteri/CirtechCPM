@@ -7,6 +7,7 @@ namespace CpmDsk;
 /// </summary>
 public ref struct DirectoryEntry
 {
+    private const int Size = 32;
     private Span<byte> entry;
     private readonly DiskParameterBlock dpb;
 
@@ -105,7 +106,7 @@ public ref struct DirectoryEntry
     /// Marks a directory entry as deleted.
     /// </summary>
     public void MarkAsEmpty()
-        => entry[0] = CpmDisk.CpmEmptyByte;
+        => entry.Fill(CpmDisk.CpmEmptyByte);
 
     /// <summary>
     /// Gets the block number for directory entry
