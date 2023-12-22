@@ -2,8 +2,6 @@ namespace CpmDsk;
 
 /// <summary>
 /// This wraps a backing span containing a CP/M format directory entry.
-/// It only understands about simple entries and ignores anything with
-/// a 16 bit block number. Designed for use with Apple ][ disk formats.
 /// </summary>
 public ref struct DirectoryEntry
 {

@@ -21,6 +21,7 @@ internal class CpmDisk
     private const int CpmDirectoryEntrySize = 128;
     public const byte CpmEmptyByte = 0xE5;
     private ushort blockSize;
+    private readonly ushort startOfDirOffset;
     byte userNumber;
     static SortedSet<ushort> freeBlocks = new();
     static SortedSet<ushort> usedBlocks = new();
@@ -38,7 +39,10 @@ internal class CpmDisk
         this.diskFileInfo = diskFileInfo;
         this.userNumber = (byte)userNumber;
         currentDPB = ComputeDPB(numberOfProDosBlocks);
-        blockSize=(ushort)(CpmSectorSize<<currentDPB.BlockShift);
+        blockSize = (ushort)(CpmSectorSize << currentDPB.BlockShift);
+        startOfDirOffset = (ushort)(currentDPB.ReservedTracksOffset
+                    * CpmSectorSize
+                    * currentDPB.SectorsPerTrack);
         diskImageData = new byte[numberOfProDosBlocks * 512];
         // Fill all of the directory with empty bytes...
         for (int entry = 0; entry <= currentDPB.DirectorEntriesMax; entry++)
@@ -180,10 +184,11 @@ internal class CpmDisk
     {
         if (currentBlock == emptyBlock)
             return;
-        int track = currentBlock.block / 4 + BootTracks;
-        int sector = (currentBlock.block * 4) & 0x0f;
-        for (int i = 0; i < 4; i++)
-            WriteCpmSector(track, sector + i, currentBlock.data.AsSpan(i * 0x100, 0x100));
+        var destinationOffset=startOfDirOffset+currentBlock.block*blockSize;
+        // Adjust for boot track wrap around for DiskII
+        if ((currentBlock.block>=128) && (currentDPB==DiskIIDPB))
+            destinationOffset=(currentBlock.block-128)*blockSize;
+        currentBlock.data.CopyTo(diskImageData,destinationOffset);    
     }
 
     /// <summary>
@@ -193,17 +198,13 @@ internal class CpmDisk
     /// <returns>Copy of data from disk image.</returns>
     private (ushort block, byte[] data) ReadBlock(ushort block)
     {
-        var data = new byte[0x400];
-        int track = block / 4 + BootTracks;
-        int sector = (block * 4) & 0x0f;
-        if (track >= Tracks)
-            track = track - Tracks;
-        for (int i = 0; i < 4; i++)
-        {
-            var src = ReadCpmSector(track, sector + i);
-            var dst = data.AsSpan(i * 0x100, 0x100);
-            src.CopyTo(dst);
-        }
+        var data = new byte[blockSize];
+        var sourceOffset=startOfDirOffset+block*blockSize;
+        // Adjust for boot track wrap around for DiskII
+        if ((block>=128) && (currentDPB==DiskIIDPB))
+            sourceOffset=(block-128)*blockSize;
+        diskImageData.AsSpan(sourceOffset,blockSize)
+            .CopyTo(data);
         return (block, data);
     }
 
@@ -323,11 +324,12 @@ internal class CpmDisk
         // Go home if we've already ready everything
         if ((freeBlocks.Count != 0) || (usedBlocks.Count != 0))
             return;
-        for (int i = 2; i < (Tracks * SectorsPerTrack / 4); i++)
+        ushort startBlock = (ushort)(Byte.PopCount(currentDPB.AL0) + Byte.PopCount(currentDPB.AL1));
+        for (ushort i = startBlock; i <= currentDPB.DriveSectorsMax; i++)
             freeBlocks.Add((byte)i);
         // Mark directory blocks as used
-        usedBlocks.Add(0);
-        usedBlocks.Add(1);
+        for (ushort i = 0; i < startBlock; i++)
+            usedBlocks.Add(i);
         for (int i = 0; i < currentDPB.DirectorEntriesMax; i++)
         {
             var directoryEntry = GetDirectoryEntry(i);
@@ -355,8 +357,8 @@ internal class CpmDisk
     /// <returns>Directory entry.</returns>
     private DirectoryEntry GetDirectoryEntry(int entry)
     {
-        var sectorData = ReadCpmSector(BootTracks, entry / 8);
-        return new DirectoryEntry(sectorData.Slice((entry & 0x07) * 0x20, 0x20));
+        return new DirectoryEntry(currentDPB,
+            diskImageData.AsSpan(startOfDirOffset + entry * 0x20, 0x20));
     }
 
 
@@ -388,7 +390,7 @@ internal class CpmDisk
         if (dirEntry.IsHidden) return false;
         foreach (var filter in filters)
         {
-            if (new DirectoryEntry(currentDPB,userNumber, filter).Match(dirEntry))
+            if (new DirectoryEntry(currentDPB, userNumber, filter).Match(dirEntry))
                 return true;
         }
         return false;
@@ -447,7 +449,7 @@ internal class CpmDisk
         }
 
         // Check size (round up to a disk sector)
-        if (bootTrackFiles.Sum(f => (f.Length + 255) & 0xff00) != (currentDPB.SectorsPerTrack*currentDPB.ReservedTracksOffset*128))
+        if (bootTrackFiles.Sum(f => (f.Length + 255) & 0xff00) != (currentDPB.SectorsPerTrack * currentDPB.ReservedTracksOffset * 128))
             throw new Exception("File sizes are wrong for the boot sectors");
         return bootTrackFiles;
     }
@@ -458,7 +460,7 @@ internal class CpmDisk
     /// <param name="bootTrackFiles">List of fileInfo entries in order.</param>
     private void WriteBootTrack(List<FileInfo> bootTrackFiles)
     {
-        byte[] data = new byte[(currentDPB.SectorsPerTrack*currentDPB.ReservedTracksOffset*128)];
+        byte[] data = new byte[(currentDPB.SectorsPerTrack * currentDPB.ReservedTracksOffset * 128)];
         Array.Fill(data, (byte)0xE5);
         int offset = 0;
         foreach (var file in bootTrackFiles)
@@ -468,14 +470,17 @@ internal class CpmDisk
             offset += (fileData.Length + 255) & 0xff00;
         }
         diskImage.WriteBootTrack(data);
-        var lastDirectorySector = ReadCpmSector(BootTracks, DirectorySectors - 1);
+        if (currentDPB != DiskIIDPB)
+            return;
+        // Write out the dummy file for a disk II 
+        var lastDirectoryEntry = GetDirectoryEntry(currentDPB.DirectorEntriesMax);
         byte[] lastBytes =
         {
             0x00,0x73,0x79,0x73,0x74,0x65,0x6d,0x20,0x20,0xf4,0xf2,0xeb,0x00,0x00,0x00,0x60,
             0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x00,0x00,0x00,0x00
         };
-        lastBytes.CopyTo(lastDirectorySector.Slice(7 * 0x20, 0x20));
-        WriteCpmSector(3, 7, lastDirectorySector);
+        var dummyEntry = new DirectoryEntry(currentDPB, lastBytes);
+        dummyEntry.CopyTo(lastDirectoryEntry);
     }
 
     /// <summary>
