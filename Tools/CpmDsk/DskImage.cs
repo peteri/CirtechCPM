@@ -16,7 +16,17 @@ public class DskImage : IDiskImage
 
     public void ReadImage(string name, byte[] diskImageData)
     {
-
+        byte[] diskData = File.ReadAllBytes(name);
+        for (int track = 0; track < 16; track++)
+        {
+            for (int cpmSector = 0; cpmSector < 16; cpmSector++)
+            {
+                int sector = rawToDos33Map[cpmSectorMap[cpmSector]];
+                var srcSectorData = diskData.AsSpan((track * 16 + sector) * 0x100, 0x100);
+                var dstSectorData = diskImageData.AsSpan((track * 16 + cpmSector) * 0x100, 0x100);
+                srcSectorData.CopyTo(dstSectorData);
+            }
+        }
     }
 
     public void WriteImage(string name, byte[] diskImageData)
