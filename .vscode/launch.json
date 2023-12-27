@@ -39,8 +39,8 @@
             "program": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0/CpmDsk.dll",
             "args": [
                 "create",
-                "--binaries-folder","${workspaceFolder}/src/OEM/binaries/",
-                "--disk-image","${workspaceFolder}/src/OEM/binaries/SYSTEM.DSK",
+                "--binaries-folder","${workspaceFolder}/src/patched/binaries/",
+                "--disk-image","${workspaceFolder}/src/patched/binaries/system.dsk",
             ],
             "cwd": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

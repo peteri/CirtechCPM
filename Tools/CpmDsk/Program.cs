@@ -91,14 +91,7 @@ class Program
         var rootCommand = new RootCommand("CpmDsk - a tool for creating Apple ][ emulator disks")
             { createCommand, addCommand, directoryCommand, extractCommand,
             removeCommand, dpbCommand,dpbTestCommand };
-        try
-        {
-            rootCommand.Invoke(args);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Exception thrown: {ex.Message}");
-        }
+        rootCommand.Invoke(args);
     }
 
     private static void DPBTest()
@@ -143,7 +136,7 @@ class Program
 
     private static void Create(FileInfo diskImage, DirectoryInfo? binariesDirectory, int numberOfBlocks)
     {
-        var cpmDisk = new CpmDisk(diskImage, numberOfBlocks);
+        var cpmDisk = new CpmDisk(diskImage, numberOfBlocks, 0);
         if (binariesDirectory != null)
             cpmDisk.CopyBootable(binariesDirectory);
         cpmDisk.WriteImage();
