@@ -16,9 +16,8 @@ internal class CpmDisk
         PhysicalRecordShift: 0x01,
         PhysicalRecordMask: 0x01
     );
-    private DiskParameterBlock currentDPB;
+    private DiskParameterBlock dpb;
     private const int CpmSectorSize = 128;
-    private const int CpmDirectoryEntrySize = 128;
     public const byte CpmEmptyByte = 0xE5;
     private ushort blockSize;
     private readonly ushort startOfDirOffset;
@@ -38,22 +37,27 @@ internal class CpmDisk
     {
         this.diskFileInfo = diskFileInfo;
         this.userNumber = (byte)userNumber;
-        currentDPB = ComputeDPB(numberOfProDosBlocks);
-        blockSize = (ushort)(CpmSectorSize << currentDPB.BlockShift);
-        startOfDirOffset = (ushort)(currentDPB.ReservedTracksOffset
+        dpb = ComputeDPB(numberOfProDosBlocks);
+        blockSize = (ushort)(CpmSectorSize << dpb.BlockShift);
+        startOfDirOffset = (ushort)(dpb.ReservedTracksOffset
                     * CpmSectorSize
-                    * currentDPB.SectorsPerTrack);
+                    * dpb.SectorsPerTrack);
         diskImageData = new byte[numberOfProDosBlocks * 512];
         // Fill all of the directory with empty bytes...
-        for (int entry = 0; entry <= currentDPB.DirectorEntriesMax; entry++)
+        for (int entry = 0; entry <= dpb.DirectorEntriesMax; entry++)
             GetDirectoryEntry(entry).MarkAsEmpty();
-        diskImage = new DskImage(currentDPB);
+        diskImage = new DskImage(dpb);
     }
 
     public CpmDisk(FileInfo diskFileInfo, int userNumber) : this(diskFileInfo, diskFileInfo.Length / 512, userNumber)
     {
     }
 
+    /// <summary>
+    /// Compute the DPB in the same way as the Cirtech loader BIOS.
+    /// </summary>
+    /// <param name="numberOfProDosBlocks">Number of prodos blocks</param>
+    /// <returns>Either a computed DPB OR the Disk II dpb if size is 280 blocks.</returns>
     public static DiskParameterBlock ComputeDPB(long numberOfProDosBlocks)
     {
         if (numberOfProDosBlocks == 280)
@@ -90,17 +94,21 @@ internal class CpmDisk
         );
     }
 
+    /// <summary>
+    /// DPB test routine. Prints out a DPB for various disk sizes.
+    /// Matches the code in dpbtest assembler code.
+    /// </summary>
     public static void DPBTest()
     {
         long[] sizes =
-        {
+        [
 		// 4K block sizes
 		0x3ff,0x420,0x63f,0x7ff,0x820,0xfff,0x1020,0x1FFF,
 		// 8K block sizes
 		0x2018,0x3FFF,0x4017,
 		// 16k block sizes
 		 0x4018,0x7FFF,0x8019,0xA000,0xFFFF
-        };
+        ];
         //        var dpbt = ComputeDPB(0x4017);
         Console.WriteLine("Cirtech DPB test (Size is 512 byte blocks)");
         Console.WriteLine("| Size| SPT | BSH| BLM| EXM| DSM | DRM | AL0| AL1| CKS | OFF | PSH| PHM| ALV |");
@@ -133,7 +141,7 @@ internal class CpmDisk
     private void WriteFile(FileInfo fileInfo)
     {
         ReadDirectoryFreeBlocks();
-        var memoryDirEntry = new DirectoryEntry(currentDPB, userNumber, fileInfo.Name);
+        var memoryDirEntry = new DirectoryEntry(dpb, userNumber, fileInfo.Name);
         RemoveFile(memoryDirEntry);
         Console.WriteLine("Adding file {0}", memoryDirEntry.Name);
         var diskDirEntry = FindBlankEntry();
@@ -184,11 +192,11 @@ internal class CpmDisk
     {
         if (currentBlock == emptyBlock)
             return;
-        var destinationOffset=startOfDirOffset+currentBlock.block*blockSize;
+        var destinationOffset = startOfDirOffset + currentBlock.block * blockSize;
         // Adjust for boot track wrap around for DiskII
-        if ((currentBlock.block>=128) && (currentDPB==DiskIIDPB))
-            destinationOffset=(currentBlock.block-128)*blockSize;
-        currentBlock.data.CopyTo(diskImageData,destinationOffset);    
+        if ((currentBlock.block >= 128) && (dpb == DiskIIDPB))
+            destinationOffset = (currentBlock.block - 128) * blockSize;
+        currentBlock.data.CopyTo(diskImageData, destinationOffset);
     }
 
     /// <summary>
@@ -199,11 +207,11 @@ internal class CpmDisk
     private (ushort block, byte[] data) ReadBlock(ushort block)
     {
         var data = new byte[blockSize];
-        var sourceOffset=startOfDirOffset+block*blockSize;
+        var sourceOffset = startOfDirOffset + block * blockSize;
         // Adjust for boot track wrap around for DiskII
-        if ((block>=128) && (currentDPB==DiskIIDPB))
-            sourceOffset=(block-128)*blockSize;
-        diskImageData.AsSpan(sourceOffset,blockSize)
+        if ((block >= 128) && (dpb == DiskIIDPB))
+            sourceOffset = (block - 128) * blockSize;
+        diskImageData.AsSpan(sourceOffset, blockSize)
             .CopyTo(data);
         return (block, data);
     }
@@ -230,7 +238,7 @@ internal class CpmDisk
     /// <exception cref="Exception">Throws an exception if out directory entries</exception>
     DirectoryEntry FindBlankEntry()
     {
-        for (int i = 0; i < currentDPB.DirectorEntriesMax; i++)
+        for (int i = 0; i < dpb.DirectorEntriesMax; i++)
         {
             var entry = GetDirectoryEntry(i);
             if (entry.IsAvailable)
@@ -247,7 +255,7 @@ internal class CpmDisk
     private void RemoveFile(DirectoryEntry file)
     {
         bool firstTime = true;
-        for (int i = 0; i < currentDPB.DirectorEntriesMax; i++)
+        for (int i = 0; i < dpb.DirectorEntriesMax; i++)
         {
             var directoryEntry = GetDirectoryEntry(i);
             if (file.Match(directoryEntry))
@@ -287,7 +295,7 @@ internal class CpmDisk
         while (more)
         {
             more = false;
-            for (int i = 0; i < currentDPB.DirectorEntriesMax; i++)
+            for (int i = 0; i < dpb.DirectorEntriesMax; i++)
             {
                 var diskEntry = GetDirectoryEntry(i);
                 if (file.Match(diskEntry) && (file.Extent == diskEntry.Extent))
@@ -324,13 +332,13 @@ internal class CpmDisk
         // Go home if we've already ready everything
         if ((freeBlocks.Count != 0) || (usedBlocks.Count != 0))
             return;
-        ushort startBlock = (ushort)(Byte.PopCount(currentDPB.AL0) + Byte.PopCount(currentDPB.AL1));
-        for (ushort i = startBlock; i <= currentDPB.DriveSectorsMax; i++)
+        ushort startBlock = (ushort)(Byte.PopCount(dpb.AL0) + Byte.PopCount(dpb.AL1));
+        for (ushort i = startBlock; i <= dpb.DriveSectorsMax; i++)
             freeBlocks.Add((byte)i);
         // Mark directory blocks as used
         for (ushort i = 0; i < startBlock; i++)
             usedBlocks.Add(i);
-        for (int i = 0; i < currentDPB.DirectorEntriesMax; i++)
+        for (int i = 0; i < dpb.DirectorEntriesMax; i++)
         {
             var directoryEntry = GetDirectoryEntry(i);
             if (directoryEntry.IsNotFile) // Skip everything 
@@ -357,7 +365,7 @@ internal class CpmDisk
     /// <returns>Directory entry.</returns>
     private DirectoryEntry GetDirectoryEntry(int entry)
     {
-        return new DirectoryEntry(currentDPB,
+        return new DirectoryEntry(dpb,
             diskImageData.AsSpan(startOfDirOffset + entry * 0x20, 0x20));
     }
 
@@ -390,7 +398,7 @@ internal class CpmDisk
         if (dirEntry.IsHidden) return false;
         foreach (var filter in filters)
         {
-            if (new DirectoryEntry(currentDPB, userNumber, filter).Match(dirEntry))
+            if (new DirectoryEntry(dpb, userNumber, filter).Match(dirEntry))
                 return true;
         }
         return false;
@@ -404,7 +412,7 @@ internal class CpmDisk
     Dictionary<string, int> GetCpmFiles(List<string> filters)
     {
         var results = new Dictionary<string, int>();
-        for (int i = 0; i <= currentDPB.DirectorEntriesMax; i++)
+        for (int i = 0; i <= dpb.DirectorEntriesMax; i++)
         {
             var entry = GetDirectoryEntry(i);
             if (DirMatches(entry, filters))
@@ -449,7 +457,7 @@ internal class CpmDisk
         }
 
         // Check size (round up to a disk sector)
-        if (bootTrackFiles.Sum(f => (f.Length + 255) & 0xff00) != (currentDPB.SectorsPerTrack * currentDPB.ReservedTracksOffset * 128))
+        if (bootTrackFiles.Sum(f => (f.Length + 255) & 0xff00) != (dpb.SectorsPerTrack * dpb.ReservedTracksOffset * 128))
             throw new Exception("File sizes are wrong for the boot sectors");
         return bootTrackFiles;
     }
@@ -460,7 +468,7 @@ internal class CpmDisk
     /// <param name="bootTrackFiles">List of fileInfo entries in order.</param>
     private void WriteBootTrack(List<FileInfo> bootTrackFiles)
     {
-        byte[] data = new byte[(currentDPB.SectorsPerTrack * currentDPB.ReservedTracksOffset * 128)];
+        byte[] data = new byte[(dpb.SectorsPerTrack * dpb.ReservedTracksOffset * 128)];
         Array.Fill(data, (byte)0xE5);
         int offset = 0;
         foreach (var file in bootTrackFiles)
@@ -470,16 +478,16 @@ internal class CpmDisk
             offset += (fileData.Length + 255) & 0xff00;
         }
         diskImage.WriteBootTrack(data);
-        if (currentDPB != DiskIIDPB)
+        if (dpb != DiskIIDPB)
             return;
         // Write out the dummy file for a disk II 
-        var lastDirectoryEntry = GetDirectoryEntry(currentDPB.DirectorEntriesMax);
+        var lastDirectoryEntry = GetDirectoryEntry(dpb.DirectorEntriesMax);
         byte[] lastBytes =
         {
             0x00,0x73,0x79,0x73,0x74,0x65,0x6d,0x20,0x20,0xf4,0xf2,0xeb,0x00,0x00,0x00,0x60,
             0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x88,0x89,0x8a,0x8b,0x00,0x00,0x00,0x00
         };
-        var dummyEntry = new DirectoryEntry(currentDPB, lastBytes);
+        var dummyEntry = new DirectoryEntry(dpb, lastBytes);
         dummyEntry.CopyTo(lastDirectoryEntry);
     }
 
@@ -532,7 +540,7 @@ internal class CpmDisk
         ReadDirectoryFreeBlocks();
         CpmWildcardAction(
             fileFilters,
-            (name, _) => RemoveFile(new DirectoryEntry(currentDPB, userNumber, name)));
+            (name, _) => RemoveFile(new DirectoryEntry(dpb, userNumber, name)));
     }
 
     /// <summary>
@@ -543,7 +551,7 @@ internal class CpmDisk
     {
         CpmWildcardAction(
             fileFilters,
-            (name, _) => ReadFile(new DirectoryEntry(currentDPB, userNumber, name)));
+            (name, _) => ReadFile(new DirectoryEntry(dpb, userNumber, name)));
     }
 
     /// <summary>

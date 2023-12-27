@@ -57,7 +57,7 @@ class Program
             { diskImageOption, binaryFolderOption, numBlocksOption };
         var dpbCommand = new Command("dpb", "Display DPB for disk size in ProDOS blocks.")
             { numBlocksOption };
-        var dpbTestCommand = new Command("dpbtest", "Test the dpb computation.");    
+        var dpbTestCommand = new Command("dpbtest", "Test the dpb computation.");
         // Set handlers
         directoryCommand.SetHandler(
             (diskImage, fileFilter, userNumber) => ShowDirectory(diskImage, fileFilter, userNumber),
@@ -89,9 +89,16 @@ class Program
             numBlocksOption);
         dpbTestCommand.SetHandler(DPBTest);
         var rootCommand = new RootCommand("CpmDsk - a tool for creating Apple ][ emulator disks")
-            { createCommand, addCommand, directoryCommand, extractCommand, 
+            { createCommand, addCommand, directoryCommand, extractCommand,
             removeCommand, dpbCommand,dpbTestCommand };
-        rootCommand.Invoke(args);
+        try
+        {
+            rootCommand.Invoke(args);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception thrown: {ex.Message}");
+        }
     }
 
     private static void DPBTest()
@@ -101,7 +108,7 @@ class Program
 
     private static void ShowDPB(int numBlocks)
     {
-        Console.WriteLine("DPB for {0:X4} is {1}",numBlocks,CpmDisk.ComputeDPB(numBlocks));
+        Console.WriteLine("DPB for {0:X4} is {1}", numBlocks, CpmDisk.ComputeDPB(numBlocks));
     }
 
     private static void ShowDirectory(FileInfo diskImage, List<string> fileFilter, int userNumber)
