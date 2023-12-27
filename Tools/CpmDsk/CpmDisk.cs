@@ -477,7 +477,7 @@ internal class CpmDisk
             fileData.CopyTo(data, offset);
             offset += (fileData.Length + 255) & 0xff00;
         }
-        diskImage.WriteBootTrack(data);
+        diskImage.WriteBootTrack(data, diskImageData);
         if (dpb != DiskIIDPB)
             return;
         // Write out the dummy file for a disk II 

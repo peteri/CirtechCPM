@@ -7,5 +7,5 @@ public interface IDiskImage
     // Write the image from disk adding any skew
     public void WriteImage(string name, byte[] diskImageData);
     // Write the boottrack using a prodos skew
-    public void WriteBootTrack(byte[] bootTrackData);
+    public void WriteBootTrack(byte[] bootTrackData, byte[] diskImageData);
 }
