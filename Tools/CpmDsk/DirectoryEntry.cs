@@ -113,9 +113,20 @@ public ref struct DirectoryEntry
     /// <param name="index">Index of the block allocation</param>
     /// <returns>Block allocation for a directory entry.</returns>
     public ushort GetBlock(int index)
-        => (dpb.DriveSectorsMax < 0x100) ?
-            entry[0x10 + index] :
-            (ushort)(entry[0x10 + (index >> 1)] + (entry[0x11 + (index >> 1)] << 8));
+    {
+        if (dpb.DriveSectorsMax < 0x100)
+        {
+            if (index > 0x10)
+                throw new Exception("Directory index block out of range");
+            return entry[0x10 + index];
+        }
+        else
+        {
+            if (index > 0x08)
+                throw new Exception("Directory index block out of range");
+            return (ushort)(entry[0x10 + (index << 1)] + (entry[0x11 + (index << 1)] << 8));
+        }
+    }
 
     /// <summary>
     /// Sets the block number for a directory entry
@@ -128,15 +139,19 @@ public ref struct DirectoryEntry
     {
         if (dpb.DriveSectorsMax < 0x100)
         {
+            if (index > 0x10)
+                throw new Exception("Directory index block out of range");
             entry[0x10 + index] = (byte)value;
         }
         else
         {
-            entry[0x10 + (index >> 1)] = (byte)(value & 0xff);
-            entry[0x11 + (index >> 1)] = (byte)(value >> 8);
+            if (index > 0x08)
+                throw new Exception("Directory index block out of range");
+            entry[0x10 + (index << 1)] = (byte)(value & 0xff);
+            entry[0x11 + (index << 1)] = (byte)(value >> 8);
         }
     }
-    
+
     /// <summary>
     /// Gets or sets the record count of the directory entry.
     /// </summary>
@@ -149,10 +164,14 @@ public ref struct DirectoryEntry
     /// <summary>
     /// Gets or sets the extent field of the directory entry.
     /// </summary>
-    public byte Extent
+    public ushort Extent
     {
-        get => entry[0x0c];
-        set => entry[0x0c] = value;
+        get => (ushort)(entry[0x0c] + entry[0x0e] << 5);
+        set
+        {
+            entry[0x0c] = (byte)(value & 0x1f);
+            entry[0x0e] = (byte)(value >> 5);
+        }
     }
 
     /// <summary>
