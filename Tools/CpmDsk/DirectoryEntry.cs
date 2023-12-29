@@ -166,7 +166,7 @@ public ref struct DirectoryEntry
     /// </summary>
     public ushort Extent
     {
-        get => (ushort)(entry[0x0c] + entry[0x0e] << 5);
+        get => (ushort)(entry[0x0c] + (entry[0x0e] << 5));
         set
         {
             entry[0x0c] = (byte)(value & 0x1f);

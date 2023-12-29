@@ -1,3 +1,5 @@
+using System.Data.Common;
+
 namespace CpmDsk;
 internal class CpmDisk
 {
@@ -102,14 +104,14 @@ internal class CpmDisk
     {
         long[] sizes =
         [
-		// 4K block sizes
-		0x3ff,0x420,0x63f,0x7ff,0x820,0xfff,0x1020,0x1FFF,
+		// 4K block sizes (0x640 is 1600 or 800K 3.5 superdrive)
+		0x3ff,0x420,0x640,0x7ff,0x820,0xfff,0x1020,0x1FFF,
 		// 8K block sizes
 		0x2018,0x3FFF,0x4017,
 		// 16k block sizes
 		 0x4018,0x7FFF,0x8019,0xA000,0xFFFF
         ];
-        //        var dpbt = ComputeDPB(0x4017);
+
         Console.WriteLine("Cirtech DPB test (Size is 512 byte blocks)");
         Console.WriteLine("| Size| SPT | BSH| BLM| EXM| DSM | DRM | AL0| AL1| CKS | OFF | PSH| PHM| ALV |");
         Console.WriteLine("|-----|-----|----|----|----|-----|-----|----|----|-----|-----|----|----|-----|");
@@ -210,7 +212,7 @@ internal class CpmDisk
             return;
         ushort startBlock = (ushort)(Byte.PopCount(dpb.AL0) + Byte.PopCount(dpb.AL1));
         for (ushort i = startBlock; i <= dpb.DriveSectorsMax; i++)
-            freeBlocks.Add((byte)i);
+            freeBlocks.Add((ushort)i);
         // Mark directory blocks as used
         for (ushort i = 0; i < startBlock; i++)
             usedBlocks.Add(i);
@@ -289,6 +291,7 @@ internal class CpmDisk
         var fileData = File.ReadAllBytes(fileInfo.FullName);
         int fileOffset = 0;
         (ushort block, byte[] data) currentBlock = emptyBlock;
+        int cpmSectorsPerBlock = 1 << dpb.BlockShift;
         while (length > 0)
         {
             // Do we need to get a new entry?
@@ -297,25 +300,31 @@ internal class CpmDisk
                 memoryDirEntry.CopyTo(diskDirEntry);  // Save extent to in memory image
                 memoryDirEntry.RecordCount = 0x00;     // Mark the current one as empty
                 memoryDirEntry.Extent++;               // Advance the extent
-                for (int i = 0; i < 16; i++)   // Clear all the current blocks
-                    memoryDirEntry.SetBlock(i, 0x00);
-                // Get a blank directory entry.
-                diskDirEntry = FindBlankEntry();
+                // Out of logical extents?
+                if ((memoryDirEntry.Extent & dpb.ExtentMask) == 0)
+                {
+                    for (int i = 0; i < 16; i++)   // Clear all the current blocks
+                        memoryDirEntry.SetBlock(i, 0x00);
+                    // Get a blank directory entry.
+                    diskDirEntry = FindBlankEntry();
+                }
             }
 
             // Do we need to get a block?
-            if ((memoryDirEntry.RecordCount & 0x07) == 0x00)
+            if ((memoryDirEntry.RecordCount & dpb.BlockMask) == 0x00)
             {
                 WriteBlock(currentBlock);
                 currentBlock = ReadNextFreeBlock();
-                memoryDirEntry.SetBlock(memoryDirEntry.RecordCount / 8, currentBlock.block);
+                int blockIndex = (((memoryDirEntry.Extent & dpb.ExtentMask) * 0x80) >> dpb.BlockShift)
+                               + (memoryDirEntry.RecordCount >> dpb.BlockShift);
+                memoryDirEntry.SetBlock(blockIndex, currentBlock.block);
             }
 
             // Copy some data into the block
             int len = (length > 128) ? 128 : length;
             length -= len;
             var srcSpan = fileData.AsSpan(fileOffset, len);
-            var dstSpan = currentBlock.data.AsSpan((memoryDirEntry.RecordCount & 0x07) * 0x80, 0x80);
+            var dstSpan = currentBlock.data.AsSpan((memoryDirEntry.RecordCount & dpb.BlockMask) * 0x80, 0x80);
             srcSpan.CopyTo(dstSpan);
             fileOffset += 0x80;
             memoryDirEntry.RecordCount++;
@@ -334,31 +343,37 @@ internal class CpmDisk
         using var stream = File.Open(file.Name, FileMode.Create);
         using var writer = new BinaryWriter(stream);
         bool more = true;
+        ushort extentMask = (ushort)(dpb.ExtentMask ^ 0xffff);
+        int cpmSectorsPerBlock = 1 << dpb.BlockShift;
         while (more)
         {
             more = false;
             for (int i = 0; i < dpb.DirectorEntriesMax; i++)
             {
                 var diskEntry = GetDirectoryEntry(i);
-                if (file.Match(diskEntry) && (file.Extent == diskEntry.Extent))
+                if (file.Match(diskEntry) && (file.Extent == (diskEntry.Extent & extentMask)))
                 {
-                    file.Extent++;
-                    more = true;
-                    int rc = 0;
-                    int j = 0;
-                    (ushort block, byte[] data) block = emptyBlock;
-
-                    while (rc < diskEntry.RecordCount)
+                    int rc = diskEntry.RecordCount;
+                    // clip record count into range
+                    if (rc > 0x80) rc = 0x80;
+                    // If we have multiple logical extents then add them into the record count
+                    rc += (diskEntry.Extent & dpb.ExtentMask) * 0x80;
+                    int j = -1;
+                    while (rc > 0)
                     {
-                        if ((rc & dpb.BlockMask) == 0)
+                        j++;
+                        (ushort block, byte[] data) block = emptyBlock;
+                        int size = rc < cpmSectorsPerBlock ? rc : cpmSectorsPerBlock;
+                        if (diskEntry.GetBlock(j) != 0)
                         {
                             // Doesn't cope with sparse files
                             block = ReadBlock(diskEntry.GetBlock(j));
-                            j++;
+                            writer.Write(block.data.AsSpan(0, size * 0x80));
                         }
-                        writer.Write(block.data.AsSpan((rc & dpb.BlockMask) * 0x80, 0x80));
-                        rc++;
+                        rc -= cpmSectorsPerBlock;
                     }
+                    more = true;
+                    file.Extent = (ushort)(diskEntry.Extent + 1);
                 }
             }
         }
@@ -476,7 +491,7 @@ internal class CpmDisk
     private void WriteBootTrack(List<FileInfo> bootTrackFiles)
     {
         byte[] data = new byte[(dpb.SectorsPerTrack * dpb.ReservedTracksOffset * 128)];
-        Array.Fill(data, (byte)0xE5);
+        Array.Fill(data, (byte)0x1A);
         int offset = 0;
         foreach (var file in bootTrackFiles)
         {

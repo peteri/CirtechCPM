@@ -34,7 +34,7 @@ class Program
             IsRequired = false
         };
         var numBlocksOption = new Option<int>(
-            name: "--numBlocks",
+            name: "--numblocks",
             description: "Number of ProDos blocks (512 byte) to create a disk with. Defaults to Disk II 280 blocks",
             getDefaultValue: () => 280)
         {

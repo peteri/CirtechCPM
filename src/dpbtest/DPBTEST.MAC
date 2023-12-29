@@ -41,7 +41,7 @@ LOOP:		call DOSIZE		; Do this size
 ; Table of sizes to test
 ;============================================================
 SIZES:		; 4K block sizes
-		DW   003ffH,00420H,0063fH,07ffH,00820H,00fffH,01020H,01FFFH
+		DW   003ffH,00420H,00640H,07ffH,00820H,00fffH,01020H,01FFFH
 		; 8K block sizes
 		DW   02018H,03FFFH,04017H
 		; 16k block sizes
