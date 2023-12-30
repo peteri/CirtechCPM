@@ -1,12 +1,11 @@
 		.Z80
 ;************************************************
 ;*                                              *
-;*     COPYSYS                                  *
-;*     Copy the system files from one disk      *
-;*     to another.                              *
+;*     PUTSYS                                   *
+;*     Copy the system files from a build       *
+;*     directory on drive.                      *
 ;*                                              *
-;* Binary   (C) Copyright 1986 Cirtech          *
-;* Comments (C) Copyright 2023 Peter Ibbotson   *
+;*     (C) Copyright 2023 Peter Ibbotson        *
 ;************************************************
 		INCLUDE EQUATES.MAC
 		INCLUDE BDOS.MAC
@@ -33,9 +32,9 @@ START:		ld   de,RELOCSTART	; Relocate ourselves
 RELOCADR:
 		.PHASE 0AF00H
 RELOCSTART:	jp   START2		; Skip past messages
-		DB   "(C) CIRTECH UK Ltd. 1986"
+		DB   "(C) P Ibbotson 2023"
 MSGWELCOME:	DB   ESC,'*',ESC,'(',CR,LF,LF,LF
-		DB   " System disk Copy Program (C) CIRTECH (UK) Ltd. 1986  Issue 1.02"
+		DB   " System disk creation Program (C) P Ibbotson  Issue 1.00"
 		DB   ESC,')','$'
 MSGDISKERR:	DB   CR,LF,LF,BELL
 		DB   "A disk error has occurred, returning to system.$"
@@ -49,8 +48,8 @@ MSGNOTSYS:	DB   CR,LF,LF,BELL
 		DB   "That is not a system disk, it does not have the file CPM3.SYS on it.$"
 MSGSRCDISK:	DB   CR,LF,LF
 		DB   "Which drive is the SOURCE system disk in ?$"
-MSGINSSRCDSK:	DB   CR,LF,LF
-		DB   "Insert SOURCE disk and press any key.$"
+MSGREADBOOTF:	DB   CR,LF,LF
+		DB   "Reading $"
 MSGDSTDISK:	DB   CR,LF,LF
 		DB   "Which drive is the DESTINATION disk in ?$"
 MSGINSDSTDSK:	DB   CR,LF,LF
@@ -64,24 +63,27 @@ START2:		ld   de,MSGWELCOME	; Say hello
 		ld   c,GETDRV		; Get the current disk drive
 		call BDOS
 		ld   (CURDRV),a		; Save the result
-GETSRCDRV:	ld   de,MSGSRCDISK	; Ask for the source disk
-		call GETDRVLTR
-		jr   c,GETSRCDRV	; Out of range loop back
-		ld   de,MSGINSSRCDSK	; Ask user for disk drive
-		call SETCPM3DRV		; Set drive for CPM3.SYS
-		call CPYDRV		; Copy drive details across banks
-		ld   c,DSKOP_RDTRK	; Read in first three tracks
-		call BIOSTRKOP
+		ld   hl,BOOTTRKFNAME	; Setup to read in boot files
+RBFLOOP:	call READBOOTFILE	; Read it
+		or   a  		; Any errors?
+		jr   nz,BOOTFERR	; Display error with file name
+		ld   de,12		; Bounce along to next entry
+		add  hl,de
+		ld   a,(hl)		; All done?
+		or   a			; Set flags
+		jr   p,RBFLOOP		; positive means loop again
 OPENCPM3SYS:	ld   c,OPENF		; See if we can open CPM3.SYS
 		call CPM3BDOS
 		or   a			; Any errors ?
 		jr   z,READCPM3SYS	; Nope, carry on
 		ld   de,MSGNOTSYS	; Yes, tell user
-		call MSGCONIN		; and get a key press
-		or   20H		; convert to lower case
-		cp   'y'		; another go?
-		jp   z,GETSRCDRV	; Loop around
 		jp   EXIT		; Nope, exit
+;============================================================
+;
+; Read in boot track files
+;
+;============================================================
+READBOOTFILE:	ret
 ;============================================================
 ;
 ; Read in CPM3.SYS
@@ -251,6 +253,13 @@ EXIT:		ld   a,(CURDRV)		; Reset drive back
 CPM3BDOS:	ld   de,CPM3SYSFCB
 		jp   BDOS
 ;============================================================
+;
+; BOOTFBDOS - Perform a BDOS operation on BOOTTRKFCB FCB
+;
+;============================================================
+BOOTFBDOS:	ld   de,BOOTTRKFCB
+		jp   BDOS		
+;============================================================
 ; BIOSTRKOP - Perform a multi track operation
 ; Entry
 ;   c = disk operation
@@ -354,6 +363,19 @@ CPM3SYSFCB:	DB   00H		; Drive
 		DB   00H,00H,00H,00H	; EX,S1,S2,RC
 		DS   10H,00h		; AL (16 bytes)
 		DB   00H,00H,00H,00H	; CR,R0,R1,R2
+BOOTTRKFCB:     DB   00H
+		DB   'BOOTSECTBIN'	; Filename+type
+		DB   00H,00H,00H,00H	; EX,S1,S2,RC
+		DS   10H,00h		; AL (16 bytes)
+		DB   00H,00H,00H,00H	; CR,R0,R1,R2
+BOOTTRKFNAME:	DB   HIGH ZBOOT_TRKDATA + 00H,'BOOTSECTBIN'
+		DB   HIGH ZBOOT_TRKDATA + 02H,'BIOSVID BIN'
+		DB   HIGH ZBOOT_TRKDATA + 06H,'BIOSDISKBIN'
+		DB   HIGH ZBOOT_TRKDATA + 0EH,'BIOSCHARBIN'
+		DB   HIGH ZBOOT_TRKDATA + 10H,'CCP     COM'
+		DB   HIGH ZBOOT_TRKDATA + 1DH,'TOOLKEY BIN'
+		DB   HIGH ZBOOT_TRKDATA + 20H,'CPMLDR  BIN'
+		DB   FFH
 		; Directory entry for boot tracks.
 SYSDIRENT:	DB   000h
 		DB   'system  '
