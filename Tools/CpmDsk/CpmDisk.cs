@@ -1,5 +1,3 @@
-using System.Data.Common;
-
 namespace CpmDsk;
 internal class CpmDisk
 {
@@ -212,7 +210,7 @@ internal class CpmDisk
             return;
         ushort startBlock = (ushort)(Byte.PopCount(dpb.AL0) + Byte.PopCount(dpb.AL1));
         for (ushort i = startBlock; i <= dpb.DriveSectorsMax; i++)
-            freeBlocks.Add((ushort)i);
+            freeBlocks.Add(i);
         // Mark directory blocks as used
         for (ushort i = 0; i < startBlock; i++)
             usedBlocks.Add(i);
@@ -224,7 +222,6 @@ internal class CpmDisk
             IterateAllocationBlocks(directoryEntry, usedBlocks, freeBlocks);
         }
     }
-
 
     /// <summary>
     /// Removes a file from in memory disk image.
@@ -291,7 +288,6 @@ internal class CpmDisk
         var fileData = File.ReadAllBytes(fileInfo.FullName);
         int fileOffset = 0;
         (ushort block, byte[] data) currentBlock = emptyBlock;
-        int cpmSectorsPerBlock = 1 << dpb.BlockShift;
         while (length > 0)
         {
             // Do we need to get a new entry?
@@ -378,7 +374,6 @@ internal class CpmDisk
             }
         }
     }
-
 
     /// <summary>
     /// Reads a directory entry from the in memory disk image.
