@@ -144,26 +144,6 @@
             "stopAtEntry": false
         },
         {
-            "name": "Add CPM3.SYS",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build",
-            // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0/CpmDsk.dll",
-            "args": [
-                "add",
-                "${workspaceFolder}/src/patched/build.sub",
-                "--disk-image",
-                "${workspaceFolder}/src/patched/binaries/cpm3.hdv",
-                "--usernum",
-                "1"
-            ],
-            "cwd": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0",
-            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
-            "console": "internalConsole",
-            "stopAtEntry": false
-        },
-        {
             "name": "DPB Test",
             "type": "coreclr",
             "request": "launch",

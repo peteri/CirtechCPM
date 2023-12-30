@@ -299,7 +299,7 @@ internal class CpmDisk
                 // Out of logical extents?
                 if ((memoryDirEntry.Extent & dpb.ExtentMask) == 0)
                 {
-                    for (int i = 0; i < 16; i++)   // Clear all the current blocks
+                    for (int i = 0; i < ((dpb.DriveSectorsMax < 0x100) ? 0x10 : 0x08); i++)   // Clear all the current blocks
                         memoryDirEntry.SetBlock(i, 0x00);
                     // Get a blank directory entry.
                     diskDirEntry = FindBlankEntry();

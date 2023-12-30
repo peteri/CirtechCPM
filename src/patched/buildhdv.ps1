@@ -41,12 +41,13 @@ $buildFiles=@(
 'RomWBW\CCP.COM',
 'BUILD.SUB'
 )
-Write-Host 'Create cpm3.hdv'
-dotnet run --project ../../tools/CpmDsk -- create --disk-image binaries/cpm3.hdv --binaries-folder ./binaries --numblocks 10240
+Write-Host 'Create buildcpm3.hdv'
+dotnet run --project ../../tools/CpmDsk -- create --disk-image ../../DiskImages/buildcpm3.hdv --binaries-folder ./binaries --numblocks 4096
 Write-Host 'Adding system files'
-dotnet run --project ../../tools/CpmDsk -- add $systemFiles --disk-image binaries/cpm3.hdv
-dotnet run --project ../../tools/CpmDsk -- add $utilityFiles --disk-image binaries/cpm3.hdv
+dotnet run --project ../../tools/CpmDsk -- add $systemFiles --disk-image ../../DiskImages/buildcpm3.hdv
+dotnet run --project ../../tools/CpmDsk -- add $utilityFiles --disk-image ../../DiskImages/buildcpm3.hdv
 Write-Host 'Creating build files in USER 1'
-dotnet run --project ../../tools/CtrlZ -- add *.MAC BUILD.SUB
-dotnet run --project ../../tools/CpmDsk -- add $buildFiles --disk-image binaries/cpm3.hdv --user 1
-dotnet run --project ../../tools/CtrlZ -- remove *.MAC BUILD.SUB
+dotnet run --project ../../tools/CtrlZ -- add *.MAC BUILD.SUB README.TXT
+dotnet run --project ../../tools/CpmDsk -- add $buildFiles --disk-image ../../DiskImages/buildcpm3.hdv --user 1
+dotnet run --project ../../tools/CpmDsk -- add README.TXT --disk-image ../../DiskImages/buildcpm3.hdv 
+dotnet run --project ../../tools/CtrlZ -- remove *.MAC BUILD.SUB README.TXT
