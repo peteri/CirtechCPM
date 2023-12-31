@@ -109,6 +109,26 @@
             "stopAtEntry": false
         },
         {
+            "name": "User 1 Filter Directory",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0/CpmDsk.dll",
+            "args": [
+                "directory",
+                "*.PRN",
+                "--disk-image",
+                "${workspaceFolder}/DiskImages/buildcpm3.hdv",
+                "--user",
+                "1"
+            ],
+            "cwd": "${workspaceFolder}/Tools/CpmDsk/bin/Debug/net8.0",
+            // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
             "name": "Extract DSK",
             "type": "coreclr",
             "request": "launch",

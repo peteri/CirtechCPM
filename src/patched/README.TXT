@@ -12,8 +12,11 @@ mame apple2ee -sl1 parallel -sl2 ssc -sl4 softcard -aux ext80
 -sl7 cffa2 -hard1 {PathTo}\DiskImages\buildcpm3.hdv 
 
 To build on the Apple //e boot the image, change user to USER 1
-then use BUILD.SUB to compile the assembly files. User area 1 has
-been used so that CPM3.SYS is not overwritten.
+then use BUILDBIN.SUB, BUILDCOM.SUB, LINKBIN.SUB to compile and
+linkg the assembly files. The type GENCPM AUTO DISPLAY to 
+generate CPM3.SYS. User area 1 has been used so that CPM3.SYS 
+is not overwritten. For some reason using BUILD.SUB to call
+the indivdiual submit files does not work.
 
 To format a blank floppy hold down closed Apple and press ? which
 will open the Cirtech Toolkey (or closed Apple and F)

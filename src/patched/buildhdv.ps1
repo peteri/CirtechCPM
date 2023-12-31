@@ -18,7 +18,7 @@ $systemFiles=@(
 'RomWBW/ERASE.COM',
 'RomWBW/GET.COM',
 'RomWBW/SETDEF.COM',
-'RomWBW/SUBMIT.COM',
+'system/SUBMIT.COM',
 'RomWBW/TYPE.COM',
 'binaries/START.COM'
 )
@@ -37,9 +37,12 @@ $buildFiles=@(
 'gencpm/*.*',
 'CPMLDR.REL',
 '*.MAC'
-'RomWBW/SUBMIT.COM',
-'RomWBW\CCP.COM',
-'BUILD.SUB'
+'system/SUBMIT.COM',
+'RomWBW/CCP.COM',
+'BUILDBIN.SUB',
+'BUILDCOM.SUB',
+'BUILD.SUB',
+'LINKBIN.SUB'
 )
 Write-Host 'Create buildcpm3.hdv'
 dotnet run --project ../../tools/CpmDsk -- create --disk-image ../../DiskImages/buildcpm3.hdv --binaries-folder ./binaries --numblocks 4096
@@ -47,7 +50,7 @@ Write-Host 'Adding system files'
 dotnet run --project ../../tools/CpmDsk -- add $systemFiles --disk-image ../../DiskImages/buildcpm3.hdv
 dotnet run --project ../../tools/CpmDsk -- add $utilityFiles --disk-image ../../DiskImages/buildcpm3.hdv
 Write-Host 'Creating build files in USER 1'
-dotnet run --project ../../tools/CtrlZ -- add *.MAC BUILD.SUB README.TXT
+dotnet run --project ../../tools/CtrlZ -- add *.MAC BUILDBIN.SUB BUILDCOM.SUB BUILD.SUB LINKBIN.SUB README.TXT
 dotnet run --project ../../tools/CpmDsk -- add $buildFiles --disk-image ../../DiskImages/buildcpm3.hdv --user 1
 dotnet run --project ../../tools/CpmDsk -- add README.TXT --disk-image ../../DiskImages/buildcpm3.hdv 
-dotnet run --project ../../tools/CtrlZ -- remove *.MAC BUILD.SUB README.TXT
+dotnet run --project ../../tools/CtrlZ -- remove *.MAC BUILDBIN.SUB BUILDCOM.SUB BUILD.SUB LINKBIN.SUB README.TXT

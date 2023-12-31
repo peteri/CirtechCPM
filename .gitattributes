@@ -3,7 +3,9 @@
 *.jpg binary
 *.nib binary
 *.bin binary
+*.hdv binary
 *.DSK binary
 *.COM binary
 *.REL binary
 *.SPR binary
+*.HDV binary
