@@ -34,8 +34,8 @@ RELOCADR:
 RELOCSTART:	jp   START2		; Skip past messages
 		DB   "(C) P Ibbotson 2023"
 MSGWELCOME:	DB   ESC,'*',ESC,'(',CR,LF,LF,LF
-		DB   " System disk creation Program (C) P Ibbotson  Issue 1.00"
-		DB   ESC,')','$'
+		DB   " System disk creation (C) P Ibbotson  Issue 1.00 "
+		DB   ESC,')',CR,LF,'$'
 MSGDISKERR:	DB   CR,LF,LF,BELL
 		DB   "A disk error has occurred, returning to system.$"
 MSGOPDONE:	DB   CR,LF,LF,LF
@@ -46,10 +46,12 @@ MSGINVDRV:	DB   CR,LF,LF,BELL
 		DB   "Invalid drive identifier.$"
 MSGNOTSYS:	DB   CR,LF,LF,BELL
 		DB   "That is not a system disk, it does not have the file CPM3.SYS on it.$"
-MSGSRCDISK:	DB   CR,LF,LF
-		DB   "Which drive is the SOURCE system disk in ?$"
-MSGREADBOOTF:	DB   CR,LF,LF
+MSGREADBOOTF:	DB   CR,LF
 		DB   "Reading $"
+MSGERRRDBF:	DB   CR,LF,LF
+		DB   "Error Reading $"		
+MSGERROPENF:	DB   CR,LF,LF
+		DB   "Error Opening $"		
 MSGDSTDISK:	DB   CR,LF,LF
 		DB   "Which drive is the DESTINATION disk in ?$"
 MSGINSDSTDSK:	DB   CR,LF,LF
@@ -63,6 +65,12 @@ START2:		ld   de,MSGWELCOME	; Say hello
 		ld   c,GETDRV		; Get the current disk drive
 		call BDOS
 		ld   (CURDRV),a		; Save the result
+		ld   hl,ZBOOT_TRKDATA
+		ld   de,ZBOOT_TRKDATA+1	
+		ld   bc,BOOT_TRACKS*16*256-1	; 12K for the tracks
+		ld   a,01aH
+		ld   (hl),a
+		ldir			; Clear destination memory
 		ld   hl,BOOTTRKFNAME	; Setup to read in boot files
 RBFLOOP:	call READBOOTFILE	; Read it
 		or   a  		; Any errors?
@@ -71,19 +79,70 @@ RBFLOOP:	call READBOOTFILE	; Read it
 		add  hl,de
 		ld   a,(hl)		; All done?
 		or   a			; Set flags
-		jr   p,RBFLOOP		; positive means loop again
+		jp   p,RBFLOOP		; positive means loop again
 OPENCPM3SYS:	ld   c,OPENF		; See if we can open CPM3.SYS
 		call CPM3BDOS
 		or   a			; Any errors ?
 		jr   z,READCPM3SYS	; Nope, carry on
 		ld   de,MSGNOTSYS	; Yes, tell user
 		jp   EXIT		; Nope, exit
+BOOTFERR:	ld   de,MSGERRRDBF	; Display error message
+		call PRINTFNAME		; Print the file name
+		jp   EXIT
+OPENFERR:	ld   de,MSGERROPENF	; Display error message
+		call PRINTFNAME		; Print the file name
+		jp   EXIT
 ;============================================================
 ;
-; Read in boot track files
+; Read in a boot track file, hl points to page to load into
+; followed by the filename to open.
 ;
 ;============================================================
-READBOOTFILE:	ret
+READBOOTFILE:	ld   de,MSGREADBOOTF
+		call PRINTFNAME		; Print the file name
+		call CLRBOOTFCB
+		push hl
+		inc  hl
+		ld   de,BOOTTRKFCB+1
+		ld   bc,11
+		ldir			; Copy in file name
+		xor  a
+		ld   c,OPENF		; See if we can open file
+		call BOOTFBDOS
+		pop  hl			; get back hl
+		or   a			; Any errors ?
+		jr   nz,OPENFERR		
+		push hl			; save it for our return
+		ld   d,(hl)		; get address to store
+		dec  d
+		ld   e,080h
+		ex   de,hl
+RDNXTBOOTF:	ld   de,BLKSIZE
+		add  hl,de		; Bounce along the dst pointer
+		push hl			; Save pointer
+		ex   de,hl		; Set destination address
+		call DOSETDMA
+		ld   c,CONO 		; Show some progress
+		ld   e,'.'
+		call BDOS
+		ld   c,READF		; Read in a block
+		call BOOTFBDOS
+		pop  hl			; Get back pointer
+		cp   ERR_HARD		; Hardware error
+		jp   z,RDBOOTEXIT	; Get out of here
+		cp   ERR_EOF		; End of file?
+		jr   nz,RDNXTBOOTF	; Nope, loop back around again
+		ld   c,CLOSEF		; Close file
+		call BOOTFBDOS
+		ld   c,CONO 		; Show some progress
+		ld   e,8		; Backspace
+		call BDOS
+		ld   c,CONO 		; Correct for last read
+		ld   e,' '
+		call BDOS
+		ld   a,0		; Say no error....
+RDBOOTEXIT:	pop  hl		
+		ret
 ;============================================================
 ;
 ; Read in CPM3.SYS
@@ -118,7 +177,7 @@ RDNXTCPM3SYS:	ld   de,BLKSIZE
 ;============================================================
 		ld   de,MSGDSTDISK	; Prompt user to get destination drive
 		call GETDRVLTR
-		jr   c,OPENCPM3SYS	; Loop back to re-read CPM3.SYS?
+		jp   c,OPENCPM3SYS	; Loop back to re-read CPM3.SYS?
 		ld   de,MSGINSDSTDSK	; Prompt user destination disk
 		call SETCPM3DRV		; Set the drive.
 		call DRVISDISK2		; Drive is a disk II
@@ -202,6 +261,13 @@ DIRSECTADDR:	ld   de,0000H		; Overwritten earlier on
 ;============================================================
 NOTDISK2:	ld   c,DSKOP_WRTRK	; write out the boot tracks
 		call BIOSTRKOP
+		ld   c,USERNUM		; Get current user number
+		ld   e,0FFH
+		call BDOS
+		ld   (SAVEDUSER),a	; Save for later
+		ld   c,USERNUM		; Set current user number
+		ld   e,00H		; to 0
+		call BDOS
 		ld   c,DELTEF		; Delete CPM3.SYS
 		call CPM3BDOS
 		or   a			; Check if acc zero
@@ -239,6 +305,10 @@ NOWRITEERR:	pop  bc			; bring back counter
 		djnz WRNXTCPM3SYS
 		ld   c,CLOSEF		; Close the file
 		call CPM3BDOS
+		ld   a,(SAVEDUSER)	; Get back save user number
+		ld   e,a
+		ld   c,USERNUM		; Set current user number
+		call BDOS
 		ld   de,MSGOPDONE	; Tell the user all done
 EXITMSG:	call MSGDE		; Display message
 EXIT:		ld   a,(CURDRV)		; Reset drive back
@@ -252,6 +322,24 @@ EXIT:		ld   a,(CURDRV)		; Reset drive back
 ;============================================================
 CPM3BDOS:	ld   de,CPM3SYSFCB
 		jp   BDOS
+;============================================================
+;
+; CLEARBOOTFCB - Clear the boot FCB
+;
+;============================================================
+CLRBOOTFCB:	push hl
+		push de
+		push bc
+		ld   hl,BOOTTRKFCB
+		ld   de,BOOTTRKFCB+1
+		ld   bc,FCBLEN-1
+		xor  a
+		ld   (hl),a
+		ldir
+		pop  bc
+		pop  de
+		pop  hl
+		ret
 ;============================================================
 ;
 ; BOOTFBDOS - Perform a BDOS operation on BOOTTRKFCB FCB
@@ -375,7 +463,7 @@ BOOTTRKFNAME:	DB   HIGH ZBOOT_TRKDATA + 00H,'BOOTSECTBIN'
 		DB   HIGH ZBOOT_TRKDATA + 10H,'CCP     COM'
 		DB   HIGH ZBOOT_TRKDATA + 1DH,'TOOLKEY BIN'
 		DB   HIGH ZBOOT_TRKDATA + 20H,'CPMLDR  BIN'
-		DB   FFH
+		DB   0FFH
 		; Directory entry for boot tracks.
 SYSDIRENT:	DB   000h
 		DB   'system  '
@@ -385,6 +473,38 @@ SYSDIRENT:	DB   000h
 		DB   088H,089H,08AH,08BH,000H,000H,000H,000H
 CURDRV:		DB   00
 CPM3BLKS:	DB   00
+SAVEDUSER:	DB   00
+FNAME:		DS   13
+;============================================================
+;
+; Print message pointed to by DE followed by the file name
+; pointed to by hl in an FCB
+;============================================================
+PRINTFNAME:	push hl			; Save hl for later
+		push hl
+		call MSGDE		; Print the starting message
+		pop  hl			
+		ld   de,FNAME		; Copy the first 8 characters
+		ld   b,8
+		inc  hl
+PRFNAMELOOP:	ld   a,(hl)
+		inc  hl
+		cp   ' '		; Don't copy spaces...
+		jr   z,SKIPSPACE
+		ld   (de),a
+		inc  de
+SKIPSPACE:	djnz PRFNAMELOOP
+		ld   a,'.'		; add a dot
+		ld   (de),a
+		inc  de
+		ld   bc,3		; Always do the extension
+		ldir
+		ld  a,'$'		; Finish off with a dollar
+		ld  (de),A
+		ld  de,FNAME
+		call MSGDE		; And print it.
+		pop  hl
+		ret
 ;============================================================
 ; Print message pointed to by DE to console
 ;============================================================

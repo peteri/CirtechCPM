@@ -330,6 +330,7 @@ src/patched/START.REL
 src/patched/SDT.REL
 src/patched/MPATCH.REL
 src/patched/GPATCH.REL
+src/patched/PUTSYS.REL
 src/patched/*.COM
 src/patched/*.BIN
 src/patched/*.$$$
