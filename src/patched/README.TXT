@@ -13,7 +13,7 @@ mame apple2ee -sl1 parallel -sl2 ssc -sl4 softcard -aux ext80
 
 To build on the Apple //e boot the image, change user to USER 1
 then use BUILDBIN.SUB, BUILDCOM.SUB, LINKBIN.SUB to compile and
-linkg the assembly files. The type GENCPM AUTO DISPLAY to 
+linkg the assembly files. Then type 'GENCPM AUTO DISPLAY' to 
 generate CPM3.SYS. User area 1 has been used so that CPM3.SYS 
 is not overwritten. For some reason using BUILD.SUB to call
 the indivdiual submit files does not work.

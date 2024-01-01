@@ -46,7 +46,7 @@ MSGINVDRV:	DB   CR,LF,LF,BELL
 		DB   "Invalid drive identifier.$"
 MSGNOTSYS:	DB   CR,LF,LF,BELL
 		DB   "That is not a system disk, it does not have the file CPM3.SYS on it.$"
-MSGREADBOOTF:	DB   CR,LF
+MSGREADF:	DB   CR,LF
 		DB   "Reading $"
 MSGERRRDBF:	DB   CR,LF,LF
 		DB   "Error Reading $"		
@@ -56,6 +56,10 @@ MSGDSTDISK:	DB   CR,LF,LF
 		DB   "Which drive is the DESTINATION disk in ?$"
 MSGINSDSTDSK:	DB   CR,LF,LF
 		DB   "Insert DESTINATION disk in drive and press any key.$"
+MSGWRTBOOT:	DB   CR,LF,LF
+		DB   "Writing boot track $"		
+MSGWRTCMP3:	DB   CR,LF,LF
+		DB   "Writing CPM3.SYS $"		
 MSGSYSTRKUSED:	DB   CR,LF,LF,BELL
 		DB   "The system tracks are already in use."
 		DB   CR,LF
@@ -98,7 +102,7 @@ OPENFERR:	ld   de,MSGERROPENF	; Display error message
 ; followed by the filename to open.
 ;
 ;============================================================
-READBOOTFILE:	ld   de,MSGREADBOOTF
+READBOOTFILE:	ld   de,MSGREADF
 		call PRINTFNAME		; Print the file name
 		call CLRBOOTFCB
 		push hl
@@ -148,7 +152,10 @@ RDBOOTEXIT:	pop  hl
 ; Read in CPM3.SYS
 ;
 ;============================================================
-READCPM3SYS:	ld   hl,CPM3SYSDATA-BLKSIZE ; Set destination
+READCPM3SYS:	ld   de,MSGREADF
+		ld   hl,CPM3SYSFCB
+		call PRINTFNAME		; Print the file name
+		ld   hl,CPM3SYSDATA-BLKSIZE ; Set destination
 		ld   b,0		; Number of blocks read
 RDNXTCPM3SYS:	ld   de,BLKSIZE
 		add  hl,de		; Bounce along the dst pointer
@@ -160,6 +167,11 @@ RDNXTCPM3SYS:	ld   de,BLKSIZE
 		call CPM3BDOS
 		cp   ERR_HARD		; Hardware error
 		jp   z,POPDISKERR	; Get out of here
+		push af
+		ld   c,CONO 		; Show some progress
+		ld   e,'.'
+		call BDOS
+		pop  af
 		pop  bc			; Get back pointer and count
 		pop  hl
 		inc  b			; Increment the conter
@@ -170,6 +182,12 @@ RDNXTCPM3SYS:	ld   de,BLKSIZE
 		ld   (CPM3BLKS),a
 		ld   c,CLOSEF
 		call CPM3BDOS
+		ld   c,CONO 		; Show some progress
+		ld   e,8		; Backspace
+		call BDOS
+		ld   c,CONO 		; Correct for last read
+		ld   e,' '
+		call BDOS
 ;============================================================
 ;
 ; Time to write out all that lovely data
@@ -259,7 +277,9 @@ DIRSECTADDR:	ld   de,0000H		; Overwritten earlier on
 ; yet to store data, OR we're not on a Disk II drive.
 ;
 ;============================================================
-NOTDISK2:	ld   c,DSKOP_WRTRK	; write out the boot tracks
+NOTDISK2:	ld   de,MSGWRTBOOT
+		call MSGDE
+		ld   c,DSKOP_WRTRK	; write out the boot tracks
 		call BIOSTRKOP
 		ld   c,USERNUM		; Get current user number
 		ld   e,0FFH
@@ -276,7 +296,9 @@ NOTDISK2:	ld   c,DSKOP_WRTRK	; write out the boot tracks
 		or   a			; File not found
 		jr   z,CPM3DELOK	; leaves h zero so carry on
 		jp   nz,POPDISKERR	; Get out of here.
-CPM3DELOK:	ld   a,0
+CPM3DELOK:	ld   de,MSGWRTCMP3
+		call MSGDE
+		ld   a,0
 		ld   (CPM3SYSFCB+FCB_CR),a ; reset current record
 		ld   (CPM3SYSFCB+FCB_EX),a ; reset extent
 		ld   c,MAKEF		; Create the file
