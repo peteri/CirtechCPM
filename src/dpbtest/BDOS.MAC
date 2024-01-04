@@ -17,7 +17,6 @@ WRITF		equ  21			; 15 - Write func
 MAKEF		equ  22			; 16 - Make a file
 GETDRV		equ  25			; 19 - return current drive function
 SETDMAOFF	equ  26			; 1a - Set DMA
-USERNUM		equ  32			; 20 - get / set user number
 RREADF		equ  33			; 21 - Read random
 RWRITF		equ  34			; 22 - Write random
 DRESET		equ  37			; 25 - Drive reset

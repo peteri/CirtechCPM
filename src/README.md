@@ -39,7 +39,7 @@ The patched build folder uses the patched SPR files from the RomWBW project as t
 Code patches applied:
 - `BIOS.MAC` - Checks for the Cirtech CP/M plus Apple //e physical hardware which it is suspected used the address mapping PROM with an alternative mapping have been removed.
 - `BIOSCHAR.MAC` - The 6850 ACIA based card driver (for the CCS7710 or Apple ][ communications card ]) now no longer overwrites an input character. _Note_ this is untested until I plug the CCS7710 I have into physical hardware.
-- `BIOSDISK.MAC` - No changes currently, although the disk formatter routine track nibble gap sizing routine looks like it is jumping to an incorrect location when wasting cycles.
+- `BIOSDISK.MAC` - Single change - the disk formatter routine track nibble gap sizing routine now jumps to correct location when wasting cycles.
 - `BIOSVID.MAC` - Now has an cursor up command and correctly implements the Soroc IQ-120
 
 Currently this builds a `system.dsk` in the binaries folder which is capable of being booted under AppleWin and Mame. The `utility.dsk` that is created has the `help.com` from the RomWBW distribution it is a bit smaller than the one on the original Cirtech disk.
@@ -47,6 +47,12 @@ Currently this builds a `system.dsk` in the binaries folder which is capable of 
 For details of the video card patches please see [video-bios-patch.md](video-bios-patch.md)
 
 For details of the memory map for the cirtech card please see [address-map.md](address-map.md)
+
+## Test routines
+
+Some test routines to run:
+- `mappertest`- Quick test routine for checking the memory mapping.
+- `dpbtest` - Tests for the DPB computation routine.
 
 ## TO DO
 

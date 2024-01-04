@@ -88,3 +88,11 @@ Total 1k Blocks =    444   Used/Max Dir Entries For Drive D:   66/ 128
 
 ## CIRTECH CPM V2 BOOT.DSK
 Possible boot image created by booting the Apple //e version and using `COPYSYS.COM` from the 800K CP/M Plus image.
+
+## buildcpm3.hdv
+Image containing the source code and compiler to build the CP/M system directly on the Apple //e.
+
+Can be run in mame using (assuming you have all the right ROMs): 
+`mame apple2ee -sl1 parallel -sl2 ssc -sl4 softcard -aux ext80 -sl7 cffa2 -hard1 {PathTo}\DiskImages\buildcpm3.hdv`
+
+_Note: AppleWin does not currently return the disk size in the X/Y registers when the ProDOS status call is made so Cirtech CP/M fails to run correctly when there is a hard disk setup._
