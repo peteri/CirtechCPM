@@ -41,6 +41,7 @@ Code patches applied:
 - `BIOSCHAR.MAC` - The 6850 ACIA based card driver (for the CCS7710 or Apple ][ communications card ]) now no longer overwrites an input character. _Note_ this is untested until I plug the CCS7710 I have into physical hardware.
 - `BIOSDISK.MAC` - Single change - the disk formatter routine track nibble gap sizing routine now jumps to correct location when wasting cycles.
 - `BIOSVID.MAC` - Now has an cursor up command and correctly implements the Soroc IQ-120
+- `LDRBIOS.MAC` - Patched to support fixed disk sizes from a ProDOS boot ROM driver. Also check for RAM disk on a smart port has been altered to check for the smart port before checking for the RAM drive.
 
 Currently this builds a `system.dsk` in the binaries folder which is capable of being booted under AppleWin and Mame. The `utility.dsk` that is created has the `help.com` from the RomWBW distribution it is a bit smaller than the one on the original Cirtech disk.
 

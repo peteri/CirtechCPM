@@ -268,18 +268,18 @@ NOTDISKII:	cp   0FAH		; Jump out of range
 		and  07H		; Mask off Prodos status bits
 		cp   07H		; Check for Status/Read/Write
 		jr   nz,CARDUNK		; Can't read / write not for us
+		ld   l,007H		; Look at byte $Cn07 needs to be zero
+		ld   a,(hl)		; to be a smartport
+		or   a
+		jr   nz,PRODOSONLY	; Skip smartport ID byte check in this case
 		ld   l,0FBH		; Load smart port ID byte at $CnFB
 		bit  0,(hl)		; RAM card?
-		jr   nz,CHKSMARTCARD
-		inc  c			; Set c to 8 PDISK
+		jr   nz,RAMCARD
+PRODOSONLY:	inc  c			; Set c to 8 PDISK
 		bit  7,b		; Test removable bit
 		jp   nz,PRODOSDSK
 		inc  c			; set c to 9 FDISK
 		jp   PRODOSDSK
-CHKSMARTCARD:	ld   l,07H		; Check $Cn07
-		ld   a,(hl)
-		or   a			; Better be zero
-		jr   z,RAMCARD
 CARDUNK:	ld   c,01H		; Unkown card type
 		jp   SAVECARD		; Save it
 RAMCARD:	ld   l,0FBH		; Get the smart port id byte again
@@ -373,6 +373,10 @@ DRIVEDONE:	pop  hl			; h=Slot Ex l=card type
 ;
 ;============================================================
 PDSIZE:		ld   h,000H		; Overwritten by card find routine
+		ld   l,0FCH		; Get size from the ROM
+		ld   e,(hl)		; put into de for later
+		inc  l
+		ld   d,(hl)
 		ld   l,0FFH		; Get prodos entry point
 		ld   l,(hl)
 		res  5,h		; Convert $ExFF to $CxFF
@@ -388,7 +392,11 @@ PDSIZE:		ld   h,000H		; Overwritten by card find routine
 		ld   hl,(ZX_6502)	; hl=number of blocks
 		scf			; Set carry flag to show error
 		ret  z			; Go home.
-		ld   de,00018H		; subtract boot tracks
+		ld   a,d		; Size in PRODOS ROM zero?
+		or   e			 
+		jr   z,PDSIZESTATUS	; Use size from status
+		ex   de,hl		; Size not zero use the ROM
+PDSIZESTATUS:	ld   de,00018H		; subtract boot tracks
 		or   a			; clear carry
 		sbc  hl,de
 		ex   de,hl		; de = total disk size, hl=disk-boot tracks

@@ -89,10 +89,21 @@ Total 1k Blocks =    444   Used/Max Dir Entries For Drive D:   66/ 128
 ## CIRTECH CPM V2 BOOT.DSK
 Possible boot image created by booting the Apple //e version and using `COPYSYS.COM` from the 800K CP/M Plus image.
 
+## system.dsk
+Patched bootable system disk for 128K Apple //e systems. Only supports 16Mb HDV (although image will autogrow) images for AppleWin currently.
+
+## utility.dsk
+Patched Utility disk for 128K Apple //e systems.
+
+## AppleWinBoot.hdv
+Bootable CP/M plus image for AppleWin with fixed 16MB HDD size firmware. Contains both the Cirtech system and utilities disk content. This relies on the AppleWin autoextend HDV image logic, it will not work with mame.
+
+**NOTE: Disk A is the hard drive when booting from this image, B is drive 1, C is drive 2 for the Disk II drives.**
+
 ## buildcpm3.hdv
 Image containing the source code and compiler to build the CP/M system directly on the Apple //e.
 
 Can be run in mame using (assuming you have all the right ROMs): 
 `mame apple2ee -sl1 parallel -sl2 ssc -sl4 softcard -aux ext80 -sl7 cffa2 -hard1 {PathTo}\DiskImages\buildcpm3.hdv`
 
-_Note: AppleWin does not currently return the disk size in the X/Y registers when the ProDOS status call is made so Cirtech CP/M fails to run correctly when there is a hard disk setup._
+_Note: AppleWin does not currently return the disk size in the X/Y registers when the ProDOS status call is made so Cirtech CP/M fails to run correctly when there is a hard disk setup. If a blank hdv disk is used it will enter the monitor ROM. You can boot by using PR#6 or 6Ctrl-P from the monitor to a system disk in drive 1._
