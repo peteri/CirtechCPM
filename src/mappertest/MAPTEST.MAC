@@ -15,12 +15,14 @@ CR		EQU  0Dh
 ESC		EQU  1Bh
 MEMADDR		EQU  010H		; Zero page address of memory to read
 KNOWNEE		EQU  0C6EAH		; Address of EE in Disk II boot ROM
-; KNOWNEE       EQU  0C87BH             ; Alternate address with A11 high
+KNOWNEEA11H     EQU  0C87BH             ; Alternate address with A11 high
 TESTADDR	EQU  KNOWNEE-0C000H	; Start of test addresses
+TESTADDRA11H	EQU  KNOWNEEA11H-0C000H	; Start of test addresses
 TESTROUT	EQU  0900H		; Address of test routine
 Z80OFFS		EQU  0F000H
 ZMEMREAD	EQU  Z80OFFS+MEMREAD
 ZTESTADDR	EQU  Z80OFFS+TESTADDR
+ZTESTADDRA11H	EQU  Z80OFFS+TESTADDRA11H
 MSAVE		EQU  Z80OFFS+MEMREAD-1	; Start address of memory save
 ZROUT_6502	EQU  0F3D0H		; 6502 routine to call
 ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
@@ -37,7 +39,48 @@ ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
 ;
 ;============================================================
 MAIN:		call WELCOME
-		ld   hl,TESTSTART
+		call OPENLOG
+		call LOGHDR
+		call RUNMULTTEST
+		call A11HIGH
+		call RUNMULTTEST
+		call CLOSELOG
+		jp   BOOT
+;============================================================
+;
+; LOGHDR - Write log header to file		
+;
+;============================================================
+LOGHDR:		ld   hl,WELCOMEMSG2
+LOGHDR2:	ld   a,(hl)		
+		inc  hl
+		cp   '$'
+		ret  z
+		push hl
+		call WRITELOG
+		pop  hl
+		jp   LOGHDR2
+;============================================================
+;
+; A11HIGH - Patch test address to have A11High		
+;
+;============================================================
+A11HIGH:	ld   hl,TESTADDRA11H	; Patch address for print results
+		ld   (TESTADDRP1+1),hl
+		ld   a,l		; Patch 6502
+		ld   (TESTADDRP2+1),a
+		ld   a,h
+		ld   (TESTADDRP3+1),a
+		ld   hl,ZTESTADDRA11H	; Patch Z80 save
+		ld   (ZTESTADDRP1+1),hl
+		ld   (ZTESTADDRP2+1),hl
+		ret
+;============================================================
+;
+; RUNMULTTEST - Run multiple tests		
+;
+;============================================================
+RUNMULTTEST:    ld   hl,TESTSTART	; Copy 6502 code
 		ld   de,TEST+Z80OFFS
 		ld   bc,TESTEND-TESTSTART
 		ldir
@@ -49,8 +92,12 @@ MAIN:		call WELCOME
 		call RUNTEST
 		call RUNTEST
 		call RESTOREMEM
-		call PRTRESULTS
-		jp   BOOT
+		jp   PRTRESULTS
+;============================================================
+;
+; RUNTEST - Run tests		
+;
+;============================================================
 RUNTEST:	push de
 		ld   hl,TEST
 		ld   (ZROUT_6502),hl
@@ -67,9 +114,19 @@ RUNTEST:	push de
 WELCOME:	ld   de,WELCOMEMSG
 		ld   c,PRSTR
 		jp   BDOS
-WELCOMEMSG:	DB   ESC,'*'
+WELCOMEMSG:	DB   CR,LF
 		DB   'Cirtech memory map test',CR,LF
-		DB   'Addr',TAB,'E400',TAB,'E401',TAB,'E402',TAB,'E403',CR,LF,'$'
+WELCOMEMSG2:	DB   'Addr',TAB,'E400',TAB,'E401',TAB,'E402',TAB,'E403',CR,LF,'$'
+;============================================================
+;
+; Write error message for disk.
+;
+;============================================================
+WRERR:		ld   de,WRERRMSG
+		ld   c,PRSTR
+		call BDOS	
+		jp   BOOT
+WRERRMSG:	DB   CR,LF,"Write error MAPTEST.LOG",CR,LF,'$'
 ;============================================================
 ;
 ; Print the results
@@ -77,7 +134,7 @@ WELCOMEMSG:	DB   ESC,'*'
 ;============================================================
 PRTRESULTS:	ld   bc,01000H
 		ld   iy,ZMEMREAD
-		ld   hl,TESTADDR
+TESTADDRP1:	ld   hl,TESTADDR
 RESULTLOOP:	push hl			; Print the address
 		call HEX_WORD
 		ld   a,TAB
@@ -117,7 +174,7 @@ MEMSAVE:	DS   010H
 SAVEMEM:	ld   a,0FFH
 		ld   bc,0F000H
 		ld   de,MEMSAVE+00FH
-		ld   hl,ZTESTADDR
+ZTESTADDRP1:	ld   hl,ZTESTADDR
 SAVELOOP:	push af
 		ld   a,(hl)
 		ld   (de),a
@@ -142,7 +199,7 @@ SAVELOOP:	push af
 RESTOREMEM:	ld   a,0FFH
 		ld   bc,0F000H
 		ld   de,MEMSAVE+00FH
-		ld   hl,ZTESTADDR
+ZTESTADDRP2:	ld   hl,ZTESTADDR
 RESTORELOOP:	push af
 		ld   a,(de)
 		ld   (hl),a
@@ -199,6 +256,7 @@ HEX_NYBBLE:	or   0F0H
 PRINT_CHAR:	push hl
 		push de
 		push bc
+		call WRITELOG
 		ld   c,CONO
 		ld   e,a
 		call BDOS
@@ -206,6 +264,87 @@ PRINT_CHAR:	push hl
 		pop  de
 		pop  hl
 		ret
+;============================================================
+;
+; OPENLOG - Open the log file
+;
+;============================================================
+OPENLOG:	ld   c,DELTEF		; Delete MAPTEST.LOG
+		ld   de,LOGFCB
+		call BDOS
+		or   a			; Check if acc zero
+		jr   z,LOGDELOK		; we're good
+		ld   a,h		; check extended code
+		or   a			; File not found
+		jr   z,LOGDELOK		; leaves h zero so carry on
+		jp   nz,WRERRMSG	; Get out of here.
+LOGDELOK:	ld   a,0
+		ld   (LOGFCB+FCB_CR),a	; reset current record
+		ld   (LOGFCB+FCB_EX),a	; reset extent
+		ld   c,MAKEF		; Create the file
+		call LOGBDOS
+		ld   c,OPENF		; open the file
+		jp   LOGBDOS
+;============================================================
+;
+; CLOSELOG - Close the log file
+;
+;============================================================
+CLOSELOG:	ld   a,01AH
+		call WRITELOG
+		call WRLOGBUF
+		ld   c,CLOSEF
+		jp   LOGBDOS
+;============================================================
+;
+; WRITELOG - Write acc to log file
+;
+;============================================================
+WRITELOG:	push af
+		ld   a,LOW LOGBUFPTR-2
+		ld   hl,(LOGBUFPTR)
+		cp   l 
+		call z,WRLOGBUF
+		pop  af
+		inc  hl
+		ld   (hl),a
+		ld   (LOGBUFPTR),hl
+                ret
+;============================================================
+;
+; WRLOGBUF - Write log buffer to file
+;
+;============================================================
+WRLOGBUF:	ld   de,LOGBUFFER
+		call DOSETDMA
+		ld   c,WRITF
+		call LOGBDOS
+		ld   hl,LOGBUFFER
+		ld   (LOGBUFPTR),hl
+		ret
+;============================================================
+;
+; LOGBDOS - Perform a BDOS operation on MAPTEST.LOG FCB
+;
+;============================================================
+LOGBDOS:	ld   de,LOGFCB
+		call BDOS
+		or   a
+		jp   nz,WRERR
+		ret
+;============================================================
+; Set the DMA address
+;============================================================
+DOSETDMA:	ld   c,SETDMAOFF
+		jp   BDOS		
+		; FCB for MAPTEST.LOG
+LOGFCB:		DB   00H		; Drive
+		DB   'MAPTEST LOG'	; Filename+type
+		DB   00H,00H,00H,00H	; EX,S1,S2,RC
+		DS   10H,00h		; AL (16 bytes)
+		DB   00H,00H,00H,00H	; CR,R0,R1,R2		
+LOGBUFFER:	DS   80H
+LOGBUFPTR:      DW   LOGBUFFER
 TESTSTART:
 		.6502
 		.PHASE TESTROUT
@@ -214,9 +353,9 @@ LCBANK1		EQU  $c08b		; RWx2 read/write RAM bank 1
 
 TEST:		BIT  LCBANK2
 		BIT  LCBANK2
-		lda  #<TESTADDR
+TESTADDRP2:	lda  #<TESTADDR
 		sta  MEMADDR
-		lda  #>TESTADDR
+TESTADDRP3:	lda  #>TESTADDR
 		sta  MEMADDR+1
 		lda  #$00
 		tay
