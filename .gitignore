@@ -339,7 +339,7 @@ src/patched/binaries/*
 src/patched/system/*
 src/patched/utility/*
 src/mappertest/MAPTEST.REL
-src/mappertest/maptest.dsk
+src/mappertest/maptest.do
 src/mappertest/MAPTEST.COM
 src/dpbtest/DPBTEST.REL
 src/dpbtest/DPBTEST.COM

@@ -11,5 +11,6 @@ Remove-Item -Path .\M80ERR.LOG
 $outfile=$filename +'.COM'
 $param=$script:outfile + '[NR,NL]=' + $filename
 C:\tools\ntvcm.exe ..\..\tools\DRI\LINK $param
-dotnet run --project ../../tools/CpmDsk -- create --disk-image maptest.dsk --binaries-folder ../patched/binaries
-dotnet run --project ../../tools/CpmDsk -- add '../patched/binaries/CPM3.SYS' 'MAPTEST.COM' --disk-image maptest.dsk --binaries-folder ../patched/binaries
+# dotnet run --project ../../tools/CpmDsk -- create --disk-image maptest.do --binaries-folder ../patched/binaries
+dotnet run --project ../../tools/CpmDsk -- create --disk-image maptest.do
+dotnet run --project ../../tools/CpmDsk -- add '../patched/binaries/CPM3.SYS' 'MAPTEST.COM' --disk-image maptest.do --binaries-folder ../patched/binaries
