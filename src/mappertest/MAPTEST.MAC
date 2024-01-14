@@ -18,7 +18,7 @@ KNOWNEE		EQU  0C6EAH		; Address of EE in Disk II boot ROM
 KNOWNEEA11H     EQU  0C87BH             ; Alternate address with A11 high
 TESTADDR	EQU  KNOWNEE-0C000H	; Start of test addresses
 TESTADDRA11H	EQU  KNOWNEEA11H-0C000H	; Start of test addresses
-TESTROUT	EQU  0900H		; Address of test routine
+TESTROUT	EQU  0070H		; Address of test routine
 Z80OFFS		EQU  0F000H
 ZMEMREAD	EQU  Z80OFFS+MEMREAD
 ZTESTADDR	EQU  Z80OFFS+TESTADDR
@@ -41,7 +41,15 @@ ZCARD_Z80	EQU  0F3DEH		; Card address from Z80 0E401H
 MAIN:		call WELCOME
 		call OPENLOG
 		call LOGHDR
+		ld   hl,TESTSTART	; Copy 6502 code
+		ld   de,TEST+Z80OFFS
+		ld   bc,TESTEND-TESTSTART
+		ldir
 		call RUNMULTTEST
+		ld   hl,TESTSTART	; Copy 6502 code
+		ld   de,TEST+Z80OFFS
+		ld   bc,TESTEND-TESTSTART
+		ldir
 		call A11HIGH
 		call RUNMULTTEST
 		call CLOSELOG
@@ -68,9 +76,9 @@ LOGHDR2:	ld   a,(hl)
 A11HIGH:	ld   hl,TESTADDRA11H	; Patch address for print results
 		ld   (TESTADDRP1+1),hl
 		ld   a,l		; Patch 6502
-		ld   (TESTADDRP2+1),a
+		ld   (Z80OFFS+TESTADDRP2+1),a
 		ld   a,h
-		ld   (TESTADDRP3+1),a
+		ld   (Z80OFFS+TESTADDRP3+1),a
 		ld   hl,ZTESTADDRA11H	; Patch Z80 save
 		ld   (ZTESTADDRP1+1),hl
 		ld   (ZTESTADDRP2+1),hl
@@ -80,11 +88,7 @@ A11HIGH:	ld   hl,TESTADDRA11H	; Patch address for print results
 ; RUNMULTTEST - Run multiple tests		
 ;
 ;============================================================
-RUNMULTTEST:    ld   hl,TESTSTART	; Copy 6502 code
-		ld   de,TEST+Z80OFFS
-		ld   bc,TESTEND-TESTSTART
-		ldir
-		call SAVEMEM
+RUNMULTTEST:    call SAVEMEM
 		ld   de,(ZCARD_Z80)
 		dec  de
 		call RUNTEST
