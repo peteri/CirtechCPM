@@ -1,7 +1,7 @@
 # Cirtech CP/M plus disassembly.
 Analysis of the Cirtech Apple //e CP/M plus code, basically the repo where I add
-various disk images and disassemblies while I work on the code. Currently the disk images do NOT boot
-in eiher mame or AppleWin this is the first thing to fix.
+various disk images and disassemblies while I work on the code. Currently patched disk images
+are bootable in both MAME and AppleWin (versions after V1.30.18.0)
 
 The Cirtech card looks like this installed in a Apple //e:
 
